@@ -1,2 +1,21 @@
-# irisai-updates
-IrisAI macOS releases and signed automatic update feed.
+# IrisAI macOS 배포
+
+IrisAI의 macOS Apple Silicon용 수정 배포본과 서명된 자동 업데이트 파일을 제공합니다. 원본 프로젝트: [rarebinary/IrisAI](https://github.com/rarebinary/IrisAI).
+
+## 설치
+
+[최신 릴리스](https://github.com/jungeunchan0806/irisai-updates/releases/latest)에서 `IrisAI-버전-macOS-AppleSilicon.zip`을 받아 압축을 풀고, `IrisAI.app`을 응용 프로그램 폴더에 옮깁니다. M 시리즈 Mac과 macOS 14 이상이 필요합니다. Python과 모델은 포함되어 있으며, 에뮬레이터와 게임은 별도로 설치해야 합니다.
+
+## 자동 업데이트
+
+0.0.9부터 지원합니다. 기존 0.0.8 사용자는 0.0.9 이상을 **한 번 설치**해야 합니다. 이후 앱이 실행 중일 때 시작 시 및 약 1시간 간격으로 새 버전을 확인하고 다운로드합니다. 다운로드한 업데이트는 앱을 종료할 때 자동으로 설치됩니다. 메뉴의 **업데이트 확인…**으로 직접 확인할 수도 있습니다.
+
+수동으로 즉시 설치를 요청해도 실행 중이거나 일시정지된 플레이가 있으면 설치를 기다립니다. 실행을 중지하면 설치하고 다시 시작합니다. 설정과 대기열은 앱 밖의 Application Support 폴더에 유지됩니다. 자동 확인과 다운로드는 Settings에서 끌 수 있습니다.
+
+업데이트 목록과 ZIP은 Ed25519 서명으로 검증합니다. 서명 키는 배포자의 Mac 키체인에 보관하며 저장소에 올리지 않습니다. 업데이트는 이 저장소에 새 릴리스가 게시되었을 때 제공됩니다.
+
+## 배포 안내
+
+이 빌드는 ad-hoc 서명이며 Apple Developer ID 공증은 없습니다. 다른 Mac의 첫 실행에서는 macOS의 별도 실행 허용이 필요할 수 있습니다. 자세한 실행·에뮬레이터 연결·오토골 사용법은 ZIP의 사용 안내를 확인하세요.
+
+원본 라이선스는 CC BY-NC 4.0이며, 원본 저작권과 제3자 라이선스 안내는 배포 ZIP에 포함됩니다. 개인 설정, 계정 정보, 플레이 로그는 공개 배포에 포함하지 않습니다.
