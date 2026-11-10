@@ -293,10 +293,10 @@
     },
     {
       "path": "pyla_addons/build_patch.py",
-      "size": 5752,
-      "sha256": "64426843909f74ac28917889d701dc0a1951b04487370e6afdcf2978d2e77d75",
+      "size": 5751,
+      "sha256": "0897e9aa0e0aecac3df2189570f45be1d3c7bdb6b1e7b21b2a1b62399371a2b6",
       "base_sha256": null,
-      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-64426843909f74ac-build_patch.py"
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-0897e9aa0e0aecac-build_patch.py"
     },
     {
       "path": "pyla_addons/diagnostics.py",
