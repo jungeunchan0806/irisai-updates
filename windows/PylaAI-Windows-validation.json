@@ -1,0 +1,52 @@
+{
+  "version": "0.1.0",
+  "base_commit": "9b13d0f21de06637baffdff9a5a67b8b0d26a9c2",
+  "iris_source_archive_sha256": "422c51b95e1b4f6dbde95776427622cfa6dca941ba81c81a7c08b372af663c20",
+  "iris_source_manifest_files_verified": 412,
+  "unique_tests_passed": 96,
+  "fixture_subtests_passed": 32,
+  "validation_environment": "Linux Python 3.12; Windows process/API operations mocked",
+  "real_onnx_models_tested": [
+    "mainInGameModel.onnx",
+    "tileDetector.onnx"
+  ],
+  "iris_playstyles_executed": 9,
+  "embedded_patch_files_verified": 51,
+  "repeat_install_and_config_preservation": true,
+  "live_https_update_verified": true,
+  "windows_feed": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/windows-manifest.json",
+  "published_commit": "65ff060e084e39bb5711bb7e97c7f0fb74e9fdb5",
+  "native_windows_tested": false,
+  "live_emulator_tested": false,
+  "youtube_videos_trained": 0,
+  "youtube_blocker": "HTTP 403 in this environment",
+  "artifacts": {
+    "PylaAI-Windows-0.1.0.zip": {
+      "bytes": 33797783,
+      "sha256": "f12ce0d834742a43592ae30e58769181f2034b2aa24dd369ca30280a5a158c9e"
+    },
+    "PylaAI-Windows-AutoPatch.zip": {
+      "bytes": 471037,
+      "sha256": "c478b6b0d8f032eb82b3fcef33c68ea1f182c9cf46a1e2bca811383c9a33affb"
+    },
+    "Apply-Windows-Patch.py": {
+      "bytes": 609036,
+      "sha256": "5bf3e33e22d9d44a00426e61ea17acd00ed3fbadfb9eeea6dd3f23c4d8933fb2"
+    },
+    "Apply-Windows-Patch.bat": {
+      "bytes": 163,
+      "sha256": "5e15063823d6ad290c18617b2a1552b036c2dc5e18810a4033a8970ab55f2f94"
+    },
+    "PylaAI-Windows-Guide-KO.md": {
+      "bytes": 8197,
+      "sha256": "36fd3338e82ce197defb258fffe467207f5967ae350e30e2395676a79025798a"
+    },
+    "PylaAI-Windows-source-changes.patch": {
+      "bytes": 5249790,
+      "sha256": "d499dd48f021e5dce44e7e0e1d5ae4c4de415d3a0d5612029210d4f675b9f6d7"
+    }
+  },
+  "packaged_baseline_future_update": true,
+  "unicode_spaced_paths_tested_on_linux": true,
+  "all_live_https_payloads_verified": 51
+}
