@@ -4,6 +4,21 @@
   "friendly_matches_played": 0,
   "checks": [],
   "completed": false,
-  "failure": "CalledProcessError: Command '['/workspace/android-tools/sdk/platform-tools/adb', '-s', 'emulator-5554', 'shell', 'am', 'start', '-W', '-n', 'com.irisai.inputprobe/.ProbeActivity']' returned non-zero exit status 224.",
-  "passed": false
+  "failure": "Android framework was not stable enough to launch the laboratory APK. No live agent/input test or Brawl Stars match completed.",
+  "passed": false,
+  "environment": "Android 11 API 30 x86_64 Google APIs emulator; software emulation because /dev/kvm is unavailable",
+  "attempts": [
+    {
+      "configuration": "1080x1920, 2 virtual CPUs, software emulation",
+      "outcome": "Framework services terminated after boot. Launching the probe failed with exit 224 before agent injection."
+    },
+    {
+      "configuration": "960x540, experimental multi-thread TCG",
+      "outcome": "Unsupported guest warning; attempt stopped before any compatibility claim."
+    },
+    {
+      "configuration": "960x540, 1 virtual CPU, standard software emulation",
+      "outcome": "Boot was observed, but readiness checks timed out and launching the probe failed: Failure calling service activity: Broken pipe (32)."
+    }
+  ]
 }

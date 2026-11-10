@@ -2,5 +2,7 @@
   "status": "waiting_for_device",
   "friendly_battle_tested": false,
   "game_package": "com.supercell.brawlstars",
-  "blocker": "No authorized Android device is connected"
+  "blocker": "No authorized Android device is connected",
+  "scope": "User-provided test devices, checked before creating a local laboratory emulator",
+  "user_device_connected": false
 }
