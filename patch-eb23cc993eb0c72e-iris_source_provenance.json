@@ -1,0 +1,269 @@
+{
+  "source_release": "https://github.com/jungeunchan0806/irisai-updates/releases/tag/v0.0.9",
+  "archive_sha256": "422c51b95e1b4f6dbde95776427622cfa6dca941ba81c81a7c08b372af663c20",
+  "copied_files": {
+    "brawl_ball.py": {
+      "source": "brawl_ball.py",
+      "sha256": "3da70242d3b6339822200da0891ddc3e4c15ef598e7983ced6326f2f8e58ffbf",
+      "packaged_sha256": "d94bee3a48673869071ea71cba32e73d1350e4a71e04066d260a52e81a458c7d"
+    },
+    "navigation.py": {
+      "source": "navigation.py",
+      "sha256": "47b9ffa0a8d19c480b40c3128913914b790ae0815802d516a8151b18beb2f773",
+      "packaged_sha256": "47b9ffa0a8d19c480b40c3128913914b790ae0815802d516a8151b18beb2f773"
+    },
+    "round_start.py": {
+      "source": "round_start.py",
+      "sha256": "1ddbafff2ea69fedccdc4bf39d92f5420ad92ca1064b332f95b6b29638dff1f7",
+      "packaged_sha256": "1ddbafff2ea69fedccdc4bf39d92f5420ad92ca1064b332f95b6b29638dff1f7"
+    },
+    "images/brawl_ball/score_icon.png": {
+      "source": "images/brawl_ball/score_icon.png",
+      "sha256": "979644aaa835dc93f826aa181a612d6a6199fe5f041f6e3b9fadbec2350bfd9e",
+      "packaged_sha256": "979644aaa835dc93f826aa181a612d6a6199fe5f041f6e3b9fadbec2350bfd9e"
+    },
+    "images/brawl_ball/ball_3.png": {
+      "source": "images/brawl_ball/ball_3.png",
+      "sha256": "afc147a0cfee266e89643ccbb210f3af0cedcd8c8545c02fee6511d050810c8f",
+      "packaged_sha256": "afc147a0cfee266e89643ccbb210f3af0cedcd8c8545c02fee6511d050810c8f"
+    },
+    "images/brawl_ball/ball_4.png": {
+      "source": "images/brawl_ball/ball_4.png",
+      "sha256": "9f8f2cf60eb25b8c7c52dc8fc616fc0de18f6c4dfec2da7c3bf3891c0568a210",
+      "packaged_sha256": "9f8f2cf60eb25b8c7c52dc8fc616fc0de18f6c4dfec2da7c3bf3891c0568a210"
+    },
+    "images/brawl_ball/score_2.png": {
+      "source": "images/brawl_ball/score_2.png",
+      "sha256": "dd0f710ec89d7623d3f5fedc2516c60e7983c529cd5a358490e98e666d9ea042",
+      "packaged_sha256": "dd0f710ec89d7623d3f5fedc2516c60e7983c529cd5a358490e98e666d9ea042"
+    },
+    "images/brawl_ball/match_over.png": {
+      "source": "images/brawl_ball/match_over.png",
+      "sha256": "84adcb5889fc534ede78c6de946e847d1d284632f4a6241a481acc6950119cb9",
+      "packaged_sha256": "84adcb5889fc534ede78c6de946e847d1d284632f4a6241a481acc6950119cb9"
+    },
+    "images/brawl_ball/ball_2.png": {
+      "source": "images/brawl_ball/ball_2.png",
+      "sha256": "ef20412fcfa3655be16d97d0faf4b627c722235bb12033f7d6d598b7a5fa8e8d",
+      "packaged_sha256": "ef20412fcfa3655be16d97d0faf4b627c722235bb12033f7d6d598b7a5fa8e8d"
+    },
+    "images/brawl_ball/score_1.png": {
+      "source": "images/brawl_ball/score_1.png",
+      "sha256": "db470206f59013035e0ae8551373a9e020915b1ab4d96503b14b96316afc622d",
+      "packaged_sha256": "db470206f59013035e0ae8551373a9e020915b1ab4d96503b14b96316afc622d"
+    },
+    "images/brawl_ball/ball_marker.png": {
+      "source": "images/brawl_ball/ball_marker.png",
+      "sha256": "6e3455812d158861bd86f8d7feaaae7d98e5dd4edf7e79bf3b099b4a21b64963",
+      "packaged_sha256": "6e3455812d158861bd86f8d7feaaae7d98e5dd4edf7e79bf3b099b4a21b64963"
+    },
+    "images/brawl_ball/score_0.png": {
+      "source": "images/brawl_ball/score_0.png",
+      "sha256": "93e36759f54aad84f03a129609e5092a0b97d5f6573e2234a27c059f33387d34",
+      "packaged_sha256": "93e36759f54aad84f03a129609e5092a0b97d5f6573e2234a27c059f33387d34"
+    },
+    "images/brawl_ball/ball_0.png": {
+      "source": "images/brawl_ball/ball_0.png",
+      "sha256": "f27246277f15d7502ba78dd3a1915f27b97fd651387e2ed6a2f36ef29b29c455",
+      "packaged_sha256": "f27246277f15d7502ba78dd3a1915f27b97fd651387e2ed6a2f36ef29b29c455"
+    },
+    "tests/fixtures/brawl_ball/last_goal.jpg": {
+      "source": "tests/fixtures/brawl_ball/last_goal.jpg",
+      "sha256": "91a8f5fedcfffe1905c65417090fe88180719c8b7a051264436405caca7d8d3c",
+      "packaged_sha256": "91a8f5fedcfffe1905c65417090fe88180719c8b7a051264436405caca7d8d3c"
+    },
+    "tests/fixtures/brawl_ball/held_overlap.jpg": {
+      "source": "tests/fixtures/brawl_ball/held_overlap.jpg",
+      "sha256": "ffef7f8670a5e684603c0de0e7793c747ccae4af52585e1c958aa0b9e249310d",
+      "packaged_sha256": "ffef7f8670a5e684603c0de0e7793c747ccae4af52585e1c958aa0b9e249310d"
+    },
+    "tests/fixtures/brawl_ball/goal_trap.jpg": {
+      "source": "tests/fixtures/brawl_ball/goal_trap.jpg",
+      "sha256": "aa94360d6a5586b1049304a425662858948258f695a918df5af26b012fffc235",
+      "packaged_sha256": "aa94360d6a5586b1049304a425662858948258f695a918df5af26b012fffc235"
+    },
+    "tests/fixtures/brawl_ball/lit_ball.jpg": {
+      "source": "tests/fixtures/brawl_ball/lit_ball.jpg",
+      "sha256": "ef563e0c66c4c9e08d804d3daebb4534133c42523b03076eabe5b7d102d7fa55",
+      "packaged_sha256": "ef563e0c66c4c9e08d804d3daebb4534133c42523b03076eabe5b7d102d7fa55"
+    },
+    "tests/fixtures/brawl_ball/last_goal_win.jpg": {
+      "source": "tests/fixtures/brawl_ball/last_goal_win.jpg",
+      "sha256": "0b4dbde13f22bc60eccea6b8e5e15301aefd33e77adfdbfb829aef9a51ad93c7",
+      "packaged_sha256": "0b4dbde13f22bc60eccea6b8e5e15301aefd33e77adfdbfb829aef9a51ad93c7"
+    },
+    "tests/fixtures/brawl_ball/held_ball.jpg": {
+      "source": "tests/fixtures/brawl_ball/held_ball.jpg",
+      "sha256": "04d096fdefa138b2c480945a028a7ef9ea50ba38ccd0cb51409144ad9d877bf0",
+      "packaged_sha256": "04d096fdefa138b2c480945a028a7ef9ea50ba38ccd0cb51409144ad9d877bf0"
+    },
+    "tests/fixtures/brawl_ball/goal_trap.json": {
+      "source": "tests/fixtures/brawl_ball/goal_trap.json",
+      "sha256": "ef301d4f882b57a18750cb162db43d35602c2748db5d1e4bc7a001b38efab0a3",
+      "packaged_sha256": "ef301d4f882b57a18750cb162db43d35602c2748db5d1e4bc7a001b38efab0a3"
+    },
+    "tests/fixtures/brawl_ball/rolling.jpg": {
+      "source": "tests/fixtures/brawl_ball/rolling.jpg",
+      "sha256": "cd2463f7cdec2e2e963947760b38a4a62c750b943b3ad579c092ecd47dc024dc",
+      "packaged_sha256": "cd2463f7cdec2e2e963947760b38a4a62c750b943b3ad579c092ecd47dc024dc"
+    },
+    "tests/fixtures/brawl_ball/result.jpg": {
+      "source": "tests/fixtures/brawl_ball/result.jpg",
+      "sha256": "88ae2924d24ca502afb183f0b719f8cf3dc2ab0c46a8818d9b0b66b16b9fcb9b",
+      "packaged_sha256": "88ae2924d24ca502afb183f0b719f8cf3dc2ab0c46a8818d9b0b66b16b9fcb9b"
+    },
+    "tests/fixtures/brawl_ball/near_player.jpg": {
+      "source": "tests/fixtures/brawl_ball/near_player.jpg",
+      "sha256": "463c2dca683cc3074b1df3d53d1b6e0e103b24db04253fe89f34b29b79e26636",
+      "packaged_sha256": "463c2dca683cc3074b1df3d53d1b6e0e103b24db04253fe89f34b29b79e26636"
+    },
+    "tests/fixtures/brawl_ball/loose_near_player.jpg": {
+      "source": "tests/fixtures/brawl_ball/loose_near_player.jpg",
+      "sha256": "a27d0127700819ebbb8d705212395f1a3cfdb7326d9c745149c7777d61b3de06",
+      "packaged_sha256": "a27d0127700819ebbb8d705212395f1a3cfdb7326d9c745149c7777d61b3de06"
+    },
+    "tests/fixtures/brawl_ball/kickoff.jpg": {
+      "source": "tests/fixtures/brawl_ball/kickoff.jpg",
+      "sha256": "1810a64420754d6dec5529dc6760bfebd50400cff40a95ce26700205486bdd90",
+      "packaged_sha256": "1810a64420754d6dec5529dc6760bfebd50400cff40a95ce26700205486bdd90"
+    },
+    "tests/fixtures/brawl_ball/opponent_goal.jpg": {
+      "source": "tests/fixtures/brawl_ball/opponent_goal.jpg",
+      "sha256": "b85800d40fef71db7b6be5994f1890568359e244c694cbb6e05a7faca0da9d88",
+      "packaged_sha256": "b85800d40fef71db7b6be5994f1890568359e244c694cbb6e05a7faca0da9d88"
+    },
+    "tests/fixtures/brawl_ball/offscreen.jpg": {
+      "source": "tests/fixtures/brawl_ball/offscreen.jpg",
+      "sha256": "4c08775de27624c727b824b1f8ac68d485eeb984c4a65b48e2c3924b48869eeb",
+      "packaged_sha256": "4c08775de27624c727b824b1f8ac68d485eeb984c4a65b48e2c3924b48869eeb"
+    },
+    "tests/fixtures/brawl_ball/clock_expiry.jpg": {
+      "source": "tests/fixtures/brawl_ball/clock_expiry.jpg",
+      "sha256": "b22dec55b9bfd4b7499dfd2c21233acee4785f33603ed0e8284a54e077d350db",
+      "packaged_sha256": "b22dec55b9bfd4b7499dfd2c21233acee4785f33603ed0e8284a54e077d350db"
+    },
+    "tests/fixtures/brawl_ball/highlight.jpg": {
+      "source": "tests/fixtures/brawl_ball/highlight.jpg",
+      "sha256": "085e483a82b8995d31c282bcc8c42ec280114d2414a705763396567ed1f7a070",
+      "packaged_sha256": "085e483a82b8995d31c282bcc8c42ec280114d2414a705763396567ed1f7a070"
+    },
+    "tests/fixtures/brawl_ball/white_hat.jpg": {
+      "source": "tests/fixtures/brawl_ball/white_hat.jpg",
+      "sha256": "9ce62c9ee4d88ae9dd2d3f61a635dbaf6dc0575b5af1050e29785dbd502fe3ca",
+      "packaged_sha256": "9ce62c9ee4d88ae9dd2d3f61a635dbaf6dc0575b5af1050e29785dbd502fe3ca"
+    },
+    "tests/fixtures/brawl_ball/opponent_goal_geometry.json": {
+      "source": "tests/fixtures/brawl_ball/opponent_goal_geometry.json",
+      "sha256": "1be78097d4e262d2a386c9e3170f4b928c5b53cf8023d47723eea3f5873cb188",
+      "packaged_sha256": "1be78097d4e262d2a386c9e3170f4b928c5b53cf8023d47723eea3f5873cb188"
+    },
+    "tests/fixtures/brawl_ball/clock_expiry_loss.jpg": {
+      "source": "tests/fixtures/brawl_ball/clock_expiry_loss.jpg",
+      "sha256": "a371388da258b28da0414e22cd653448c7b84c647b44c642de935fb1eb115424",
+      "packaged_sha256": "a371388da258b28da0414e22cd653448c7b84c647b44c642de935fb1eb115424"
+    },
+    "tests/fixtures/brawl_ball/blocked_spawn.jpg": {
+      "source": "tests/fixtures/brawl_ball/blocked_spawn.jpg",
+      "sha256": "cb2ae6c4e51e18602307531018eeedd6c33b107242a8636e798cca95a8181061",
+      "packaged_sha256": "cb2ae6c4e51e18602307531018eeedd6c33b107242a8636e798cca95a8181061"
+    },
+    "tests/fixtures/brawl_ball/held_turn.jpg": {
+      "source": "tests/fixtures/brawl_ball/held_turn.jpg",
+      "sha256": "1d53c724fb19c2e4534123fa4d28fc0c0345c4d1f95d83219b7565ad742de16f",
+      "packaged_sha256": "1d53c724fb19c2e4534123fa4d28fc0c0345c4d1f95d83219b7565ad742de16f"
+    },
+    "images/states/game_highlight.png": {
+      "source": "images/states/game_highlight.png",
+      "sha256": "7cc10a4ff470c213a232068acdf80b9f7ca6cf7d76c2a1955acb728af03b94f5",
+      "packaged_sha256": "7cc10a4ff470c213a232068acdf80b9f7ca6cf7d76c2a1955acb728af03b94f5"
+    },
+    "images/states/match_intro_vs.png": {
+      "source": "images/states/match_intro_vs.png",
+      "sha256": "9ddf415cf57eacb058df0ed3efd90b8012356091ecfd9231fddddf68c0205f07",
+      "packaged_sha256": "9ddf415cf57eacb058df0ed3efd90b8012356091ecfd9231fddddf68c0205f07"
+    },
+    "images/states/spectating_following.png": {
+      "source": "images/states/spectating_following.png",
+      "sha256": "827cead744dcc81810b4f68dbeb97bf780871a956e8ffae26b6bef06a7e81b2d",
+      "packaged_sha256": "827cead744dcc81810b4f68dbeb97bf780871a956e8ffae26b6bef06a7e81b2d"
+    },
+    "playstyles/iris_knockout.pyla": {
+      "source": "playstyles/knockout.iris",
+      "sha256": "61d8e75c0049889cfff6c594a45088bbb40d9b34a29a62acd1cd06ee2bf8fd45",
+      "packaged_sha256": "b741f0a8120d997955cc88bbfd3aafe767645ded290012a8054fcc8358da877e"
+    },
+    "playstyles/iris_aggressive_balanced.pyla": {
+      "source": "playstyles/aggressive_balanced.iris",
+      "sha256": "ecc09d73c103fffdcc0480b7e7d928ed4c95aa7819cfa23d65a5d8d2922c303e",
+      "packaged_sha256": "3dd5241be09d0aaeef72f70d929e2e1022bc8f37d54790c172c48a8fe9729b77"
+    },
+    "playstyles/iris_showdown_team.pyla": {
+      "source": "playstyles/showdown_team.iris",
+      "sha256": "e524be59a25424fba48ae4b2cafd3e0a8e0bc3e8a4323429baa84d9c117264d9",
+      "packaged_sha256": "2213170b862010643f563fd6a03337fee591cd7631b94d861283bfbb0d702b18"
+    },
+    "playstyles/iris_aggressive_rush.pyla": {
+      "source": "playstyles/aggressive_rush.iris",
+      "sha256": "0b7e981b47ea3e57e9dd89399aced005e5cf31b5fe5b1cd445108799cab45f79",
+      "packaged_sha256": "1cc976f6b9a7e41a320fa6eca553141d9a432514b959499035ff9ceb6c2dff8d"
+    },
+    "playstyles/iris_aggressive_universal.pyla": {
+      "source": "playstyles/aggressive_universal.iris",
+      "sha256": "9bde975adf5214333f2c1688b278f8afbd87b28b073d3837ce7c1c73b354c42e",
+      "packaged_sha256": "bbaf44a733912a7bf4309c2618d451edb027755d955d3b0e73d636d10e989c77"
+    },
+    "playstyles/iris_team_follow.pyla": {
+      "source": "playstyles/team_follow.iris",
+      "sha256": "f6b9776db6a29dbe20a2650521c5525f6fe0e22872dd6492f6b1b2285512df53",
+      "packaged_sha256": "561852b43014daede5c5eb6923a2ab4a75292cb352d1faaed3402a5aea3822a6"
+    },
+    "playstyles/iris_showdown_survival.pyla": {
+      "source": "playstyles/showdown_survival.iris",
+      "sha256": "d2c01dfbf778103b66d1b11c31ffc06fbf08a042dd7e299bcd3f42af23412500",
+      "packaged_sha256": "4388fa5fcadf8c425f729817d90d21198c5023336e4c0ae286edd66ef6fcb6ad"
+    },
+    "playstyles/iris_lane_up.pyla": {
+      "source": "playstyles/lane_up.iris",
+      "sha256": "a62fbb76dd40b89196fd652eb64435689e559025d54050ebe9bbc96d705e9652",
+      "packaged_sha256": "fe0f565f2088be61251630ee36022f7d387d88538517cc37419fef33be09cbe3"
+    },
+    "playstyles/iris_lane_right.pyla": {
+      "source": "playstyles/lane_right.iris",
+      "sha256": "84a11aa2322ad60f8033d1c452f256a0546f00e2b4dfe2a3247922b0c6309a6e",
+      "packaged_sha256": "75216c36139e27544a4a9ffab7b3e1a832aa185eff0260c3e54dc2d8d542b25a"
+    },
+    "IRIS_LICENSE.txt": {
+      "source": "LICENSE",
+      "sha256": "3711f963c05d0be80d53e5923308a6dee31b203da23435c9cfb7c7b6e4dd5e19",
+      "packaged_sha256": "3711f963c05d0be80d53e5923308a6dee31b203da23435c9cfb7c7b6e4dd5e19"
+    }
+  },
+  "adapted_methods": {
+    "play.py": [
+      "navigate_playstyle_movement",
+      "main gameplay integration",
+      "count_enemies_in_area",
+      "count_teammates_in_area",
+      "is_there_teammate",
+      "playstyle context mapping"
+    ],
+    "window_controller.py": [
+      "move",
+      "touch_down",
+      "touch_move",
+      "touch_up",
+      "_send_touch",
+      "_sync_resolution",
+      "_log_movement",
+      "rearm_movement_for_round",
+      "aim_attack",
+      "swipe",
+      "click",
+      "release_movement"
+    ]
+  },
+  "adaptations": {
+    "brawl_ball.py": "Configuration import uses pyla_addons.game_config; original game decisions unchanged.",
+    "playstyles": "Renamed .iris to iris_*.pyla and added Iris prefix to UI name; gameplay code unchanged."
+  }
+}

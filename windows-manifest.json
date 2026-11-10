@@ -1,0 +1,365 @@
+{
+  "schema": 1,
+  "platform": "windows",
+  "product": "pyla-windows",
+  "version": "0.1.0",
+  "files": [
+    {
+      "path": "main.py",
+      "size": 25151,
+      "sha256": "a22c5ad3a9a1489597d09cb37d68c061ad7a41e2fd6472b746cfe1d14eb84f02",
+      "base_sha256": "74209261efb891d0358e20feadeb1d68f16da9a67ce6e446201c3fe275687fa1",
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-a22c5ad3a9a14895-main.py"
+    },
+    {
+      "path": "play.py",
+      "size": 43896,
+      "sha256": "d482ed2a36f6880d2ac64fea780e2e7178e12b1d34dfef43c4ef81f3f2ccaf40",
+      "base_sha256": "aad36930a087ef888d4945a89c484e22e2020b3fb9184a503cd5cc94f1e0795a",
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-d482ed2a36f6880d-play.py"
+    },
+    {
+      "path": "window_controller.py",
+      "size": 19677,
+      "sha256": "4a062bead3dfadd12748dcfaf780b41b1a18eee3106b1ec933567a4ed27bfad6",
+      "base_sha256": "066d713d98b8ca57d5712bca14f7e18c2df9b4984a16a9ec6db41cf0c9cc8554",
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-4a062bead3dfadd1-window_controller.py"
+    },
+    {
+      "path": "state_finder.py",
+      "size": 10488,
+      "sha256": "171a05fc68eb51bae36deaa53acb6b88d0d7c7258455e71ac9f175334fe9e3c4",
+      "base_sha256": "f33b2674345aa092cc7d85ac22a2348bb0bda22803603615d9a866713ad8de0c",
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-171a05fc68eb51ba-state_finder.py"
+    },
+    {
+      "path": "brawl_ball.py",
+      "size": 26476,
+      "sha256": "d94bee3a48673869071ea71cba32e73d1350e4a71e04066d260a52e81a458c7d",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-d94bee3a48673869-brawl_ball.py"
+    },
+    {
+      "path": "navigation.py",
+      "size": 7540,
+      "sha256": "47b9ffa0a8d19c480b40c3128913914b790ae0815802d516a8151b18beb2f773",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-47b9ffa0a8d19c48-navigation.py"
+    },
+    {
+      "path": "round_start.py",
+      "size": 2098,
+      "sha256": "1ddbafff2ea69fedccdc4bf39d92f5420ad92ca1064b332f95b6b29638dff1f7",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-1ddbafff2ea69fed-round_start.py"
+    },
+    {
+      "path": "webui/services.py",
+      "size": 48909,
+      "sha256": "0c4693d54cb76be5215440aefdf424dbbfa091b07ae4226ac8e73aef499ce111",
+      "base_sha256": "9d6bd15cb3fbda028bbd810fba7154b7ca9d19bee8bd4a185d329725e0de315e",
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-0c4693d54cb76be5-services.py"
+    },
+    {
+      "path": "static/js/app.js",
+      "size": 173391,
+      "sha256": "db8d92cc6f24ae7a7a8fca5df0987934f18a91ff4ed19a4b1804111efe8c0c94",
+      "base_sha256": "51d0deb91e141877f54d354ed4a01526fa0aa2abecf9061c9e8989d1892028ce",
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-db8d92cc6f24ae7a-app.js"
+    },
+    {
+      "path": "README.md",
+      "size": 2454,
+      "sha256": "20fff5ae847def784aa01c713e391df4d24966f1ffc5ba33b42dc517924c16a9",
+      "base_sha256": "58f96c0eb6c4b6c78cbff2ad1ba974eaf55868f5e88e4ed253cd119526453249",
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-20fff5ae847def78-README.md"
+    },
+    {
+      "path": "WINDOWS_GUIDE_KO.md",
+      "size": 8197,
+      "sha256": "36fd3338e82ce197defb258fffe467207f5967ae350e30e2395676a79025798a",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-36fd3338e82ce197-WINDOWS_GUIDE_KO.md"
+    },
+    {
+      "path": "IRIS_LICENSE.txt",
+      "size": 19346,
+      "sha256": "3711f963c05d0be80d53e5923308a6dee31b203da23435c9cfb7c7b6e4dd5e19",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-3711f963c05d0be8-IRIS_LICENSE.txt"
+    },
+    {
+      "path": "Start-Windows.bat",
+      "size": 364,
+      "sha256": "df34c5cc95ee56a2b11cc41ab6e63401e8411f193edc85155025faf69b013717",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-df34c5cc95ee56a2-Start-Windows.bat"
+    },
+    {
+      "path": "Setup-Windows.bat",
+      "size": 202,
+      "sha256": "fd8c38833d5053b6f06a2d9506d97469d64d1046b45dbfe42a8856c8dae79493",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-fd8c38833d5053b6-Setup-Windows.bat"
+    },
+    {
+      "path": "Update-Windows.bat",
+      "size": 189,
+      "sha256": "8c2c19055329541d8969b55f04f5f4600a737b34b5dca5a923d8df0192cf41af",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-8c2c19055329541d-Update-Windows.bat"
+    },
+    {
+      "path": "Diagnose-Windows.bat",
+      "size": 190,
+      "sha256": "0183422fb2791281659576223636642b94e44eea2f576b23be0cf6d340bf36af",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-0183422fb2791281-Diagnose-Windows.bat"
+    },
+    {
+      "path": "requirements.txt",
+      "size": 229,
+      "sha256": "dd42ee18c81935daa6777f7ffb6d2baa5c24a00a28b69d62f6084820f72c2b62",
+      "base_sha256": "dd42ee18c81935daa6777f7ffb6d2baa5c24a00a28b69d62f6084820f72c2b62",
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-dd42ee18c81935da-requirements.txt"
+    },
+    {
+      "path": "images/brawl_ball/ball_0.png",
+      "size": 11496,
+      "sha256": "f27246277f15d7502ba78dd3a1915f27b97fd651387e2ed6a2f36ef29b29c455",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-f27246277f15d750-ball_0.png"
+    },
+    {
+      "path": "images/brawl_ball/ball_2.png",
+      "size": 13548,
+      "sha256": "ef20412fcfa3655be16d97d0faf4b627c722235bb12033f7d6d598b7a5fa8e8d",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-ef20412fcfa3655b-ball_2.png"
+    },
+    {
+      "path": "images/brawl_ball/ball_3.png",
+      "size": 13762,
+      "sha256": "afc147a0cfee266e89643ccbb210f3af0cedcd8c8545c02fee6511d050810c8f",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-afc147a0cfee266e-ball_3.png"
+    },
+    {
+      "path": "images/brawl_ball/ball_4.png",
+      "size": 13366,
+      "sha256": "9f8f2cf60eb25b8c7c52dc8fc616fc0de18f6c4dfec2da7c3bf3891c0568a210",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-9f8f2cf60eb25b8c-ball_4.png"
+    },
+    {
+      "path": "images/brawl_ball/ball_marker.png",
+      "size": 6053,
+      "sha256": "6e3455812d158861bd86f8d7feaaae7d98e5dd4edf7e79bf3b099b4a21b64963",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-6e3455812d158861-ball_marker.png"
+    },
+    {
+      "path": "images/brawl_ball/match_over.png",
+      "size": 32607,
+      "sha256": "84adcb5889fc534ede78c6de946e847d1d284632f4a6241a481acc6950119cb9",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-84adcb5889fc534e-match_over.png"
+    },
+    {
+      "path": "images/brawl_ball/score_0.png",
+      "size": 190,
+      "sha256": "93e36759f54aad84f03a129609e5092a0b97d5f6573e2234a27c059f33387d34",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-93e36759f54aad84-score_0.png"
+    },
+    {
+      "path": "images/brawl_ball/score_1.png",
+      "size": 156,
+      "sha256": "db470206f59013035e0ae8551373a9e020915b1ab4d96503b14b96316afc622d",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-db470206f5901303-score_1.png"
+    },
+    {
+      "path": "images/brawl_ball/score_2.png",
+      "size": 178,
+      "sha256": "dd0f710ec89d7623d3f5fedc2516c60e7983c529cd5a358490e98e666d9ea042",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-dd0f710ec89d7623-score_2.png"
+    },
+    {
+      "path": "images/brawl_ball/score_icon.png",
+      "size": 10179,
+      "sha256": "979644aaa835dc93f826aa181a612d6a6199fe5f041f6e3b9fadbec2350bfd9e",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-979644aaa835dc93-score_icon.png"
+    },
+    {
+      "path": "images/states/game_highlight.png",
+      "size": 133144,
+      "sha256": "7cc10a4ff470c213a232068acdf80b9f7ca6cf7d76c2a1955acb728af03b94f5",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-7cc10a4ff470c213-game_highlight.png"
+    },
+    {
+      "path": "images/states/match_intro_vs.png",
+      "size": 19307,
+      "sha256": "9ddf415cf57eacb058df0ed3efd90b8012356091ecfd9231fddddf68c0205f07",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-9ddf415cf57eacb0-match_intro_vs.png"
+    },
+    {
+      "path": "images/states/spectating_following.png",
+      "size": 17578,
+      "sha256": "827cead744dcc81810b4f68dbeb97bf780871a956e8ffae26b6bef06a7e81b2d",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-827cead744dcc818-spectating_following.png"
+    },
+    {
+      "path": "playstyles/iris_aggressive_balanced.pyla",
+      "size": 4092,
+      "sha256": "3dd5241be09d0aaeef72f70d929e2e1022bc8f37d54790c172c48a8fe9729b77",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-3dd5241be09d0aae-iris_aggressive_balanced.pyla"
+    },
+    {
+      "path": "playstyles/iris_aggressive_rush.pyla",
+      "size": 2857,
+      "sha256": "1cc976f6b9a7e41a320fa6eca553141d9a432514b959499035ff9ceb6c2dff8d",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-1cc976f6b9a7e41a-iris_aggressive_rush.pyla"
+    },
+    {
+      "path": "playstyles/iris_aggressive_universal.pyla",
+      "size": 5105,
+      "sha256": "bbaf44a733912a7bf4309c2618d451edb027755d955d3b0e73d636d10e989c77",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-bbaf44a733912a7b-iris_aggressive_universal.pyla"
+    },
+    {
+      "path": "playstyles/iris_knockout.pyla",
+      "size": 4096,
+      "sha256": "b741f0a8120d997955cc88bbfd3aafe767645ded290012a8054fcc8358da877e",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-b741f0a8120d9979-iris_knockout.pyla"
+    },
+    {
+      "path": "playstyles/iris_lane_right.pyla",
+      "size": 4515,
+      "sha256": "75216c36139e27544a4a9ffab7b3e1a832aa185eff0260c3e54dc2d8d542b25a",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-75216c36139e2754-iris_lane_right.pyla"
+    },
+    {
+      "path": "playstyles/iris_lane_up.pyla",
+      "size": 4512,
+      "sha256": "fe0f565f2088be61251630ee36022f7d387d88538517cc37419fef33be09cbe3",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-fe0f565f2088be61-iris_lane_up.pyla"
+    },
+    {
+      "path": "playstyles/iris_showdown_survival.pyla",
+      "size": 3220,
+      "sha256": "4388fa5fcadf8c425f729817d90d21198c5023336e4c0ae286edd66ef6fcb6ad",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-4388fa5fcadf8c42-iris_showdown_survival.pyla"
+    },
+    {
+      "path": "playstyles/iris_showdown_team.pyla",
+      "size": 3741,
+      "sha256": "2213170b862010643f563fd6a03337fee591cd7631b94d861283bfbb0d702b18",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-2213170b86201064-iris_showdown_team.pyla"
+    },
+    {
+      "path": "playstyles/iris_team_follow.pyla",
+      "size": 2591,
+      "sha256": "561852b43014daede5c5eb6923a2ab4a75292cb352d1faaed3402a5aea3822a6",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-561852b43014daed-iris_team_follow.pyla"
+    },
+    {
+      "path": "pyla_addons/__init__.py",
+      "size": 88,
+      "sha256": "5529fcd80900b76e0f5c394658c2eb8b6d4c218104a646f6a88e30c9025dbed7",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-5529fcd80900b76e-__init__.py"
+    },
+    {
+      "path": "pyla_addons/bootstrap.py",
+      "size": 1602,
+      "sha256": "e530e0e51a4bc481d7372369d8488a1ff7a70954d838daf0c6d58217f4ddecaa",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-e530e0e51a4bc481-bootstrap.py"
+    },
+    {
+      "path": "pyla_addons/build_patch.py",
+      "size": 5752,
+      "sha256": "64426843909f74ac28917889d701dc0a1951b04487370e6afdcf2978d2e77d75",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-64426843909f74ac-build_patch.py"
+    },
+    {
+      "path": "pyla_addons/diagnostics.py",
+      "size": 1611,
+      "sha256": "02731a64215b36a4be5e2d344a2532bc8c0e5b7ed42be36f0b4bde7b3817083d",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-02731a64215b36a4-diagnostics.py"
+    },
+    {
+      "path": "pyla_addons/emulators.py",
+      "size": 17701,
+      "sha256": "7749211d78b5aae137b7ab4ebb5354e2f14ca43edc13d522f7b8e41f9f05b65f",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-7749211d78b5aae1-emulators.py"
+    },
+    {
+      "path": "pyla_addons/game_config.py",
+      "size": 212,
+      "sha256": "8e19a695004449d9bb4d9de6f0f3e0e70b243090cb2f23cb850184925c8d50f3",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-8e19a695004449d9-game_config.py"
+    },
+    {
+      "path": "pyla_addons/launcher.py",
+      "size": 1386,
+      "sha256": "ebcfe76537176954f66c3287b6228b51bd5f6d435ee62a9f86930b3f3cdc97fd",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-ebcfe76537176954-launcher.py"
+    },
+    {
+      "path": "pyla_addons/startup.py",
+      "size": 1702,
+      "sha256": "59df7d87d72cd7a7316530958b4a39eb7369c3dc9d3d802f16aa5a92a44c0e99",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-59df7d87d72cd7a7-startup.py"
+    },
+    {
+      "path": "pyla_addons/updater.py",
+      "size": 11304,
+      "sha256": "f5fb513cf068f2c54af5b18a2ca0c4156260d0087372c36dee80606244f01f08",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-f5fb513cf068f2c5-updater.py"
+    },
+    {
+      "path": "pyla_addons/setup_windows.ps1",
+      "size": 1983,
+      "sha256": "c6628495c581e8fdb072694174c06adc43fc23a22ff7ee05b83adbe988a2b4e7",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-c6628495c581e8fd-setup_windows.ps1"
+    },
+    {
+      "path": "pyla_addons/base_hashes.json",
+      "size": 701,
+      "sha256": "03d9c9356398a5ccf965250669f4748878cb1fc4db91c4da68772ee0ff67eeed",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-03d9c9356398a5cc-base_hashes.json"
+    },
+    {
+      "path": "pyla_addons/iris_source_provenance.json",
+      "size": 14192,
+      "sha256": "eb23cc993eb0c72eb1a3f6b423c7c5b8e40549c94f0791ce1e9884e6788c472d",
+      "base_sha256": null,
+      "url": "https://raw.githubusercontent.com/jungeunchan0806/irisai-updates/windows-updates/patch-eb23cc993eb0c72e-iris_source_provenance.json"
+    }
+  ]
+}

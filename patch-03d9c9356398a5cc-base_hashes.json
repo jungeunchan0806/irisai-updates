@@ -1,0 +1,10 @@
+{
+  "main.py": "74209261efb891d0358e20feadeb1d68f16da9a67ce6e446201c3fe275687fa1",
+  "play.py": "aad36930a087ef888d4945a89c484e22e2020b3fb9184a503cd5cc94f1e0795a",
+  "window_controller.py": "066d713d98b8ca57d5712bca14f7e18c2df9b4984a16a9ec6db41cf0c9cc8554",
+  "state_finder.py": "f33b2674345aa092cc7d85ac22a2348bb0bda22803603615d9a866713ad8de0c",
+  "webui/services.py": "9d6bd15cb3fbda028bbd810fba7154b7ca9d19bee8bd4a185d329725e0de315e",
+  "static/js/app.js": "51d0deb91e141877f54d354ed4a01526fa0aa2abecf9061c9e8989d1892028ce",
+  "README.md": "58f96c0eb6c4b6c78cbff2ad1ba974eaf55868f5e88e4ed253cd119526453249",
+  "requirements.txt": "dd42ee18c81935daa6777f7ffb6d2baa5c24a00a28b69d62f6084820f72c2b62"
+}

@@ -1,0 +1,54 @@
+{"name": "Iris Aggressive Rush", "description": "Maximum pressure for tanks and assassins. Chases visible enemies and uses abilities only when the target is reachable.", "brawlers": ["tank", "assassin"], "gamemodes": ["all"], "author": "Official", "date": "2026-08-09"}
+brawler_info = brawlers_info.get(brawler)
+if not brawler_info:
+    raise ValueError(f"Brawler '{brawler}' not found in brawlers info.")
+must_brawler_hold_attack = must_brawler_hold_attack(brawler, brawlers_info)
+if must_brawler_hold_attack and persistent_data["time_since_holding_attack"] is not None and time.time() - persistent_data["time_since_holding_attack"] >= brawler_info['hold_attack'] + seconds_to_hold_attack_after_reaching_max:
+    attack(touch_up=True, touch_down=False)
+    persistent_data["time_since_holding_attack"] = None
+
+safe_range, attack_range, super_range = get_brawler_range(brawler)
+player_pos = get_entity_pos(player_data)
+if debug: print("found player pos:", player_pos)
+
+if not is_there_enemy(enemy_data):
+    movement = (0, -JOYSTICK_RADIUS)
+else:
+    enemy_coords, enemy_distance = find_closest_enemy(enemy_data, player_pos, walls, "attack")
+    if enemy_coords is None:
+        movement = (0, -JOYSTICK_RADIUS)
+    else:
+        direction_x = enemy_coords[0] - player_pos[0]
+        direction_y = enemy_coords[1] - player_pos[1]
+
+        attack_hittable = is_enemy_hittable(player_pos, enemy_coords, walls, "attack")
+        super_hittable = is_enemy_hittable(player_pos, enemy_coords, walls, "super")
+
+        if is_super_ready and persistent_data["time_since_holding_attack"] is None and super_hittable:
+            super_type = brawler_info['super_type']
+            if super_type == "rush" and enemy_distance <= super_range + attack_range:
+                use_super()
+            elif enemy_distance <= super_range:
+                if is_hypercharge_ready:
+                    use_hypercharge()
+                use_super()
+
+        if (is_gadget_ready
+                and enemy_distance <= attack_range
+                and attack_hittable
+                and persistent_data["time_since_holding_attack"] is None):
+            use_gadget()
+
+        movement = (direction_x, direction_y)
+
+        if enemy_distance <= attack_range:
+            if attack_hittable:
+                if not must_brawler_hold_attack:
+                    attack()
+                else:
+                    if persistent_data["time_since_holding_attack"] is None:
+                        persistent_data["time_since_holding_attack"] = time.time()
+                        attack(touch_up=False, touch_down=True)
+                    elif time.time() - persistent_data["time_since_holding_attack"] >= brawlers_info[brawler]['hold_attack']:
+                        attack(touch_up=True, touch_down=False)
+                        persistent_data["time_since_holding_attack"] = None
