@@ -1,0 +1,40 @@
+{
+  "scope": "Offline unit tests and recorded source fixtures; not live gameplay",
+  "java_suites": [
+    {
+      "name": "com.irisai.autogoal.BallVisionTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "time": "1.4"
+    },
+    {
+      "name": "com.irisai.autogoal.GeometryTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "time": "0.008"
+    },
+    {
+      "name": "com.irisai.autogoal.GoalPlannerTest",
+      "tests": "11",
+      "failures": "0",
+      "errors": "0",
+      "time": "0.008"
+    },
+    {
+      "name": "com.irisai.autogoal.SessionGateTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "time": "0.001"
+    }
+  ],
+  "javascript_gate_tests": 8,
+  "javascript_gate_failures": 0,
+  "brawl_stars_tested": false,
+  "friendly_matches_played": 0,
+  "javascript_agent_scheduler_tests": 5,
+  "javascript_agent_scheduler_failures": 0,
+  "java_native_test_backend": "Linux OpenCV 4.9 JNI; Android OpenCV 4.12 device runtime not yet verified"
+}

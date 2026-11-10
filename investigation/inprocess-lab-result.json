@@ -1,0 +1,9 @@
+{
+  "scope": "Iris Input Probe on a local Android emulator only",
+  "brawl_stars_tested": false,
+  "friendly_matches_played": 0,
+  "checks": [],
+  "completed": false,
+  "failure": "CalledProcessError: Command '['/workspace/android-tools/sdk/platform-tools/adb', '-s', 'emulator-5554', 'shell', 'am', 'start', '-W', '-n', 'com.irisai.inputprobe/.ProbeActivity']' returned non-zero exit status 224.",
+  "passed": false
+}

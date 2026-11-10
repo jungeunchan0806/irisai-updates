@@ -1,0 +1,49 @@
+{
+  "finding": "In-process execution is a technically established approach; compatibility with the user's current game is unverified.",
+  "candidate": "Independent agent uses Android Activity.dispatchTouchEvent inside the selected game process. It does not invoke native gameplay functions or inject OS-wide touch events.",
+  "entry_requirement": "An authorized instrumentation entry point such as an already-rooted device with Frida; installing an ordinary separate APK does not grant this access.",
+  "sources": [
+    {
+      "url": "https://frida.re/docs/android/",
+      "supports": "Android instrumentation requires a suitable entry point; root or embedding are documented options."
+    },
+    {
+      "url": "https://developer.android.com/reference/android/app/Activity#dispatchTouchEvent(android.view.MotionEvent)",
+      "supports": "Activity API for delivering touch events to the activity window."
+    },
+    {
+      "url": "https://source.android.com/docs/security/app-sandbox",
+      "supports": "Separate Android apps are isolated by UID and sandbox."
+    },
+    {
+      "url": "https://github.com/sonREvenge/REvengeBS",
+      "supports": "Author describes an in-process agent for Brawl Stars 68.250 arm64; not independently tested here."
+    },
+    {
+      "url": "https://github.com/sonREvenge/REvengeBS/blob/main/LICENSE",
+      "supports": "Reviewed only; its no-redistribution code was not copied into Iris."
+    },
+    {
+      "url": "https://github.com/Genymobile/scrcpy/blob/master/doc/virtual-display.md",
+      "supports": "Alternative separate display control; does not establish in-process game control."
+    }
+  ],
+  "not_done": [
+    "No user device rooted or modified",
+    "No game protection bypass implemented",
+    "No current-game native offsets guessed",
+    "No friendly match claimed",
+    "No third-party modified Brawl Stars APK downloaded"
+  ],
+  "core_validation": {
+    "java_tests_passed": 30,
+    "friendly_battles": 0,
+    "javascript_tests_passed": 13
+  },
+  "input_fixes": [
+    "Discard callbacks belonging to a canceled stroke even after a new stroke starts",
+    "Attempt CANCEL if the final UP call throws",
+    "Close the session before pending re-enable requests can execute",
+    "Reject stale commands after clock rollback"
+  ]
+}

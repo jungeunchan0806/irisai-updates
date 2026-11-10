@@ -1,0 +1,15 @@
+{
+  "status": "blocked_no_game_device",
+  "actual_friendly_matches_played": 0,
+  "release_status": "not_a_verified_final_apk",
+  "requires": ["reachable Android test device", "installed Brawl Stars version and ABI", "authorized in-process instrumentation environment"],
+  "checks": [
+    {"name": "current_game_accepts_agent", "result": "not_run"},
+    {"name": "friendly_brawl_ball_start_and_capture", "result": "not_run"},
+    {"name": "collect_carry_aim_and_shoot", "result": "not_run"},
+    {"name": "ten_on_off_cycles_without_delayed_input", "result": "not_run"},
+    {"name": "own_goal_and_blocked_shot_rejection", "result": "not_run"},
+    {"name": "round_result_pause_and_reconnection", "result": "not_run"},
+    {"name": "app_switch_screen_lock_and_revoked_capture", "result": "not_run"}
+  ]
+}

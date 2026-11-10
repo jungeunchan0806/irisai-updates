@@ -1,0 +1,19 @@
+{
+  "source": "IrisAI 0.0.9 full-source",
+  "release": "https://github.com/jungeunchan0806/irisai-updates/releases/tag/v0.0.9",
+  "assets": {
+    "vision/score_icon.png": "979644aaa835dc93f826aa181a612d6a6199fe5f041f6e3b9fadbec2350bfd9e",
+    "vision/ball_3.png": "afc147a0cfee266e89643ccbb210f3af0cedcd8c8545c02fee6511d050810c8f",
+    "vision/ball_4.png": "9f8f2cf60eb25b8c7c52dc8fc616fc0de18f6c4dfec2da7c3bf3891c0568a210",
+    "vision/score_2.png": "dd0f710ec89d7623d3f5fedc2516c60e7983c529cd5a358490e98e666d9ea042",
+    "vision/match_over.png": "84adcb5889fc534ede78c6de946e847d1d284632f4a6241a481acc6950119cb9",
+    "vision/game_highlight.png": "7cc10a4ff470c213a232068acdf80b9f7ca6cf7d76c2a1955acb728af03b94f5",
+    "vision/ball_2.png": "ef20412fcfa3655be16d97d0faf4b627c722235bb12033f7d6d598b7a5fa8e8d",
+    "vision/score_1.png": "db470206f59013035e0ae8551373a9e020915b1ab4d96503b14b96316afc622d",
+    "vision/ball_marker.png": "6e3455812d158861bd86f8d7feaaae7d98e5dd4edf7e79bf3b099b4a21b64963",
+    "vision/score_0.png": "93e36759f54aad84f03a129609e5092a0b97d5f6573e2234a27c059f33387d34",
+    "vision/ball_0.png": "f27246277f15d7502ba78dd3a1915f27b97fd651387e2ed6a2f36ef29b29c455",
+    "models/mainInGameModel.onnx": "e9e2394ab3b65c92b88334a4ecc6675c054ee717c5fea9f35ad8f111ba13a9a4",
+    "models/tileDetector.onnx": "34eb23ad1d9f05cd9dd828e38b524b6a519bb4b19f1c0e906c1554dc02326b71"
+  }
+}
