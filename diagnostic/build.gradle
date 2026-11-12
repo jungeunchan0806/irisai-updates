@@ -1,0 +1,17 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.irisai.diagnostic'
+    compileSdk 35
+    defaultConfig {
+        // Same package, certificate and versionCode allow a data-preserving update.
+        applicationId 'com.supercell.brawlstars'
+        minSdk 32
+        targetSdk 35
+        versionCode 70757
+        versionName '70.757-diagnostic1'
+    }
+    buildTypes { release { minifyEnabled false } }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    testOptions { unitTests.returnDefaultValues = true }
+}
+dependencies { testImplementation 'junit:junit:4.13.2' }

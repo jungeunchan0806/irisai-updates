@@ -1,0 +1,7 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.irisai.fixture'
+    compileSdk 35
+    defaultConfig { applicationId 'com.supercell.brawlstars'; minSdk 32; targetSdk 35; versionCode 70757; versionName 'diagnostic-test-fixture' }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}

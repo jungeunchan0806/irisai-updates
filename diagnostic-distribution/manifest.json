@@ -1,0 +1,18 @@
+{
+  "package": "com.supercell.brawlstars",
+  "versionCode": 70757,
+  "signer_sha256": "487be061bdbadf1269cb5b81c051d897624c5373f5734f46274e5da8465ae591",
+  "diagnostic_only": true,
+  "files": [
+    {
+      "name": "IrisAutoGoal-Startup-Diagnostic1.apk",
+      "bytes": 20872,
+      "sha256": "a90813557a323c76d642bb814b45a3192188e70c74c429a2cdb15c9931c2654d"
+    },
+    {
+      "name": "CI_ONLY_crash_fixture.apk",
+      "bytes": 8584,
+      "sha256": "4ddab0b13851064260c1bfaf8d7b00f362ec0a06fb4dca732730df0c1b936a33"
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+name: Validate and publish startup diagnostic
+on:
+  push:
+    branches: [android-startup-diagnostics]
+    paths: ['diagnostic-distribution/**', 'tools/test_diagnostic_update.py', '.github/workflows/android-startup-diagnostic.yml']
+permissions:
+  contents: read
+jobs:
+  update-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      matrix:
+        api: [35, 36]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools build-tools;35.0.0'
+          log-accepted-android-sdk-licenses: false
+      - name: Verify certificate and APK integrity
+        run: |
+          java -jar "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" verify --verbose --print-certs diagnostic-distribution/IrisAutoGoal-Startup-Diagnostic1.apk
+          sudo chmod 666 /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 3072 -cores 2 -camera-back none -camera-front none
+          script: python tools/test_diagnostic_update.py --out diagnostic-test-results
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: diagnostic-api-${{ matrix.api }}
+          path: diagnostic-test-results/
+          retention-days: 7
+  publish:
+    needs: update-test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish only the diagnostic user APK, never the crash fixture
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          tag=android-startup-diagnostic1
+          if ! gh release view "$tag" > /dev/null 2>&1; then
+            gh release create "$tag" --target "$GITHUB_SHA" --title 'Iris 시작 오류 확인용 · 게임 수정본 아님' --notes-file diagnostic-distribution/README-KO.md --prerelease --latest=false
+          else
+            gh release edit "$tag" --notes-file diagnostic-distribution/README-KO.md --prerelease --latest=false
+          fi
+          gh release upload "$tag" diagnostic-distribution/IrisAutoGoal-Startup-Diagnostic1.apk diagnostic-distribution/IrisAutoGoal-Startup-Diagnostic1.apk.sha256 --clobber

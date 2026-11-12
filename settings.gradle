@@ -5,3 +5,4 @@ include ':app'
 
 include(":probe")
 include(":ingame")
+include(":diagnostic", ":diagnosticfixture")
