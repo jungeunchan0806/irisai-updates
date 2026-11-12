@@ -16,6 +16,9 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools build-tools;35.0.0'
+          log-accepted-android-sdk-licenses: false
       - name: Enable KVM for this disposable runner
         run: |
           test -e /dev/kvm
