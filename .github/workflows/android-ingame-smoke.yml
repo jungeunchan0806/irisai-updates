@@ -38,7 +38,7 @@ jobs:
           emulator-boot-timeout: 900
           disable-animations: true
           emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -skin 960x540 -dpi-device 160 -memory 3072 -cores 2 -camera-back none -camera-front none
-          script: python tools/smoke_candidate.py --apk "$RUNNER_TEMP/candidate.apk" --out smoke-results
+          script: python tools/smoke_candidate.py --apk "$RUNNER_TEMP/candidate.apk" --backup "$RUNNER_TEMP/original.zip" --out smoke-results
       - name: Save only test report and fresh-install screenshots
         if: always()
         uses: actions/upload-artifact@v4
