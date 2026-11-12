@@ -25,9 +25,9 @@ Android 12L/API 32 이상, ARM64 기기가 대상입니다. 다른 버전의 APK
 - release 빌드 및 Android Lint: 오류 0개. 페이로드의 앱 아이콘·백업 설정, 한국어 문자열, ARM64 한정 배포 관련 경고 4개.
 - 원본 분할 APK 6개 서명과 SHA-256 확인. 수정 APK의 v2/v3 서명·정렬·DEX 중복 없음·초기화 진입점·모듈 자산 확인.
 - 원본 DEX·네이티브 라이브러리·자산 파일 37,230개 바이트 유지 확인. 원본 C++ 런타임을 유지하고 OpenCV의 필요한 C++ 심볼 223개 존재 확인.
-- **실제 브롤스타즈 실행 / 친선전투: 미검증, 친선전투 0회.** 호스트 CPU·녹화 화면 테스트는 실제 폰의 게임 호환성 시험이 아닙니다.
+- **실행 검사 실패, 친선전투 0회.** KVM 가속 Android 35의 Google APIs / Google Play 이미지에서 원본과 수정본 모두 설치 후 같은 `nv.Q` 예외로 종료됐습니다. 게임 안의 버튼·실제 오토골 동작은 확인하지 못했으며 실제 ARM64 폰에서도 미검증입니다. 호스트 CPU·녹화 화면 테스트는 폰의 게임 호환성 시험이 아닙니다.
 
-상세 결과: [검증 기록](investigation/ingame-candidate-validation.json). 과거 Frida 실험은 [이전 연구 기록](investigation/README-previous-research.md)에 보존했습니다.
+상세 결과: [검증 기록](investigation/ingame-candidate-validation.json), [원본과 수정본 비교](investigation/ingame-ci-comparison.json), [실제 CI 실행](https://github.com/jungeunchan0806/irisai-updates/actions/runs/43221305252). 과거 Frida 실험은 [이전 연구 기록](investigation/README-previous-research.md)에 보존했습니다.
 
 ## 소스 빌드
 

@@ -1,0 +1,49 @@
+{
+  "installed": true,
+  "game_process_alive": false,
+  "button_off_visible": false,
+  "button_on_visible": false,
+  "button_off_again": false,
+  "friendly_matches": 0,
+  "abi": "x86_64,arm64-v8a",
+  "android_api": "35",
+  "start_exit": 0,
+  "initial_button": null,
+  "error": "Game launch/toggle check incomplete; inspect report and screenshots",
+  "candidate_diagnostics": {
+    "crash_summary": [
+      "E/AndroidRuntime( 4206): FATAL EXCEPTION: Thread-2",
+      "E/AndroidRuntime( 4206): Process: com.supercell.brawlstars, PID: 4206",
+      "E/AndroidRuntime( 4206): nv.Q: <opaque diagnostic payload omitted>",
+      "E/AndroidRuntime( 4206): \tat nv.aJ.b(Unknown Source:46)",
+      "E/AndroidRuntime( 4206): \tat nv.aJ.a(Unknown Source:0)",
+      "E/AndroidRuntime( 4206): \tat nv.am.run(Unknown Source:27)"
+    ],
+    "exit_info": [
+      "process=com.supercell.brawlstars reason=4 (APP CRASH(EXCEPTION)) subreason=0 (UNKNOWN) status=0",
+      "importance=100 pss=0.00 rss=0.00 description=crash state=empty trace=null"
+    ]
+  },
+  "module_diagnostics": [],
+  "unmodified_backup_comparison": {
+    "installed": true,
+    "start_exit": 0,
+    "game_process_alive": false,
+    "crash_summary": [
+      "E/AndroidRuntime( 5230): FATAL EXCEPTION: Thread-2",
+      "E/AndroidRuntime( 5230): Process: com.supercell.brawlstars, PID: 5230",
+      "E/AndroidRuntime( 5230): nv.Q: <opaque diagnostic payload omitted>",
+      "E/AndroidRuntime( 5230): \tat nv.aJ.b(Unknown Source:46)",
+      "E/AndroidRuntime( 5230): \tat nv.aJ.a(Unknown Source:0)",
+      "E/AndroidRuntime( 5230): \tat nv.am.run(Unknown Source:27)"
+    ],
+    "exit_info": [
+      "process=com.supercell.brawlstars reason=4 (APP CRASH(EXCEPTION)) subreason=0 (UNKNOWN) status=0",
+      "importance=100 pss=0.00 rss=0.00 description=crash state=empty trace=null"
+    ]
+  },
+  "workflow_url": "https://github.com/jungeunchan0806/irisai-updates/actions/runs/43221305252",
+  "target": "google_apis_playstore",
+  "hardware_acceleration": "KVM",
+  "other_comparison_url": "https://github.com/jungeunchan0806/irisai-updates/actions/runs/43220353877"
+}

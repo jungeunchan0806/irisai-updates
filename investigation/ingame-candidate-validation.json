@@ -26,13 +26,22 @@
   "lint_warnings": 4,
   "original_apk_signatures_verified": 6,
   "original_signer_certificate_sha256": "731a29e80b7ca89c7e9b39d381821ee8dccd1b0456782f788650945e7d60d8d3",
-  "runtime_test_status": "GitHub KVM API35 ARM64-translation emulator installed the candidate successfully; game process exited before toggle verification. Comparing untouched backup next. Physical ARM64 device and friendly battles remain unverified.",
+  "runtime_test_status": "On both API35 Google APIs and Google Play KVM emulators with ARM64 translation, candidate and untouched original split APKs install successfully but terminate in Thread-2 with nv.Q (nv.aJ.b -> nv.aJ.a -> nv.am.run). Toggle/native action and friendly battle verification could not be completed. Physical ARM64 phone untested.",
   "binary_patch_roundtrip_verified": true,
   "ci_launch_check": {
     "url": "https://github.com/jungeunchan0806/irisai-updates/actions/runs/43219306342",
     "installed": true,
     "game_process_alive_after_25_seconds": false,
     "toggle_visible": false,
-    "friendly_matches": 0
-  }
+    "friendly_matches": 0,
+    "original_also_exits": true,
+    "exception_type": "nv.Q",
+    "comparison_url": "https://github.com/jungeunchan0806/irisai-updates/actions/runs/43221305252",
+    "physical_arm64_device_tested": false
+  },
+  "limitations": [
+    "The emulator startup failure also affects the untouched original; this does not prove candidate compatibility on a physical phone.",
+    "No successful game-window toggle or live auto-goal action has been observed.",
+    "Different signing certificate prevents overwriting or co-installing with the official app."
+  ]
 }
