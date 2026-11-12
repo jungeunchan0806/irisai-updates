@@ -48,4 +48,16 @@ A repackaging/re-signing-related failure in the original game's startup or integ
 
 Delaying Iris initialization or changing model loading does not address a failure that precedes Iris initialization. Suppressing the exception would not demonstrate that the protected library initialized correctly and is not a verified repair.
 
-The available source is the Iris module, not the original game/protection build. No supported way to rebuild that protected startup code with the modified package has been established. No candidate 2 or fixed APK is being represented as complete. Gameplay remains untested.
+The available source is the Iris module, not the original game/protection build. No supported way to rebuild that protected startup code with the modified package has been established. No fixed APK is being represented as complete. Gameplay remains untested.
+
+## Packaging retry: a verified defect, not a verified startup repair
+
+A subsequent comparison found that candidate 1 omitted all 128 original `META-INF` entries, including `META-INF/services/fi` and `META-INF/services/zd1`. Both the merge flag `-clean-meta` and the injector's directory-wide deletion were overly broad: this directory also contains runtime service registrations, Kotlin/Android metadata and notices, not only obsolete JAR signatures.
+
+`IrisAutoGoal-BrawlStars-70.757-packaging2-test.apk` preserves that metadata and removes only obsolete signature artifacts. Validation now compares every original nonsignature metadata entry with the source APK, in addition to the prior DEX/native/assets checks. The old candidate fails this new check and the retry passes it.
+
+The retry adds exactly those 128 entries. All existing ZIP file contents remain byte-identical to candidate 1; the game manifest, Iris and original DEX, models, libraries, native compression and game resources are unchanged. The whole-APK signature changes as expected for changed archive content, using the same signing certificate, package and version code.
+
+There is no evidence yet linking this metadata loss to the native `01` condition. Startup on the user's phone is untested for the retry; it may still fail for the original native startup/integrity reason. The retry is published as an experiment to test this concrete packaging correction, not as a completed fix. No game protection checks were patched or bypassed.
+
+See [retry validation](packaging2-validation.json) and [installation instructions](../distribution/packaging2/RELEASE-SECTION-KO.md). The 489KB binary delta uses the exact signed candidate 1 as its source and is for reproducible artifact publication; the regular phone-installable file remains the full APK.

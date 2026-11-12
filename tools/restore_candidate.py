@@ -14,7 +14,7 @@ def checksum(path):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--manifest', type=Path, default=Path(__file__).resolve().parents[1] / 'distribution/candidate.json')
-    p.add_argument('--backup', type=Path, required=True, help='Existing ZIP, or destination if --download is set')
+    p.add_argument('--backup', type=Path, required=True, help='Unmodified source file named in the manifest, or destination if --download is set')
     p.add_argument('--download', action='store_true')
     p.add_argument('--out', type=Path, required=True)
     p.add_argument('--xdelta', default='xdelta3')
@@ -36,7 +36,7 @@ def main():
         finally:
             temporary.unlink(missing_ok=True)
     if checksum(a.backup) != manifest['backup_sha256']:
-        raise SystemExit('The ZIP must be the unchanged BrawlStars-70.757-BlueStacks-APK.zip.')
+        raise SystemExit('Source checksum mismatch. Use the unmodified source file from ' + manifest['backup_url'])
     a.out.parent.mkdir(parents=True, exist_ok=True)
     temporary = a.out.with_suffix('.reconstructing')
     if temporary.exists():

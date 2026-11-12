@@ -68,7 +68,9 @@ def main():
     merged = a.work / 'merged.apk'
     unsigned = a.work / 'unsigned.apk'
     aligned = a.work / 'aligned.apk'
-    run(java, '-Xmx4g', '-jar', a.apkeditor, 'm', '-i', originals, '-o', merged, '-clean-meta', '-validate-modules')
+    # META-INF also contains runtime service registrations and third-party notices.
+    # Remove only stale signing artifacts in InjectPayload, not this whole directory.
+    run(java, '-Xmx4g', '-jar', a.apkeditor, 'm', '-i', originals, '-o', merged, '-validate-modules')
     run(java, '-Xmx4g', '-cp', str(a.apkeditor) + os.pathsep + str(classes),
         'InjectPayload', merged, a.payload, unsigned)
     merged.unlink()

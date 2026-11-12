@@ -1,0 +1,50 @@
+name: Publish metadata-preserving game test APK
+on:
+  push:
+    branches: [android-packaging-retry]
+    paths: ['distribution/packaging2/**', 'investigation/packaging2-validation.json', 'tools/check_packaging_retry.py', '.github/workflows/android-packaging-retry.yml']
+permissions:
+  contents: read
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools build-tools;35.0.0'
+          log-accepted-android-sdk-licenses: false
+      - name: Install delta decoder
+        run: sudo apt-get update -qq && sudo apt-get install -y xdelta3
+      - name: Reconstruct exact locally signed test APK
+        run: |
+          python tools/restore_candidate.py --manifest distribution/packaging2/manifest.json --backup "$RUNNER_TEMP/candidate1.apk" --download --out "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-packaging2-test.apk"
+      - name: Verify APK signature, signer, alignment, checksum, and scope of changes
+        run: |
+          java -jar "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" verify --min-sdk-version 24 --verbose --print-certs "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-packaging2-test.apk" > "$RUNNER_TEMP/signature.txt"
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-packaging2-test.apk"
+          python tools/check_packaging_retry.py --original "$RUNNER_TEMP/candidate1.apk" --retry "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-packaging2-test.apk" --signature-report "$RUNNER_TEMP/signature.txt"
+      - name: Add the test APK to the user-requested release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          tag=android-ingame-70.757-candidate1
+          gh release upload "$tag" "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-packaging2-test.apk" "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-packaging2-test.apk.sha256" investigation/packaging2-validation.json --clobber
+          gh release view "$tag" --json body --jq .body > "$RUNNER_TEMP/existing-notes.txt"
+          python - <<'PY'
+          import os, re
+          from pathlib import Path
+          p = Path(os.environ['RUNNER_TEMP'])
+          body = (p / 'existing-notes.txt').read_text()
+          body = re.sub(r'<!-- iris-packaging2-start -->.*?<!-- iris-packaging2-end -->\s*', '', body, flags=re.S)
+          section = Path('distribution/packaging2/RELEASE-SECTION-KO.md').read_text()
+          (p / 'updated-notes.txt').write_text(section + '\n\n' + body)
+          PY
+          gh release edit "$tag" --notes-file "$RUNNER_TEMP/updated-notes.txt" --prerelease --latest=false

@@ -1,0 +1,13 @@
+{
+  "backup_url": "https://github.com/jungeunchan0806/irisai-updates/releases/download/android-ingame-70.757-candidate1/IrisAutoGoal-BrawlStars-70.757-candidate1.apk",
+  "backup_sha256": "a8a78a866c1c644954d99b7ca021fff5fcf432f9c2c4cd1155f0012df683106f",
+  "source_kind": "signed candidate1 APK (not original ZIP)",
+  "patch_filename": "packaging2.vcdiff",
+  "patch_sha256": "ce7f0cb0ac8a133fc9df36dc00f6345fcc03cae69e66b6242dfbbcd2d2bb3627",
+  "patch_bytes": 500137,
+  "apk_filename": "IrisAutoGoal-BrawlStars-70.757-packaging2-test.apk",
+  "apk_sha256": "f644891128d3774010beff017e9e682c484bf444d8e04f66de097e47fbab4fa5",
+  "apk_bytes": 1971275719,
+  "version": "70.757",
+  "status": "experimental metadata-restoration build; phone startup and nv.s: 01 resolution unverified"
+}

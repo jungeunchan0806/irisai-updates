@@ -1,5 +1,7 @@
 # Iris 오토골 — 브롤스타즈 70.757 내부 실행 후보
 
+**재시도 시험본:** `IrisAutoGoal-BrawlStars-70.757-packaging2-test.apk`는 기존 패키징이 삭제한 메타데이터 128개를 보존합니다. 서비스 등록 파일 2개가 포함됩니다. 이 누락은 확인해 수정했으나 **실기기 `nv.s: 01` 종료 해결은 아직 미확인**입니다. [변경·설치 안내](distribution/packaging2/RELEASE-SECTION-KO.md), [정적 검증 결과](investigation/packaging2-validation.json).
+
 **실기기 시작 실패가 보고됐으며 수정 완료본은 없습니다.** Android 17/API 37 ARM64에서 원본 게임 라이브러리 초기화 중 `nv.s: 01`로 종료됩니다. 같은 폰의 공식 앱은 정상 실행됐다는 사용자 보고가 있습니다. 기존 후보를 재설치해도 해결되지 않습니다. [분석과 확인 한계](investigation/phone-startup-failure.md)
 
 사용자가 제공한 **브롤스타즈 70.757 Android 백업**에 Iris 0.0.9의 공 인식·운반·슈팅 로직을 추가한 수정 APK입니다. **실제 게임 실행과 친선전투가 검증된 최종본은 아닙니다.** 빌드·서명·원본 유지 검사와 오프라인 테스트를 통과한 후보입니다.

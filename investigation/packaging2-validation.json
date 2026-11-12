@@ -1,0 +1,56 @@
+{
+  "apk": "IrisAutoGoal-BrawlStars-70.757-packaging2-test.apk",
+  "bytes": 1971275719,
+  "sha256": "f644891128d3774010beff017e9e682c484bf444d8e04f66de097e47fbab4fa5",
+  "static_checks": {
+    "signature_v2_v3": true,
+    "zip_alignment": true,
+    "provider": true,
+    "no_external_control_permissions": true,
+    "standalone": true,
+    "min_sdk_32": true,
+    "version_70757": true,
+    "unique_zip_entries": true,
+    "unique_dex_classes": true,
+    "entrypoint_class_present": true,
+    "original_assets_dex_native_unchanged": true,
+    "original_runtime_metadata_unchanged": true,
+    "payload_content": true
+  },
+  "live_brawlstars_tested": false,
+  "friendly_matches": 0,
+  "signer_certificate_sha256": "487be061bdbadf1269cb5b81c051d897624c5373f5734f46274e5da8465ae591",
+  "original_entries_verified": 37230,
+  "original_metadata_entries_verified": 128,
+  "original_service_descriptors_verified": [
+    "META-INF/services/fi",
+    "META-INF/services/zd1"
+  ],
+  "comparison_to_candidate1": {
+    "added_metadata_entries": 128,
+    "removed_entries": 0,
+    "changed_existing_entry_crc_or_size": 0,
+    "no_existing_code_change": true,
+    "all_existing_entry_bytes_identical_sha256": true,
+    "native_compression_methods_unchanged": true
+  },
+  "known_limitations": [
+    "This corrects metadata deletion during packaging; it does not establish that nv.s: 01 is fixed.",
+    "No successful game startup or match on the user phone has been observed for this build.",
+    "Original game native protection and the different signing certificate remain."
+  ],
+  "runtime_test_status": "Not run on physical ARM64/API37. User launch test required. Prior candidate runtime failures are not passed off as a successful test of this build.",
+  "update_compatibility": {
+    "same_package": true,
+    "same_version_code": 70757,
+    "same_signing_certificate_as_candidate1_and_diagnostic1": true,
+    "installer_update_on_user_phone_tested": false
+  },
+  "binary_patch_roundtrip_verified": true,
+  "packaging_regression_check": {
+    "candidate1_rejected_by_metadata_validator": true,
+    "retry_passes": true,
+    "original_metadata_entries": 128,
+    "service_descriptors": 2
+  }
+}

@@ -9,6 +9,34 @@ import struct
 import subprocess
 import zipfile
 
+STALE_JAR_SIGNATURE = re.compile(
+    r'META-INF/(?:MANIFEST\.MF|[^/]+\.(?:SF|RSA|DSA|EC)|SIG-[^/]+)', re.IGNORECASE)
+
+
+def validate_original_metadata(final, originals):
+    """Check runtime metadata independently of asset/native/DEX checks.
+
+    The original candidate dropped this directory entirely. Only obsolete JAR
+    signatures may be omitted when producing an APK signed with another key.
+    """
+    verified = set()
+    for apk in sorted(originals.glob('*.apk')):
+        with zipfile.ZipFile(apk) as original:
+            for info in original.infolist():
+                name = info.filename
+                if (info.is_dir() or not name.startswith('META-INF/')
+                        or STALE_JAR_SIGNATURE.fullmatch(name)):
+                    continue
+                try:
+                    with original.open(name) as source, final.open(name) as output:
+                        same = digest(source) == digest(output)
+                except KeyError as error:
+                    raise ValueError('Original runtime metadata missing: ' + name) from error
+                if not same:
+                    raise ValueError('Original runtime metadata changed: ' + name)
+                verified.add(name)
+    return sorted(verified)
+
 
 def dex_classes(data):
     if data[:4] != b'dex\n':
@@ -76,6 +104,11 @@ def validate(candidate, originals, payload, sdk, java):
                     verified += 1
         checks['original_assets_dex_native_unchanged'] = True
         report['original_entries_verified'] = verified
+        metadata = validate_original_metadata(final, originals)
+        checks['original_runtime_metadata_unchanged'] = True
+        report['original_metadata_entries_verified'] = len(metadata)
+        report['original_service_descriptors_verified'] = [
+            n for n in metadata if n.startswith('META-INF/services/')]
         for info in module.infolist():
             name = info.filename
             if name.startswith(('assets/iris_autogoal/', 'lib/arm64-v8a/')) and not name.endswith('/libc++_shared.so'):

@@ -4,9 +4,14 @@ import com.reandroid.arsc.chunk.xml.AndroidManifestBlock;
 import com.reandroid.arsc.chunk.xml.ResXmlElement;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 /** Adds only our provider, DEX, namespaced assets and new native libraries. */
 public final class InjectPayload {
+    private static final Pattern STALE_JAR_SIGNATURE = Pattern.compile(
+        "META-INF/(?:MANIFEST\\.MF|[^/]+\\.(?:SF|RSA|DSA|EC)|SIG-[^/]+)",
+        Pattern.CASE_INSENSITIVE);
+
     public static void main(String[] args) throws Exception {
         if (args.length != 3) throw new IllegalArgumentException("merged-game.apk payload.apk output-unsigned.apk");
         try (ApkModule game = ApkModule.loadApkFile(new File(args[0]));
@@ -39,7 +44,11 @@ public final class InjectPayload {
                     if (name.endsWith(".so")) System.out.println("Add " + name);
                 }
             }
-            game.getZipEntryMap().removeDir("META-INF");
+            // Keep ServiceLoader registrations, Kotlin/Android metadata and notices.
+            // They are application content, not signatures.
+            game.getZipEntryMap().removeIf(source ->
+                STALE_JAR_SIGNATURE.matcher(source.getAlias()).matches());
+            game.setApkSignatureBlock(null);
             game.removeInputSource("stamp-cert-sha256");
             game.writeApk(new File(args[2]));
         }
