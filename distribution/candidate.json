@@ -8,5 +8,5 @@
   "apk_sha256": "a8a78a866c1c644954d99b7ca021fff5fcf432f9c2c4cd1155f0012df683106f",
   "apk_bytes": 1971165053,
   "version": "70.757",
-  "status": "candidate; live game and friendly battles not verified"
+  "status": "startup failure reported on physical ARM64/API37; unresolved; no fixed game APK"
 }

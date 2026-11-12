@@ -26,7 +26,7 @@
   "lint_warnings": 4,
   "original_apk_signatures_verified": 6,
   "original_signer_certificate_sha256": "731a29e80b7ca89c7e9b39d381821ee8dccd1b0456782f788650945e7d60d8d3",
-  "runtime_test_status": "On both API35 Google APIs and Google Play KVM emulators with ARM64 translation, candidate and untouched original split APKs install successfully but terminate in Thread-2 with nv.Q (nv.aJ.b -> nv.aJ.a -> nv.am.run). Toggle/native action and friendly battle verification could not be completed. Physical ARM64 phone untested.",
+  "runtime_test_status": "Candidate startup failed: user-supplied ARM64/API37 phone log reports main-thread nv.s: 01 during original native library initialization before Iris providers. User reports official game works on the same phone, but its exact version is not established. Separately, original and candidate both failed on API35 x86_64/ARM64-translation emulators with Thread-2 nv.Q. No fixed game APK, successful toggle, native action, or friendly battle is verified.",
   "binary_patch_roundtrip_verified": true,
   "ci_launch_check": {
     "url": "https://github.com/jungeunchan0806/irisai-updates/actions/runs/43219306342",
@@ -40,8 +40,27 @@
     "physical_arm64_device_tested": false
   },
   "limitations": [
-    "The emulator startup failure also affects the untouched original; this does not prove candidate compatibility on a physical phone.",
+    "The candidate now has a user-reported physical ARM64/API37 startup failure, distinct from the original/candidate emulator failure.",
+    "The internal meaning of error code 01 and a repair are not established; no fixed game APK has been produced.",
     "No successful game-window toggle or live auto-goal action has been observed.",
     "Different signing certificate prevents overwriting or co-installing with the official app."
-  ]
+  ],
+  "user_reported_phone_launch": {
+    "evidence": "User-supplied diagnostic text; not directly observed by assistant",
+    "android_release": "17",
+    "android_api": 37,
+    "abi": "arm64-v8a",
+    "startup_succeeded": false,
+    "logo_visible": false,
+    "thread": "main",
+    "exception": "nv.s",
+    "exception_message": "01",
+    "phase": "Original libsupercell_brawlstars.so initialization from CoreComponentFactory, before Iris providers",
+    "official_game_works_on_same_phone_user_reported": true,
+    "official_game_exact_version_verified": false,
+    "root_cause_confirmed": false,
+    "leading_hypothesis": "Repackaging/re-signing-related failure in original native startup/integrity checks",
+    "fix_verified": false,
+    "analysis": "investigation/phone-startup-failure.md"
+  }
 }
