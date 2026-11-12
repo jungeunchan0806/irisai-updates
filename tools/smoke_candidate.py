@@ -40,7 +40,10 @@ def main():
         result={}
         try:
             raw=adb('logcat','-b','crash','-d','-v','brief',timeout=15,check=False).stdout.decode('utf-8','replace')
-            result['crash_summary']=[s for s in raw.splitlines() if re.search(r'FATAL EXCEPTION|java\.lang\.|signal \d|Abort message|#\d+ pc|backtrace',s)][-60:]
+            relevant=[s for s in raw.splitlines() if 'AndroidRuntime' in s or re.search(r'signal \d|Abort message|#\d+ pc|backtrace',s)]
+            # The emulator is a fresh install with no user sign-in. Retain actual
+            # exception types/stack frames; redact any incidental URLs/credentials.
+            result['crash_summary']=[re.sub(r'(?i)(token|password|authorization)\s*[:=]\s*\S+',r'\1=<redacted>',re.sub(r'https?://\S+','<url>',s)) for s in relevant][-90:]
             raw=adb('shell','dumpsys','activity','exit-info','com.supercell.brawlstars',timeout=20,check=False).stdout.decode('utf-8','replace')
             result['exit_info']=[s.strip() for s in raw.splitlines() if re.search(r'reason=|status=|description=|processName=|importance=',s)][-20:]
         except Exception as e:result['diagnostic_error']=type(e).__name__
