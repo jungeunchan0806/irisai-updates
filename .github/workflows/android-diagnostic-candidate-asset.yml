@@ -1,0 +1,33 @@
+name: Add tested diagnostic APK to the existing game release
+on:
+  push:
+    branches: [android-startup-diagnostics]
+    paths: ['.github/workflows/android-diagnostic-candidate-asset.yml']
+permissions:
+  contents: read
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify the previously tested diagnostic and upload only that APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$GH_REPO/actions/runs/43226286481" --jq .conclusion)" = success
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          apk = Path('diagnostic-distribution/IrisAutoGoal-Startup-Diagnostic1.apk')
+          expected = 'a90813557a323c76d642bb814b45a3192188e70c74c429a2cdb15c9931c2654d'
+          if hashlib.sha256(apk.read_bytes()).hexdigest() != expected:
+              raise SystemExit('Diagnostic APK differs from the tested build')
+          PY
+          gh release view android-ingame-70.757-candidate1 > /dev/null
+          gh release upload android-ingame-70.757-candidate1 diagnostic-distribution/IrisAutoGoal-Startup-Diagnostic1.apk --clobber
