@@ -1,0 +1,45 @@
+name: Android in-game launch check
+on:
+  push:
+    branches: [android-ingame-70.757]
+    paths: ['.github/workflows/android-ingame-smoke.yml', 'tools/smoke_candidate.py', 'distribution/candidate.json']
+permissions:
+  contents: read
+jobs:
+  launch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Enable KVM for this disposable runner
+        run: |
+          test -e /dev/kvm
+          sudo chmod 666 /dev/kvm
+          sudo apt-get update -qq
+          sudo apt-get install -y xdelta3
+      - name: Reconstruct signed candidate
+        run: python tools/restore_candidate.py --backup "$RUNNER_TEMP/original.zip" --download --out "$RUNNER_TEMP/candidate.apk"
+      - name: Start clean Android and check game launch
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disk-size: 8192M
+          emulator-boot-timeout: 900
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -skin 960x540 -dpi-device 160 -memory 3072 -cores 2 -camera-back none -camera-front none
+          script: python tools/smoke_candidate.py --apk "$RUNNER_TEMP/candidate.apk" --out smoke-results
+      - name: Save only test report and fresh-install screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-ingame-launch-check
+          path: smoke-results/
+          retention-days: 7

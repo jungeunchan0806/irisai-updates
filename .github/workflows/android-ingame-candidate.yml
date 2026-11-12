@@ -2,7 +2,7 @@ name: Publish signed Android in-game candidate
 on:
   push:
     branches: [android-ingame-70.757]
-    paths: ['distribution/candidate.json']
+    paths: ['distribution/candidate.json', '.github/workflows/android-ingame-candidate.yml']
 permissions:
   contents: write
 jobs:
@@ -15,6 +15,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - uses: android-actions/setup-android@v3
       - name: Install delta decoder
         run: sudo apt-get update -qq && sudo apt-get install -y xdelta3
       - name: Reconstruct the exact locally signed APK
