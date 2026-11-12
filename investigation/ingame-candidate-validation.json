@@ -26,6 +26,13 @@
   "lint_warnings": 4,
   "original_apk_signatures_verified": 6,
   "original_signer_certificate_sha256": "731a29e80b7ca89c7e9b39d381821ee8dccd1b0456782f788650945e7d60d8d3",
-  "runtime_test_status": "Own API35 x86_64 emulator with ARM64 translation failed before APK verification: PackageManagerInternal.freeStorage was null in StorageManagerService.allocateBytes. System boot did not complete; live game not launched.",
-  "binary_patch_roundtrip_verified": true
+  "runtime_test_status": "GitHub KVM API35 ARM64-translation emulator installed the candidate successfully; game process exited before toggle verification. Comparing untouched backup next. Physical ARM64 device and friendly battles remain unverified.",
+  "binary_patch_roundtrip_verified": true,
+  "ci_launch_check": {
+    "url": "https://github.com/jungeunchan0806/irisai-updates/actions/runs/43219306342",
+    "installed": true,
+    "game_process_alive_after_25_seconds": false,
+    "toggle_visible": false,
+    "friendly_matches": 0
+  }
 }

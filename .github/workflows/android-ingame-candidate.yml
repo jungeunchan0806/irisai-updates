@@ -2,7 +2,7 @@ name: Publish signed Android in-game candidate
 on:
   push:
     branches: [android-ingame-70.757]
-    paths: ['distribution/candidate.json', '.github/workflows/android-ingame-candidate.yml']
+    paths: ['distribution/candidate.json', 'distribution/RELEASE-KO.md', 'investigation/ingame-candidate-validation.json', '.github/workflows/android-ingame-candidate.yml']
 permissions:
   contents: write
 jobs:
@@ -11,20 +11,40 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
+      - name: Check whether this exact signed APK is already published
+        id: remote
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          python - <<'PY'
+          import json,os,pathlib,subprocess
+          m=json.loads(pathlib.Path('distribution/candidate.json').read_text())
+          r=subprocess.run(['gh','api','repos/'+os.environ['GH_REPO']+'/releases/tags/android-ingame-70.757-candidate1'],capture_output=True,text=True)
+          same=False
+          if r.returncode==0:
+            same=any(a['name']==m['apk_filename'] and a.get('digest')=='sha256:'+m['apk_sha256'] and a['state']=='uploaded' for a in json.loads(r.stdout)['assets'])
+          with open(os.environ['GITHUB_OUTPUT'],'a') as out:out.write('exists='+str(same).lower()+'\n')
+          PY
       - uses: actions/setup-java@v4
+        if: steps.remote.outputs.exists != 'true'
         with:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        if: steps.remote.outputs.exists != 'true'
         with:
           packages: 'platform-tools build-tools;35.0.0'
           log-accepted-android-sdk-licenses: false
       - name: Install delta decoder
+        if: steps.remote.outputs.exists != 'true'
         run: sudo apt-get update -qq && sudo apt-get install -y xdelta3
       - name: Reconstruct the exact locally signed APK
+        if: steps.remote.outputs.exists != 'true'
         run: |
           python tools/restore_candidate.py --backup "$RUNNER_TEMP/original.zip" --download --out "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-candidate1.apk"
       - name: Verify signature and checksum
+        if: steps.remote.outputs.exists != 'true'
         run: |
           sdkmanager 'build-tools;35.0.0' > /dev/null
           java -jar "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" verify --min-sdk-version 24 --verbose --print-certs "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-candidate1.apk"
@@ -41,9 +61,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          EXISTING_APK: ${{ steps.remote.outputs.exists }}
         run: |
           tag=android-ingame-70.757-candidate1
           if ! gh release view "$tag" > /dev/null 2>&1; then
             gh release create "$tag" --target "$GITHUB_SHA" --title 'Iris AutoGoal · 게임 내부 실행 후보 1 (70.757)' --notes-file distribution/RELEASE-KO.md --prerelease --latest=false
+          else
+            gh release edit "$tag" --notes-file distribution/RELEASE-KO.md --prerelease --latest=false
           fi
-          gh release upload "$tag" "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-candidate1.apk" "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-candidate1.apk.sha256" investigation/ingame-candidate-validation.json --clobber
+          if [ "$EXISTING_APK" != true ]; then
+            gh release upload "$tag" "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-candidate1.apk" "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-candidate1.apk.sha256" --clobber
+          fi
+          gh release upload "$tag" investigation/ingame-candidate-validation.json --clobber
