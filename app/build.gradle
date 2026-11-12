@@ -34,4 +34,6 @@ dependencies {
     implementation 'com.microsoft.onnxruntime:onnxruntime-android:1.23.2'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.openpnp:opencv:4.9.0-0'
+    // Host JNI only for recorded-frame integration tests, never packaged into APK.
+    testRuntimeOnly 'com.microsoft.onnxruntime:onnxruntime:1.23.2'
 }

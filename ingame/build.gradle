@@ -1,0 +1,40 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.irisai.autogoal.ingame'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'com.irisai.autogoal.ingame.payload'
+        minSdk 32
+        targetSdk 35
+        versionCode 1
+        versionName '0.2.0-candidate1'
+        ndk { abiFilters 'arm64-v8a' }
+    }
+    buildTypes { release { minifyEnabled false } }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    sourceSets {
+        main {
+            java.srcDirs += ['../app/src/main/java']
+            assets.srcDirs = [layout.buildDirectory.dir('payloadAssets')]
+        }
+    }
+    androidResources { noCompress += ['onnx'] }
+    packaging { resources { excludes += ['META-INF/DEPENDENCIES', 'META-INF/INDEX.LIST'] } }
+    testOptions { unitTests.returnDefaultValues = true }
+    lint { abortOnError true }
+}
+tasks.register('copyPayloadAssets', Copy) {
+    from('../app/src/main/assets')
+    into(layout.buildDirectory.dir('payloadAssets/iris_autogoal'))
+}
+tasks.named('preBuild').configure { dependsOn('copyPayloadAssets') }
+dependencies {
+    implementation('org.opencv:opencv:4.12.0') {
+        // The game already has its own (R8-processed) Kotlin runtime. Only the Java
+        // OpenCV API is used here; packaging a second stdlib would shadow game types.
+        exclude group: 'org.jetbrains.kotlin'
+        exclude group: 'org.jetbrains'
+    }
+    implementation 'com.microsoft.onnxruntime:onnxruntime-android:1.23.2'
+    testImplementation 'junit:junit:4.13.2'
+}

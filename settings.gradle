@@ -4,3 +4,4 @@ rootProject.name = 'IrisAutoGoal'
 include ':app'
 
 include(":probe")
+include(":ingame")

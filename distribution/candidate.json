@@ -1,0 +1,12 @@
+{
+  "backup_url": "https://github.com/jungeunchan0806/irisai-updates/releases/download/brawlstars-70.757-backup/BrawlStars-70.757-BlueStacks-APK.zip",
+  "backup_sha256": "8e1f184645198723018aa2d89cca5842925cf9a618fa1182d92aeb2ddebd34ea",
+  "patch_filename": "candidate1.vcdiff",
+  "patch_sha256": "2b49c28295813ff299e8cb604b2e77e1a863274ef00179e4a09ee4ba9749bc39",
+  "patch_bytes": 83100334,
+  "apk_filename": "IrisAutoGoal-BrawlStars-70.757-candidate1.apk",
+  "apk_sha256": "a8a78a866c1c644954d99b7ca021fff5fcf432f9c2c4cd1155f0012df683106f",
+  "apk_bytes": 1971165053,
+  "version": "70.757",
+  "status": "candidate; live game and friendly battles not verified"
+}

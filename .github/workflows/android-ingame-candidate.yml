@@ -1,0 +1,45 @@
+name: Publish signed Android in-game candidate
+on:
+  push:
+    branches: [android-ingame-70.757]
+    paths: ['distribution/candidate.json']
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install delta decoder
+        run: sudo apt-get update -qq && sudo apt-get install -y xdelta3
+      - name: Reconstruct the exact locally signed APK
+        run: |
+          python tools/restore_candidate.py --backup "$RUNNER_TEMP/original.zip" --download --out "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-candidate1.apk"
+      - name: Verify signature and checksum
+        run: |
+          sdkmanager 'build-tools;35.0.0' > /dev/null
+          java -jar "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" verify --min-sdk-version 24 --verbose --print-certs "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-candidate1.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-candidate1.apk"
+          python - <<'PY'
+          import hashlib,json,os,pathlib
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'IrisAutoGoal-BrawlStars-70.757-candidate1.apk'
+          expected=json.loads(pathlib.Path('distribution/candidate.json').read_text())['apk_sha256']
+          with p.open('rb') as f: actual=hashlib.file_digest(f,'sha256').hexdigest()
+          assert actual==expected
+          p.with_suffix('.apk.sha256').write_text(actual+'  '+p.name+'\n')
+          PY
+      - name: Publish candidate without changing the Mac latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          tag=android-ingame-70.757-candidate1
+          if ! gh release view "$tag" > /dev/null 2>&1; then
+            gh release create "$tag" --target "$GITHUB_SHA" --title 'Iris AutoGoal · 게임 내부 실행 후보 1 (70.757)' --notes-file distribution/RELEASE-KO.md --prerelease --latest=false
+          fi
+          gh release upload "$tag" "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-candidate1.apk" "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-candidate1.apk.sha256" investigation/ingame-candidate-validation.json --clobber

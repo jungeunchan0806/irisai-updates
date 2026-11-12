@@ -1,0 +1,31 @@
+{
+  "apk": "IrisAutoGoal-BrawlStars-70.757-candidate1.apk",
+  "bytes": 1971165053,
+  "sha256": "a8a78a866c1c644954d99b7ca021fff5fcf432f9c2c4cd1155f0012df683106f",
+  "static_checks": {
+    "signature_v2_v3": true,
+    "zip_alignment": true,
+    "provider": true,
+    "no_external_control_permissions": true,
+    "standalone": true,
+    "min_sdk_32": true,
+    "version_70757": true,
+    "unique_zip_entries": true,
+    "unique_dex_classes": true,
+    "entrypoint_class_present": true,
+    "original_assets_dex_native_unchanged": true,
+    "payload_content": true
+  },
+  "live_brawlstars_tested": false,
+  "friendly_matches": 0,
+  "signer_certificate_sha256": "487be061bdbadf1269cb5b81c051d897624c5373f5734f46274e5da8465ae591",
+  "original_entries_verified": 37230,
+  "core_java_tests_passed": 32,
+  "native_stroke_tests_passed": 7,
+  "lint_errors": 0,
+  "lint_warnings": 4,
+  "original_apk_signatures_verified": 6,
+  "original_signer_certificate_sha256": "731a29e80b7ca89c7e9b39d381821ee8dccd1b0456782f788650945e7d60d8d3",
+  "runtime_test_status": "Own API35 x86_64 emulator with ARM64 translation failed before APK verification: PackageManagerInternal.freeStorage was null in StorageManagerService.allocateBytes. System boot did not complete; live game not launched.",
+  "binary_patch_roundtrip_verified": true
+}

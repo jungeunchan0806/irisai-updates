@@ -1,0 +1,8 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Payload only. The patcher adds this provider to the original game manifest. -->
+    <application android:label="Iris in-game payload" android:allowBackup="false">
+        <provider android:name="com.irisai.autogoal.ingame.InitProvider"
+            android:authorities="${applicationId}.init"
+            android:exported="false" />
+    </application>
+</manifest>
