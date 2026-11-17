@@ -16,8 +16,6 @@ public final class PanelPreviewActivity extends Activity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         getWindow().setDecorFitsSystemWindows(false);
-        getWindow().getInsetsController().hide(WindowInsets.Type.systemBars());
-        getWindow().getInsetsController().setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
         root = new FrameLayout(this); board = new Board(); root.addView(board, new FrameLayout.LayoutParams(-1, -1));
         panel = new IrisControlPanel(this, new IrisControlPanel.Actions() {
             @Override public void toggleAutoGoal() { enabled = !enabled; update(); }
@@ -26,7 +24,15 @@ public final class PanelPreviewActivity extends Activity {
             @Override public void visibilitySuppressed() { board.calibration = -1; panel.calibrationStep(-1); }
         }, false);
         root.addView(panel, new FrameLayout.LayoutParams(-1, -1)); setContentView(root); update();
+        root.post(this::hideSystemBars);
     }
+    private void hideSystemBars() {
+        WindowInsetsController controller = getWindow().getDecorView().getWindowInsetsController();
+        if (controller == null) return;
+        controller.hide(WindowInsets.Type.systemBars());
+        controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+    }
+    @Override public void onWindowFocusChanged(boolean hasFocus) { super.onWindowFocusChanged(hasFocus); if (hasFocus) hideSystemBars(); }
     private void update() { panel.setEngineState(enabled, "UI 미리보기 · 게임 연결 없음"); }
     @Override public void onResume() { super.onResume(); if (panel != null) panel.resume(); }
     @Override public void onPause() { if (panel != null) panel.pause(); super.onPause(); }
