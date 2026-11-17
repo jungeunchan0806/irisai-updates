@@ -1,0 +1,30 @@
+{
+  "apk": "IrisAutoGoal-BrawlStars-70.757-panel3-test-newkey.apk",
+  "bytes": 1971288007,
+  "sha256": "d5427c59ec08e3e13390baacdfbca058204a8d08aa61b9042ce186ad3028aea5",
+  "previous_apk_sha256": "f644891128d3774010beff017e9e682c484bf444d8e04f66de097e47fbab4fa5",
+  "signer_certificate_sha256": "75fbedd4009cc3f38872ef4b2d12646a7b0fef4eac40f2f6c42e4cfff2a66f7b",
+  "same_signer_as_previous": false,
+  "replaced_iris_dex": [
+    "classes3.dex"
+  ],
+  "unchanged_game_entries": 38355,
+  "unchanged_metadata_entries": 128,
+  "static_checks": {
+    "signature_v2_v3": true,
+    "alignment_16kb": true,
+    "one_provider": true,
+    "unique_dex_classes": true,
+    "old_game_content_preserved": true,
+    "new_payload_exact": true,
+    "real_engine_and_bridge_present": true,
+    "no_preview_classes": true
+  },
+  "live_game_tested": false,
+  "friendly_matches": 0,
+  "game_crash_fix_verified": false,
+  "streamer_mode_enabled": false,
+  "signed_patch_roundtrip_verified": true,
+  "game_source_commit": "12ee892bb07eb7f330c36242aa2576fc562be3fb",
+  "host_tests_passed": 49
+}

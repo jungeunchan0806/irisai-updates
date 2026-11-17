@@ -1,0 +1,96 @@
+name: Verify and publish the full game APK with actual auto-goal panel
+on:
+  push:
+    branches: [android-ingame-panel]
+    paths: ['distribution/panel3/**', '.github/workflows/android-ingame-panel.yml']
+permissions:
+  contents: read
+jobs:
+  game-apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools build-tools;35.0.0'
+          log-accepted-android-sdk-licenses: false
+      - name: Install decoder and enable disposable emulator
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xdelta3
+          sudo chmod 666 /dev/kvm
+      - name: Restore and verify the exact signed full game
+        run: |
+          python tools/restore_candidate.py --manifest distribution/panel3/manifest.json --backup "$RUNNER_TEMP/previous.apk" --download --out "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-panel3-test-newkey.apk"
+          java -jar "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" verify --min-sdk-version 24 --verbose --print-certs "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-panel3-test-newkey.apk" > "$RUNNER_TEMP/signature.txt"
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-panel3-test-newkey.apk"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          manifest = json.loads(Path('distribution/panel3/manifest.json').read_text())
+          signature = (Path(os.environ['RUNNER_TEMP']) / 'signature.txt').read_text()
+          assert manifest['signer_certificate_sha256'] in signature
+          assert 'Verified using v2 scheme (APK Signature Scheme v2): true' in signature
+          assert 'Verified using v3 scheme (APK Signature Scheme v3): true' in signature
+          PY
+      - name: Check installation and original-game launch separately from module tests
+        id: game-launch
+        continue-on-error: true
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis_playstore
+          arch: x86_64
+          profile: pixel_2
+          disk-size: 8192M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 3072 -cores 2 -camera-back none -camera-front none
+          script: python tools/smoke_candidate.py --apk "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-panel3-test-newkey.apk" --out panel3-game-launch
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: panel3-game-launch
+          path: panel3-game-launch/
+          retention-days: 14
+      - name: Publish with actual launch result and signing limitation
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          GAME_LAUNCH_OUTCOME: ${{ steps.game-launch.outcome }}
+        run: |
+          verification_run=$(python -c "import json; print(json.load(open('distribution/panel3/manifest.json'))['engine_verification_run'])")
+          gh api "repos/$GH_REPO/actions/runs/$verification_run" > "$RUNNER_TEMP/engine-verification.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          notes = Path('distribution/panel3/RELEASE-KO.md').read_text()
+          engine = json.loads((Path(os.environ['RUNNER_TEMP']) / 'engine-verification.json').read_text())
+          assert engine['conclusion'] == 'success', 'Refusing publication: actual module pipeline verification did not pass'
+          notes += '\n\nAndroid에서 실제 PixelCopy·OpenCV·ONNX 모델·오토골 컨트롤러를 사용한 녹화 프레임 검사를 통과했습니다. 입력 수신부는 테스트용 메서드이며 원본 게임 네이티브 실행이나 실전 성공을 뜻하지 않습니다.\n'
+          notes += '\n[모듈 실행 검사](' + engine['html_url'] + ')\n'
+          report = Path('panel3-game-launch/smoke.json')
+          status = json.loads(report.read_text()) if report.exists() else {}
+          ok = all(status.get(k) is True for k in ('installed','game_process_alive','button_off_visible','button_on_visible','button_off_again'))
+          if ok:
+              notes += '\n\n이번 API 35 에뮬레이터에서는 설치·게임 시작·오토골 ON/OFF 표시 검사가 통과했습니다. 실제 친선전투는 검증하지 않았습니다.\n'
+          else:
+              notes += '\n\n**이번 API 35 에뮬레이터에서 게임 실행 검사는 통과하지 못했습니다. 게임이 정상 작동하는 완성본으로 표시하지 않습니다.**\n'
+          notes += '\n[이번 빌드 및 게임 실행 검사](https://github.com/' + os.environ['GITHUB_REPOSITORY'] + '/actions/runs/' + os.environ['GITHUB_RUN_ID'] + ')\n'
+          (Path(os.environ['RUNNER_TEMP']) / 'release-notes.md').write_text(notes)
+          PY
+          tag=android-ingame-70.757-panel3
+          if ! gh release view "$tag" > /dev/null 2>&1; then
+            gh release create "$tag" --target "$GITHUB_SHA" --title 'Iris 실제 오토골 + 새 UI · panel3 시험 APK · 새 서명' --notes-file "$RUNNER_TEMP/release-notes.md" --prerelease --latest=false
+          else
+            gh release edit "$tag" --notes-file "$RUNNER_TEMP/release-notes.md" --prerelease --latest=false
+          fi
+          gh release upload "$tag" "$RUNNER_TEMP/IrisAutoGoal-BrawlStars-70.757-panel3-test-newkey.apk" distribution/panel3/IrisAutoGoal-BrawlStars-70.757-panel3-test-newkey.apk.sha256 investigation/panel3-validation.json --clobber
+          if test -f panel3-game-launch/smoke.json; then
+            gh release upload "$tag" panel3-game-launch/smoke.json --clobber
+          fi
