@@ -15,3 +15,5 @@ __pycache__/
 *.pyc
 control-panel-results/
 ui-artifacts/
+bridgecheck/generated/
+bridgecheck-results/

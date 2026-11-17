@@ -1,5 +1,5 @@
 rpc.exports={
- boot(){return {selected:globalThis.__irisBoot||null,canary:globalThis.__irisPatchFixture===true};},
+ boot(){return {selected:globalThis.__irisBoot||null,engineAvailable:typeof globalThis.setHxptAutoGoalEnabled==='function'};},
  installfixture(){return new Promise((resolve,reject)=>_bootJava.perform(()=>{try{
   const app=_bootJava.use('android.app.ActivityThread').currentApplication();
   const bytes=_bootRead(app.getAssets().open('iris-bootstrap.dex'));

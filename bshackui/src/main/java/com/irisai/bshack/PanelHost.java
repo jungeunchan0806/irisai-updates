@@ -28,6 +28,7 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     private LicenseClient license;
     private long lastHeartbeat, connectedAt;
     private boolean markedHealthy;
+    private boolean gameReady;
     private String latestError = "", diagnosticState = "", bootName = "2.2.0", recovery = "";
     private final Handler handler = new Handler(Looper.getMainLooper());
     public static void initialize(Application app) {
@@ -81,6 +82,7 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     }
     private void disconnect() {
         resumed = false; queue(2);
+        if(activity!=null){updates.pause(activity);license.detach(activity);}
         if (panel != null) {
             panel.close(); if (panel.getParent() instanceof ViewGroup) ((ViewGroup) panel.getParent()).removeView(panel);
         }
@@ -91,11 +93,11 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     public static void update(boolean enabled, String phase) {
         if (host != null && host.panel != null) {
             host.lastHeartbeat=SystemClock.uptimeMillis();host.engineEnabled = enabled; host.panel.setEngineState(enabled, phase);
-            if(!host.markedHealthy&&host.lastHeartbeat-host.connectedAt>8000){host.markedHealthy=true;host.updates.healthy();}
+            if(!host.markedHealthy&&host.gameReady&&host.lastHeartbeat-host.connectedAt>8000){host.markedHealthy=true;host.updates.healthy();}
         }
     }
     public static void recordError(String stage,String error) { if(host!=null)host.latestError=stage+": "+error; }
-    public static void recordState(String state) { if(host!=null)host.diagnosticState=state; }
+    public static void recordState(String state) { if(host!=null){host.diagnosticState=state;try{host.gameReady=new org.json.JSONObject(state).optBoolean("game",false);}catch(Exception e){host.gameReady=false;}} }
     private void watchdog() {
         if(resumed&&panel!=null&&SystemClock.uptimeMillis()-lastHeartbeat>5000)panel.setEngineState(false,"UI 응답 없음 · 오류 확인");
         handler.postDelayed(this::watchdog,1500);
@@ -109,7 +111,7 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
             }).setNegativeButton(panel.english()?"Close":"닫기",null).show();
     }
     @Override public void onActivityResumed(Activity value) { attach(value); }
-    @Override public void onActivityPaused(Activity value) { if (value == activity) { resumed = false; queue(2); panel.pause(); } }
+    @Override public void onActivityPaused(Activity value) { if (value == activity) { resumed = false; queue(2); updates.pause(value);license.detach(value);panel.pause(); } }
     @Override public void onActivityDestroyed(Activity value) { if (value == activity) disconnect(); }
     @Override public void onActivityCreated(Activity value, Bundle state) {}
     @Override public void onActivityStarted(Activity value) {}

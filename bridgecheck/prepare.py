@@ -9,6 +9,6 @@ const _ag={enabled:false,phase:'idle'};const _MS={checked:0};
 init_licensing();
 const _license=createLicense(frida_java_bridge_default,{toggle(){_panelActivate();},cancel(){_panelWanted=false;},disabled(){_st.requested=false;}});
 '''+(r/'bshack/engine_state.js').read_text()+(r/'bshack/panel_bridge.js').read_text()+(r/'bridgecheck/fixture-api.js').read_text()+'\nexport default true;\n'
-out=r/'bshackcheck/build/payload';out.mkdir(parents=True,exist_ok=True)
+out=r/'bridgecheck/generated';out.mkdir(parents=True,exist_ok=True)
 (out/'iris-engine.mjs').write_text(engine)
 print('Prepared production bootstrap/bridge with isolated native-state fixture.')

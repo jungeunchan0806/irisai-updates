@@ -23,19 +23,27 @@ public final class UpdateManager {
  private long version=UpdateConfig.VERSION;
  private String versionName=UpdateConfig.VERSION_NAME;
  private AlertDialog dialog;
+ private String pendingTitle,pendingMessage,pendingButton;
+ private Runnable pendingAction;
  public UpdateManager(Application app){this.app=app;store=new PatchStore(app);}
  public void configure(long version,String name){this.version=version;this.versionName=name;}
- public void attach(Activity value,boolean english){activity=new WeakReference<>(value);this.english=english;}
+ public void attach(Activity value,boolean english){activity=new WeakReference<>(value);this.english=english;if(pendingTitle!=null)renderDialog();}
+ public void pause(Activity value){if(activity.get()==value){activity.clear();if(dialog!=null){dialog.dismiss();dialog=null;}}}
  public void start(){if(startupChecked)return;startupChecked=true;main.postDelayed(()->check(false),5000);}
- public void healthy(){worker.execute(()->store.healthy(version));}
+ public void healthy(){worker.execute(()->{try{store.healthy(version);}catch(IOException e){android.util.Log.w("IRIS","Patch health marker could not be committed",e);}});}
  private String tr(String ko,String en){return english?en:ko;}
  private Activity current(){Activity a=activity.get();return a!=null&&!a.isDestroyed()&&!a.isFinishing()?a:null;}
  private AlertDialog show(String title,String message,String button,Runnable action){
+  pendingTitle=title;pendingMessage=message;pendingButton=button;pendingAction=action;return renderDialog();
+ }
+ private AlertDialog renderDialog(){
   Activity a=current();if(a==null)return null;
   if(dialog!=null&&dialog.isShowing())dialog.dismiss();
-  AlertDialog d=new AlertDialog.Builder(a).setTitle(title).setMessage(message)
-   .setPositiveButton(button,(v,w)->{if(action!=null)action.run();}).setCancelable(false).create();
-  d.setCanceledOnTouchOutside(false);d.show();dialog=d;return d;
+  final Runnable action=pendingAction;
+  AlertDialog d=new AlertDialog.Builder(a).setTitle(pendingTitle).setMessage(pendingMessage)
+   .setPositiveButton(pendingButton,(v,w)->{pendingTitle=null;pendingAction=null;if(action!=null)action.run();}).setCancelable(false).create();
+  d.setCanceledOnTouchOutside(false);
+  try{d.show();dialog=d;return d;}catch(android.view.WindowManager.BadTokenException e){dialog=null;return null;}
  }
  public void check(boolean manual){
   if(busy){if(manual)show(tr("업데이트","Update"),tr("업데이트 확인 또는 다운로드가 진행 중입니다.","An update check or download is in progress."),tr("확인","OK"),null);return;}

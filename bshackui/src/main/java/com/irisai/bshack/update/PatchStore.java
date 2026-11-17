@@ -79,8 +79,6 @@ public final class PatchStore {
    write(new File(temp,"manifest.json"),m.raw);write(new File(temp,"manifest.sig"),m.signature);
    remove(target);if(!temp.renameTo(target))throw new IOException("패치를 저장하지 못했습니다.");
    atomic("active",String.valueOf(m.version));
-   atomic("highest",String.valueOf(Math.max(m.version,highestVersion())));
-   new File(root,"pending").delete();
   }finally{remove(temp);}
  }
  public static void remove(File file){if(file.isDirectory()){File[] children=file.listFiles();if(children!=null)for(File child:children)remove(child);}file.delete();}
@@ -101,5 +99,7 @@ public final class PatchStore {
   }
   return j.put("version",UpdateConfig.VERSION).put("name",UpdateConfig.VERSION_NAME).put("engine","").put("ui","").put("recovery",recovery);
  }
- public synchronized void healthy(long version){if(number("pending")==version)new File(root,"pending").delete();}
+ public synchronized void healthy(long version)throws IOException{
+  if(number("pending")==version){atomic("highest",String.valueOf(Math.max(version,highestVersion())));new File(root,"pending").delete();}
+ }
 }

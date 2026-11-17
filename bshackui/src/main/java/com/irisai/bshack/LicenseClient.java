@@ -24,6 +24,8 @@ final class LicenseClient {
  private String hwid="",error="",status="unregistered";
  private boolean ready,checked,busy,consentDialog;
  private long until,request,completed;
+ private AlertDialog dialog;
+ private Activity dialogActivity;
  LicenseClient(Application app){
   this.app=app;prefs=app.getSharedPreferences("bshack_license_v1",0);
   try{
@@ -48,14 +50,18 @@ final class LicenseClient {
   if(activity==null||activity.isFinishing()){error="게임 화면 준비 중";completed=request;return request;}
   if(!consentDialog){
    consentDialog=true;
-   new AlertDialog.Builder(activity).setTitle("HWID 구독 확인")
+   dialogActivity=activity;
+   dialog=new AlertDialog.Builder(activity).setTitle("HWID 구독 확인")
     .setMessage("등록된 구독을 확인하려면 이 앱 전용 HWID를 인증 서버로 전송합니다.\n\n"+hwid)
     .setPositiveButton("확인",(d,w)->{prefs.edit().putBoolean("license_consent_v1",true).apply();consentDialog=false;refresh();})
     .setNegativeButton("닫기",(d,w)->{consentDialog=false;completed=request;})
-    .setOnCancelListener(d->{consentDialog=false;completed=request;}).show();
+    .setOnCancelListener(d->{consentDialog=false;completed=request;}).create();
+   dialog.setOnDismissListener(d->{consentDialog=false;dialog=null;dialogActivity=null;});
+   try{dialog.show();}catch(android.view.WindowManager.BadTokenException e){consentDialog=false;dialog=null;dialogActivity=null;completed=request;error="게임 화면을 다시 열어 주세요.";}
   }
   return request;
  }
+ void detach(Activity activity){if(dialogActivity==activity&&dialog!=null){dialog.dismiss();consentDialog=false;completed=request;}}
  void copy(){((ClipboardManager)app.getSystemService(Context.CLIPBOARD_SERVICE)).setPrimaryClip(ClipData.newPlainText("BSHACK HWID",hwid));Toast.makeText(app,"HWID를 복사했습니다.",Toast.LENGTH_SHORT).show();}
  private void refresh(){
   if(busy||!ready)return;busy=true;

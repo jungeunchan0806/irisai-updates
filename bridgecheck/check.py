@@ -26,6 +26,7 @@ def check(value,label):
  checks.append(label);print('PASS',label,flush=True)
 try:
  session,script=attach()
+ s={}
  deadline=time.monotonic()+15
  while time.monotonic()<deadline:
   try:
@@ -33,7 +34,7 @@ try:
    if s['foreground'] and s['auth']['ready']:break
   except frida.core.RPCException:pass
   time.sleep(.25)
- check(s['foreground'] and s['auth']['ready'],'bootstrap loads production DEX and Android authorization')
+ check(s.get('foreground') and s.get('auth',{}).get('ready'),'bootstrap loads production DEX and Android authorization')
  check(not s['enabled'] and not s['auth']['active'],'unregistered device starts disabled')
  check(script.exports_sync.grant(),'fixture supplies a bounded authorized lease')
  time.sleep(.5)
@@ -46,7 +47,7 @@ try:
  check(script.exports_sync.installfixture(),'verified small patch installs without replacing APK')
  restart(session);session,script=attach();time.sleep(1)
  b=script.exports_sync.boot()
- check(b['selected']['version']==22001 and b['canary'],'signed downloaded engine executes on next start')
+ check(b['selected']['version']==22001 and b['engineAvailable'],'signed full production engine loads on next start')
  restart(session);session,script=attach();time.sleep(1)
  b=script.exports_sync.boot()
  check(b['selected']['version']==22000 and bool(b['selected']['recovery']),'unfinished patched startup rolls back to embedded engine')
