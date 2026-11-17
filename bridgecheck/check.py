@@ -3,6 +3,7 @@ from pathlib import Path
 import json,subprocess,time,frida
 out=Path('bridgecheck-results');out.mkdir(exist_ok=True)
 subprocess.run(['adb','install','-r','bshackcheck/build/outputs/apk/debug/bshackcheck-debug.apk'],check=True)
+subprocess.run(['adb','shell','pm','clear','com.irisai.bshack.check'],check=True)
 subprocess.run(['adb','forward','tcp:27042','tcp:27042'],check=True)
 messages=[];checks=[]
 source=Path('bridgecheck/java-bridge.js').read_text()+Path('bshack/bootstrap.js').read_text()+Path('bridgecheck/bootstrap-api.js').read_text()

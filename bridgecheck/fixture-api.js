@@ -16,7 +16,7 @@ rpc.exports={...rpc.exports,
   const records=_Java.use('android.app.ActivityThread').currentActivityThread().mActivities.value;
   const it=records.values().iterator();
   function find(v){
-   const d=v.getContentDescription();if(d&&String(d)==='오토골 켜기 또는 끄기'){v.performClick();return true;}
+   const d=v.getContentDescription();if(d&&['오토골 켜기 또는 끄기','Toggle Auto Goal'].includes(String(d))){v.performClick();return true;}
    if(_Java.use('android.view.ViewGroup').class.isInstance(v)){
     const g=_Java.cast(v,_Java.use('android.view.ViewGroup'));
     for(let i=0;i<g.getChildCount();i++)if(find(g.getChildAt(i)))return true;
