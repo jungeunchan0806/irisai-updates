@@ -19,6 +19,19 @@ test('native callback status uses injected monotonic clock without invoking Andr
  const license=vm.runInContext('createLicense(Java,handlers,options)',c);
  assert.equal(license.isActive(),false);license.status();license.press();assert.equal(javaCalls,0);
 });
+test('typed Android authorization is cached for native callbacks and completion toggles once',()=>{
+ const c=core();let now=1000,toggles=0,cancels=0,request=0;
+ const data={ready:true,checked:true,remainingMs:0,status:'unregistered',completed:0,error:'',pending:false};
+ c.Java={};c.handlers={toggle(){toggles++;},cancel(){cancels++;}};c.options={now:()=>now};
+ const license=vm.runInContext('createLicense(Java,handlers,options)',c);
+ const host={licenseStatus:()=>JSON.stringify(data),authorize:()=>++request};
+ license.sync(host);license.tap();assert.equal(toggles,0);
+ data.completed=1;data.status='active';data.remainingMs=5000;license.sync(host);license.sync(host);
+ assert.equal(toggles,1);assert.equal(license.isActive(),true);
+ now+=5001;assert.equal(license.isActive(),false);assert.equal(license.status().active,false);
+ data.remainingMs=0;data.status='revoked';license.tap();data.completed=2;license.sync(host);assert.equal(cancels,1);assert.equal(toggles,1);
+ data.remainingMs=300001;assert.throws(()=>license.sync(host));
+});
 function panelFixture({ready=true,started=true,active=false}={}) {
  let command=0,foreground=true,phase='',taps=0;
  const auth={ready,error:null,pending:false,active};
@@ -47,4 +60,12 @@ test('backgrounding and lease expiry stop input even with the render loop idle',
  const f=panelFixture({active:true});f.poll(1);f.activate();f.poll();assert.equal(f.c._ag.enabled,true);
  f.auth.active=false;f.poll();assert.equal(f.c._ag.enabled,false);assert.equal(f.c._ag.stopPending,true);
  f.auth.active=true;f.poll(1);f.activate();f.poll();assert.equal(f.c._ag.enabled,true);f.background();f.poll();assert.equal(f.c._ag.enabled,false);
+});
+test('a transient UI exception stops the engine and clears after successful reconnection',()=>{
+ const f=panelFixture({active:true});f.poll(1);f.activate();f.poll();
+ const original=f.c.fake.poll;let once=true;
+ f.c.fake.poll=()=>{if(once){once=false;throw Error('temporary UI transport failure');}return original();};
+ f.poll();assert.equal(f.c._st.requested,false);assert.equal(f.phase,'UI 연결 오류');
+ f.poll();assert.equal(f.c._ag.enabled,false);assert.notEqual(f.phase,'UI 연결 오류');
+ f.poll(1);f.activate();f.poll();assert.equal(f.c._ag.enabled,true);
 });

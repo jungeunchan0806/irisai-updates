@@ -34,11 +34,14 @@ public final class Checks extends Instrumentation {
     call("update",new Class<?>[]{boolean.class,String.class},true,"골대로 운반");require(((TextView)toggle).getText().toString().contains("ON"),"native state updates HUD");
     opener.performClick();require(find(root(),"키 등록")==null,"buyer key registration absent from menu");
     require(find(root(),"스트리머 모드")==null,"streamer mode absent from menu");
+    require(find(root(),"업데이트 확인")!=null,"manual patch update entry is visible");
+    require(find(root(),"오류 확인")!=null,"diagnostics is available without a separate app");
     require(find(root(),"조작 위치")==null,"no coordinate calibration in native engine mode");
     ((View)find(root(),"UI 전부 숨기기").getParent()).performClick();require(!toggle.isShown(),"hide all hides toggle");require(poll()==0,"hiding HUD does not toggle engine");
     opener.performClick();require(find(root(),"UI 다시 표시").isShown(),"invisible opener recovers hidden UI");
     ((View)find(root(),"언어").getParent()).performClick();require(find(root(),"IRIS  /  CONTROL CENTER")!=null,"language switching works");
    });
+   UpdateChecks.run(getTargetContext(),host.getClassLoader(),checks);
    ui(()->activity.finish());
    java.util.concurrent.atomic.AtomicBoolean active=new java.util.concurrent.atomic.AtomicBoolean(true);
    long deadline=SystemClock.uptimeMillis()+5000;

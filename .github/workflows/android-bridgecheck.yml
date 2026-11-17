@@ -23,7 +23,10 @@ jobs:
           cp /tmp/frida bshackcheck/src/main/jniLibs/x86_64/libirisgadget.so
           echo '{"interaction":{"type":"listen","address":"127.0.0.1","port":27042,"on_load":"resume"}}' > bshackcheck/src/main/jniLibs/x86_64/libirisgadget.config.so
           sudo chmod 666 /dev/kvm
-      - run: ./gradlew :bshackcheck:assembleDebug --console=plain --max-workers=2
+      - run: |
+          python bridgecheck/prepare.py
+          node --test bshack/runtime.test.mjs
+          ./gradlew :controlui:testDebugUnitTest :bshackcheck:assembleDebug :bshackcheck:assembleDebugAndroidTest --console=plain --max-workers=2
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -33,7 +36,12 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 2048 -cores 2
           script: |
+            python bshack/ci_payload.py
             python bridgecheck/check.py
       - uses: actions/upload-artifact@v4
         if: always()
-        with: {name: real-bridge-results, path: bridgecheck-results/}
+        with:
+          name: real-bridge-results
+          path: |
+            bridgecheck-results/
+            bshack-checks/

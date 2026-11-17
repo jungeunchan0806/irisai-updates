@@ -4,7 +4,7 @@ android {
  compileSdk 35
  defaultConfig { applicationId 'com.irisai.bshack.check'; minSdk 32; targetSdk 35; versionCode 1; versionName '1'; testInstrumentationRunner 'com.irisai.bshack.check.Checks' }
  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
- sourceSets { main { assets.srcDirs = [layout.buildDirectory.dir('payload')] } }
+ sourceSets { main { assets.srcDirs = [layout.buildDirectory.dir('payload'), '../bridgecheck/fixtures'] } }
 }
 tasks.register('copyDex', Copy) {
  dependsOn ':bshackui:assembleRelease'
@@ -13,4 +13,11 @@ tasks.register('copyDex', Copy) {
  rename 'classes.dex', 'iris-panel.dex'
  into layout.buildDirectory.dir('payload')
 }
+tasks.register('copyBootstrap', Copy) {
+ dependsOn 'copyDex'
+ from layout.buildDirectory.file('payload/iris-panel.dex')
+ rename 'iris-panel.dex', 'iris-bootstrap.dex'
+ into layout.buildDirectory.dir('payload')
+}
 tasks.named('preBuild').configure { dependsOn 'copyDex' }
+tasks.named('preBuild').configure { dependsOn 'copyBootstrap' }

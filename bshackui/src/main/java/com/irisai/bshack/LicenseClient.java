@@ -75,12 +75,9 @@ final class LicenseClient {
     try{
      error=networkError;
      if(data!=null){
-      Object active=data.get("active");if(!(active instanceof Boolean))throw new IOException("Invalid active field");
-      if((Boolean)active){
-       long lease=data.getLong("leaseSeconds"),server=data.getLong("serverTime");
-       if(lease<1||lease>300)throw new IOException("Invalid lease");
-       if(!data.optBoolean("permanent",false)&&data.getLong("expiresAt")-server<lease*1000L)throw new IOException("Invalid expiration");
-       until=SystemClock.elapsedRealtime()+lease*1000L;status="active";
+      long leaseMillis=AuthorizationLease.millis(data.toString());
+      if(leaseMillis>0){
+       until=SystemClock.elapsedRealtime()+leaseMillis;status="active";
       }else{until=0;status=data.optString("status","unregistered");}
       checked=true;
      }
