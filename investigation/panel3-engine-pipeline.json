@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "checks": [
+    "recorded-frame surface is valid",
+    "actual controller enabled from shared UI",
+    "models and planner reached internal DOWN call",
+    "aim/movement coordinates reached internal MOVE call",
+    "finite gesture reached internal UP call",
+    "OFF disables actual controller",
+    "no stale frame or delayed gesture after OFF",
+    "background pause stops internal input",
+    "close rejects pending inference input"
+  ],
+  "capture": "PixelCopy from recorded-frame SurfaceView",
+  "inference": "real packaged OpenCV and ONNX models on Android x86_64",
+  "input_sink": "test Java method matching game entrypoint; NOT the original native game",
+  "live_game_tested": false,
+  "friendly_matches": 0,
+  "workflow_run": "https://github.com/jungeunchan0806/irisai-updates/actions/runs/44078822861",
+  "source_commit": "12ee892bb07eb7f330c36242aa2576fc562be3fb"
+}

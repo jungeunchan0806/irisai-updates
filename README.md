@@ -1,5 +1,9 @@
 # Iris 오토골 — 브롤스타즈 70.757 내부 실행 후보
 
+**새 panel3 게임 APK:** 이전 `packaging2-test.apk`의 Iris 모듈을 새 UI와 실제 인식·이동·슈팅 코드로 교체했습니다. [받을 파일과 설치 제한](https://github.com/jungeunchan0806/irisai-updates/releases/tag/android-ingame-70.757-panel3). 파일명은 `IrisAutoGoal-BrawlStars-70.757-panel3-test-newkey.apk`입니다. **새 서명이므로 기존 수정본·진단 앱·공식 앱 위에 덮어쓸 수 없습니다.** 기존 게임을 삭제하기 전에 진행 상태 보존 여부를 확인해야 합니다.
+
+panel3는 호스트 테스트 49개와 Android 녹화 프레임 실행 검사 9개를 통과했습니다. 후자는 실제 PixelCopy·OpenCV·ONNX·컨트롤러를 사용하지만 입력 수신 메서드는 테스트용입니다. 원본 게임의 JNI 성공·실제 경기·사용자 폰의 튕김 해결을 확인한 결과가 아닙니다. 느린 분석 뒤 입력이 중간 취소되던 경로를 수정했고 OFF·백그라운드·오래된 결과의 입력은 계속 차단합니다. [모듈 실행 결과](investigation/panel3-engine-pipeline.json), [서명·게임 파일 보존 검증](investigation/panel3-validation.json).
+
 **UI 작업 (`android-control-panel`):** 큰 설정창, 오토골 버튼의 가로·세로 2배인 투명 열기 영역, 전체 UI 숨김/복원, 한국어·영어, Discord 링크를 공유 모듈 `controlui`에 구현했습니다. 라이선스 항목은 사용자 요청으로 제외했습니다. `uipreview`는 별도 앱으로 UI만 검증하며 게임 실행이나 조작은 하지 않습니다. [현재 범위와 제한](ui-distribution/RELEASE-KO.md). 기존 게임의 종료 문제는 여전히 미해결이며 같은 서명의 업데이트용 키가 현재 작업환경에 없습니다.
 
 [UI 미리보기 APK 받기](https://github.com/jungeunchan0806/irisai-updates/releases/tag/android-control-panel-preview1) · [검증 결과](investigation/control-panel-validation.json) · [작은 화면](docs/control-panel/compact-panel-ko.png) · [전체 UI 숨김 상태](docs/control-panel/wide-hidden.png)
@@ -62,6 +66,18 @@ python tools/build_ingame.py --backup BrawlStars-70.757-BlueStacks-APK.zip \
 ```
 
 Windows에서는 `gradlew.bat`과 해당 시스템의 경로를 사용하세요. 키스토어와 비밀번호는 저장소에 포함하지 않습니다. 빌드 스크립트는 원본 ZIP과 도구의 해시를 확인하고 새 결과 파일만 생성합니다.
+
+이미 배포된 정확한 packaging2 APK에서 **기존 Iris DEX만 교체**하려면 `tools/update_ingame.py`를 사용합니다. 이전 APK의 해시·서명을 확인하고 Iris 전용 DEX인지 검사한 뒤 바꿉니다. 게임 본체 DEX·자산·네이티브 라이브러리·메타데이터 보존을 다시 검증합니다.
+
+```sh
+python tools/update_ingame.py --previous IrisAutoGoal-BrawlStars-70.757-packaging2-test.apk \
+  --payload ingame/build/outputs/apk/release/ingame-release-unsigned.apk \
+  --apkeditor APKEditor-1.4.9.jar --java-home /path/to/jdk17 --sdk /path/to/android-sdk \
+  --keystore /private/iris-ingame-v2.p12 --password-file /private/ingame.password \
+  --work /temporary/new-build-directory --out /output/IrisAutoGoal-panel3.apk
+```
+
+`enginecheck`는 CI 전용 테스트 앱이며 게임 APK에 합치지 않습니다. 테스트용 `com.supercell.titan.GameApp`은 직접 작성한 입력 기록용 클래스입니다. 원본 게임 코드가 아니며 실제 게임 실행 검증을 대신하지 않습니다. `distribution/panel3`의 차이 파일은 **이미 서명한 정확한 APK를 복원**하기 위한 것으로 개인키를 포함하지 않습니다.
 
 ## 서명된 후보 복원·배포
 

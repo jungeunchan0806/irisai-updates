@@ -26,5 +26,11 @@
   "streamer_mode_enabled": false,
   "signed_patch_roundtrip_verified": true,
   "game_source_commit": "12ee892bb07eb7f330c36242aa2576fc562be3fb",
-  "host_tests_passed": 49
+  "host_tests_passed": 49,
+  "android_recorded_frame_pipeline": {
+    "passed": true,
+    "checks": 9,
+    "report": "panel3-engine-pipeline.json",
+    "original_game_native_input_tested": false
+  }
 }
