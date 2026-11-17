@@ -35,7 +35,7 @@ public final class PreviewChecks extends Instrumentation {
                 int before = activity.board.taps;
                 tap(activity.root.getWidth() / 2f, activity.root.getHeight() * .85f);
                 require(activity.board.taps == before + 1, "outside UI touches reach game area");
-                opener.performClick();
+                tap(opener.getX() + opener.getWidth() / 2f, opener.getY() + opener.getHeight() / 2f);
             });
             waitForIdleSync(); screenshot("panel-ko.png");
             onUi(() -> {
@@ -47,7 +47,9 @@ public final class PreviewChecks extends Instrumentation {
             });
             waitForIdleSync(); screenshot("panel-en.png");
             onUi(() -> {
-                ((View) byText(activity.root, "Hide all UI").getParent()).performClick();
+                View hide = (View) byText(activity.root, "Hide all UI").getParent();
+                hide.requestRectangleOnScreen(new android.graphics.Rect(0, 0, hide.getWidth(), hide.getHeight()), true);
+                hide.performClick();
                 require(!byDescription(activity.root, "Toggle Auto Goal").isShown(), "hide all removes HUD");
                 byDescription(activity.root, "Open Iris settings").performClick();
                 require(byText(activity.root, "Show UI").isShown(), "hidden UI can be recovered");

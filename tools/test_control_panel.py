@@ -19,12 +19,16 @@ for label, size, density in [('wide', '1280x720', '160'), ('compact', '960x540',
     adb('shell', 'wm', 'size', size); adb('shell', 'wm', 'density', density)
     adb('shell', 'am', 'force-stop', 'com.irisai.autogoal.preview')
     target = root / label; target.mkdir(exist_ok=True)
-    output = adb('shell', 'am', 'instrument', '-w', 'com.irisai.autogoal.preview.test/com.irisai.autogoal.preview.PreviewChecks', timeout=150)
+    output = adb('shell', 'am', 'instrument', '-w', '-r', 'com.irisai.autogoal.preview.test/com.irisai.autogoal.preview.PreviewChecks', timeout=150)
     (target / 'instrumentation.txt').write_text(output)
+    # Keep screenshots even if a later assertion or result-format check fails.
+    try:
+        adb('pull', '/sdcard/Android/data/com.irisai.autogoal.preview/files/ui-checks', str(target))
+    except subprocess.CalledProcessError:
+        pass
     if 'PASS ' not in output or 'INSTRUMENTATION_CODE: -1' not in output:
         (target / 'crash.txt').write_text(adb('logcat', '-d', '-b', 'crash', '-t', '100'))
         raise SystemExit('UI checks failed: ' + output)
-    adb('pull', '/sdcard/Android/data/com.irisai.autogoal.preview/files/ui-checks', str(target))
     report = json.loads((target / 'ui-checks/result.json').read_text())
     if report.get('passed') is not True or report.get('game_startup_tested') is not False:
         raise SystemExit('Invalid test report')
