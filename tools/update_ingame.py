@@ -49,7 +49,7 @@ def validate_update(previous, candidate, payload, old_dex, sdk, java):
     run(sdk / 'build-tools/35.0.0/zipalign', '-c', '-P', '16', '4', candidate)
     manifest = subprocess.check_output([str(sdk / 'build-tools/35.0.0/aapt2'), 'dump', 'xmltree',
         '--file', 'AndroidManifest.xml', str(candidate)], text=True)
-    if manifest.count('com.irisai.autogoal.ingame.InitProvider') != 1:
+    if sum('com.irisai.autogoal.ingame.InitProvider' in line for line in manifest.splitlines()) != 1:
         raise ValueError('Expected exactly one Iris provider')
     if not re.search(r'versionCode[^\n]*=70757', manifest) or 'com.supercell.brawlstars' not in manifest:
         raise ValueError('Game identity changed')

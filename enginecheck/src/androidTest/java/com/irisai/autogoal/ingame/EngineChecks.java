@@ -49,7 +49,13 @@ public final class EngineChecks extends Instrumentation {
             try (FileWriter writer = new FileWriter(out)) { writer.write(report.toString(2)); }
             result.putString("stream", "PASS " + checks.size() + " engine pipeline checks\n"); finish(Activity.RESULT_OK, result);
         } catch (Throwable error) {
-            result.putString("stream", "FAIL " + error + "\n"); finish(Activity.RESULT_CANCELED, result);
+            AtomicReference<String> events = new AtomicReference<>("");
+            if (activity != null) onUi(() -> {
+                StringBuilder s = new StringBuilder("input count=" + GameApp.inputs.size() + "; last events=");
+                for (int i = Math.max(0, GameApp.inputs.size() - 12); i < GameApp.inputs.size(); i++) s.append(Arrays.toString(GameApp.inputs.get(i)));
+                events.set(s.toString());
+            });
+            result.putString("stream", "FAIL " + error + "\n" + events.get() + "\n"); finish(Activity.RESULT_CANCELED, result);
         }
     }
     private void awaitGesture(int start) {

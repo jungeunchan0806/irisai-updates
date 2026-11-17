@@ -154,8 +154,12 @@ final class GameController implements AutoCloseable {
         int x = (int) ((shooting ? attackX : moveX) * width), y = (int) ((shooting ? attackY : moveY) * height);
         int endX = Math.max(1, Math.min(width - 2, (int) (x + dx / length * radius)));
         int endY = Math.max(1, Math.min(height - 2, (int) (y + dy / length * radius)));
-        boolean accepted = stroke.start(x, y, endX, endY, shooting ? 120 : 180,
-                () -> allowed(epoch, at), () -> {
+        int duration = shooting ? 120 : 180;
+        InputLease lease = new InputLease(gate, epoch, at, duration);
+        if (!lease.start(SystemClock.uptimeMillis())) { phase = "분석 지연 · 입력 대기"; paint(); return; }
+        boolean accepted = stroke.start(x, y, endX, endY, duration,
+                () -> !closed && resumed && activity.hasWindowFocus() && validSurface()
+                        && lease.valid(SystemClock.uptimeMillis()), () -> {
                     if (shooting && !closed) {
                         final double shotAt = SystemClock.uptimeMillis() / 1000.;
                         worker.execute(() -> { if (engine != null && epoch == gate.generation()) engine.planner.shotAccepted(shotAt); });
