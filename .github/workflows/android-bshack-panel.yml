@@ -31,6 +31,7 @@ jobs:
         if: always()
         with: {name: bshack-payload-checks, path: bshack-checks/}
   game:
+    if: ${{ !contains(github.event.head_commit.message, '[payload-only]') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     permissions: {contents: write}
@@ -85,25 +86,38 @@ jobs:
           retention-days: 7
   publish:
     needs: [payload, game]
+    if: ${{ always() && needs.payload.result == 'success' && (needs.game.result == 'success' || needs.game.result == 'skipped') }}
     runs-on: ubuntu-24.04
-    permissions: {contents: write}
+    permissions: {contents: write, actions: read}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
-        with: {name: bshack-apk, path: apk}
+        with:
+          name: bshack-apk
+          path: apk
+          run-id: ${{ needs.game.result == 'skipped' && '44097940785' || github.run_id }}
+          github-token: ${{ github.token }}
       - uses: actions/download-artifact@v4
-        with: {name: bshack-game-launch, path: bshack-game-launch}
+        with:
+          name: bshack-game-launch
+          path: bshack-game-launch
+          run-id: ${{ needs.game.result == 'skipped' && '44097940785' || github.run_id }}
+          github-token: ${{ github.token }}
       - name: Publish with actual verification limits
         env: {GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}'}
         run: |
           python - <<'PY'
           from pathlib import Path
-          import json,os
+          import json,os,hashlib
+          manifest=json.loads(Path('distribution/bshack-panel/manifest.json').read_text())
+          with Path('apk',manifest['filename']).open('rb') as f:
+            assert hashlib.file_digest(f,'sha256').hexdigest()==manifest['sha256'], 'Cached APK differs from the reviewed candidate'
           notes=Path('distribution/bshack-panel/RELEASE-KO.md').read_text()
           p=Path('bshack-game-launch/result.json');r=json.loads(p.read_text()) if p.exists() else {}
           if r.get('candidate',{}).get('alive_30s') and r.get('candidate',{}).get('ui_visible'):
             notes+='\nAPI 35 에뮬레이터에서 30초 실행 유지 및 새 UI 표시를 확인했습니다.\n'
           else:notes+='\n**API 35 에뮬레이터에서 게임 실행·UI 표시를 검증하지 못했습니다. 휴대폰 정상 실행을 보장하는 완성본이 아닙니다.**\n'
+          notes+='\n동일 APK의 게임 비교 검사는 [44097940785](https://github.com/jungeunchan0806/irisai-updates/actions/runs/44097940785)에서도 확인할 수 있습니다.\n'
           notes+='\n[이번 검사 결과](https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GITHUB_RUN_ID']+')\n'
           Path('release-notes.md').write_text(notes)
           PY

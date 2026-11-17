@@ -39,7 +39,11 @@ public final class Checks extends Instrumentation {
     opener.performClick();require(find(root(),"UI 다시 표시").isShown(),"invisible opener recovers hidden UI");
     ((View)find(root(),"언어").getParent()).performClick();require(find(root(),"IRIS  /  CONTROL CENTER")!=null,"language switching works");
    });
-   ui(()->activity.finish());waitForIdleSync();ui(()->{require(!(Boolean)call("isResumed",new Class<?>[]{}),"activity destruction clears foreground state");require(poll()==2,"leaving game queues engine stop");});
+   ui(()->activity.finish());
+   java.util.concurrent.atomic.AtomicBoolean active=new java.util.concurrent.atomic.AtomicBoolean(true);
+   long deadline=SystemClock.uptimeMillis()+5000;
+   while(active.get()&&SystemClock.uptimeMillis()<deadline){waitForIdleSync();ui(()->active.set((Boolean)call("isResumed",new Class<?>[]{})));if(active.get())SystemClock.sleep(50);}
+   ui(()->{require(!(Boolean)call("isResumed",new Class<?>[]{}),"activity destruction clears foreground state");require(poll()==2,"leaving game queues engine stop");});
    result.putString("stream","PASS "+checks.size()+" in-memory payload checks\n"+String.join("\n",checks)+"\n");finish(Activity.RESULT_OK,result);
   }catch(Throwable e){result.putString("stream","FAIL "+e+"\n");finish(Activity.RESULT_CANCELED,result);}
  }
