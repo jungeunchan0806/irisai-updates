@@ -32,5 +32,12 @@
     "checks": 9,
     "report": "panel3-engine-pipeline.json",
     "original_game_native_input_tested": false
+  },
+  "emulator_game_launch": {
+    "attempted": true,
+    "installed": true,
+    "startup_passed": false,
+    "error": "Thread-2 nv.Q",
+    "report": "panel3-game-launch.json"
   }
 }

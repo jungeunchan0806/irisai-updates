@@ -2,7 +2,7 @@
 
 **새 panel3 게임 APK:** 이전 `packaging2-test.apk`의 Iris 모듈을 새 UI와 실제 인식·이동·슈팅 코드로 교체했습니다. [받을 파일과 설치 제한](https://github.com/jungeunchan0806/irisai-updates/releases/tag/android-ingame-70.757-panel3). 파일명은 `IrisAutoGoal-BrawlStars-70.757-panel3-test-newkey.apk`입니다. **새 서명이므로 기존 수정본·진단 앱·공식 앱 위에 덮어쓸 수 없습니다.** 기존 게임을 삭제하기 전에 진행 상태 보존 여부를 확인해야 합니다.
 
-panel3는 호스트 테스트 49개와 Android 녹화 프레임 실행 검사 9개를 통과했습니다. 후자는 실제 PixelCopy·OpenCV·ONNX·컨트롤러를 사용하지만 입력 수신 메서드는 테스트용입니다. 원본 게임의 JNI 성공·실제 경기·사용자 폰의 튕김 해결을 확인한 결과가 아닙니다. 느린 분석 뒤 입력이 중간 취소되던 경로를 수정했고 OFF·백그라운드·오래된 결과의 입력은 계속 차단합니다. [모듈 실행 결과](investigation/panel3-engine-pipeline.json), [서명·게임 파일 보존 검증](investigation/panel3-validation.json).
+panel3는 호스트 테스트 49개와 Android 녹화 프레임 실행 검사 9개를 통과했습니다. 후자는 실제 PixelCopy·OpenCV·ONNX·컨트롤러를 사용하지만 입력 수신 메서드는 테스트용입니다. 원본 게임의 JNI 성공·실제 경기·사용자 폰의 튕김 해결을 확인한 결과가 아닙니다. 느린 분석 뒤 입력이 중간 취소되던 경로를 수정했고 OFF·백그라운드·오래된 결과의 입력은 계속 차단합니다. [모듈 실행 결과](investigation/panel3-engine-pipeline.json), [서명·게임 파일 보존 검증](investigation/panel3-validation.json). 이번 API 35 에뮬레이터에는 설치됐으나 원본 게임의 `Thread-2 nv.Q`로 종료됐습니다. [실제 게임 시작 검사 결과](investigation/panel3-game-launch.json).
 
 **UI 작업 (`android-control-panel`):** 큰 설정창, 오토골 버튼의 가로·세로 2배인 투명 열기 영역, 전체 UI 숨김/복원, 한국어·영어, Discord 링크를 공유 모듈 `controlui`에 구현했습니다. 라이선스 항목은 사용자 요청으로 제외했습니다. `uipreview`는 별도 앱으로 UI만 검증하며 게임 실행이나 조작은 하지 않습니다. [현재 범위와 제한](ui-distribution/RELEASE-KO.md). 기존 게임의 종료 문제는 여전히 미해결이며 같은 서명의 업데이트용 키가 현재 작업환경에 없습니다.
 

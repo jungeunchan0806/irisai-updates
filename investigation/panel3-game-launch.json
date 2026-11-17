@@ -1,0 +1,31 @@
+{
+  "installed": true,
+  "game_process_alive": false,
+  "button_off_visible": false,
+  "button_on_visible": false,
+  "button_off_again": false,
+  "friendly_matches": 0,
+  "abi": "x86_64,arm64-v8a",
+  "android_api": "35",
+  "start_exit": 0,
+  "initial_button": null,
+  "error": "Game launch/toggle check incomplete; inspect report and screenshots",
+  "candidate_diagnostics": {
+    "crash_summary": [
+      "E/AndroidRuntime( 4376): FATAL EXCEPTION: Thread-2",
+      "E/AndroidRuntime( 4376): Process: com.supercell.brawlstars, PID: 4376",
+      "E/AndroidRuntime( 4376): nv.Q: <opaque native diagnostic omitted>",
+      "E/AndroidRuntime( 4376): \tat nv.aJ.b(Unknown Source:46)",
+      "E/AndroidRuntime( 4376): \tat nv.aJ.a(Unknown Source:0)",
+      "E/AndroidRuntime( 4376): \tat nv.am.run(Unknown Source:27)"
+    ],
+    "exit_info": [
+      "process=com.supercell.brawlstars reason=4 (APP CRASH(EXCEPTION)) subreason=0 (UNKNOWN) status=0",
+      "importance=100 pss=0.00 rss=0.00 description=crash state=empty trace=null"
+    ]
+  },
+  "module_diagnostics": [],
+  "workflow_run": "https://github.com/jungeunchan0806/irisai-updates/actions/runs/44079092015",
+  "physical_android17_tested": false,
+  "apk_sha256": "d5427c59ec08e3e13390baacdfbca058204a8d08aa61b9042ce186ad3028aea5"
+}
