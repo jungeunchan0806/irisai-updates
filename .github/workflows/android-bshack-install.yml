@@ -1,0 +1,40 @@
+name: Check exact panel APK installation on fresh emulator
+on:
+  push:
+    branches: [android-bshack-panel]
+    paths: ['tools/bshack_install_check.py', '.github/workflows/android-bshack-install.yml']
+permissions: {contents: read, actions: read}
+jobs:
+  install:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+        with: {packages: 'platform-tools', log-accepted-android-sdk-licenses: false}
+      - uses: actions/download-artifact@v4
+        with: {name: bshack-apk, run-id: 44097940785, github-token: '${{ github.token }}', path: apk}
+      - name: Verify the APK under test is unchanged
+        run: |
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          m=json.loads(Path('distribution/bshack-panel/manifest.json').read_text())
+          with Path('apk',m['filename']).open('rb') as f:assert hashlib.file_digest(f,'sha256').hexdigest()==m['sha256']
+          PY
+          sudo chmod 666 /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis_playstore
+          arch: x86_64
+          profile: pixel_2
+          disk-size: 12288M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 3072 -cores 2
+          script: python tools/bshack_install_check.py apk/BSHACK-Autogoal-2.1.0-panel-test.apk
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: bshack-fresh-install, path: bshack-install-check/}
