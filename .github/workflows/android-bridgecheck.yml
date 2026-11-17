@@ -1,0 +1,41 @@
+name: Verify real Frida Android UI bridge
+on:
+  push:
+    branches: [android-bshack-panel6]
+    paths: ['bridgecheck/**', 'bshack/**', 'bshackui/**', 'bshackcheck/**', 'controlui/**', '.github/workflows/android-bridgecheck.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  bridge:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+        with: {packages: 'platform-tools platforms;android-35 build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
+      - run: ./gradlew :bshackcheck:assembleDebug --console=plain --max-workers=2
+      - run: |
+          pip install frida==17.5.1
+          curl --fail --location --retry 3 -o /tmp/frida.xz https://github.com/frida/frida/releases/download/17.5.1/frida-server-17.5.1-android-x86_64.xz
+          xz -d /tmp/frida.xz
+          sudo chmod 666 /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 2048 -cores 2
+          script: |
+            adb root
+            adb wait-for-device
+            adb push /tmp/frida /data/local/tmp/frida
+            adb shell chmod 755 /data/local/tmp/frida
+            adb shell '/data/local/tmp/frida >/data/local/tmp/frida.log 2>&1 &'
+            python bridgecheck/check.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: real-bridge-results, path: bridgecheck-results/}
