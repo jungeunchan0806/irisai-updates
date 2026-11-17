@@ -1,6 +1,7 @@
 // Executed inside the existing licensed engine closure. No Java calls from game hooks.
 let _panelHost = null, _panelPending = false, _panelAttempts = 0;
 let _panelWanted = false, _panelQueued = false, _panelForeground = false, _panelError = '';
+let _panelLastTick = 0;
 const _Java = frida_java_bridge_default;
 function _panelStop() { _panelWanted = false; _panelQueued = false; _st.requested = false; }
 function _panelActivate() {
@@ -9,11 +10,17 @@ function _panelActivate() {
 }
 function _panelSurface(surface) {
   if (!_panelHost) return;
-  try { _panelHost.attach(_Java.cast(surface.getContext(), _Java.use('android.app.Activity'))); }
-  catch (e) { _panelError = String(e); }
+  try { _panelHost.attachContext(surface.getContext()); }
+  catch (e) { _panelRecordError('surface', e); }
+}
+function _panelRecordError(stage, error) {
+  _panelError=String(error);
+  console.error('[IRIS BSHACK] '+stage+': '+_panelError);
+  try { if(_panelHost) _panelHost.recordError(stage,_panelError); } catch (_) {}
 }
 function _panelInitialize(app) {
-  const input = app.getAssets().open('iris-panel.dex');
+  const boot=globalThis.__irisBoot || {version:22000,name:'2.2.0',ui:'',recovery:''};
+  const input = boot.ui ? _Java.use('java.io.FileInputStream').$new(boot.ui) : app.getAssets().open('iris-panel.dex');
   const out = _Java.use('java.io.ByteArrayOutputStream').$new();
   const buffer = _Java.array('byte', new Array(8192).fill(0));
   try { let n; while ((n = input.read(buffer)) > 0) out.write(buffer, 0, n); }
@@ -23,6 +30,7 @@ function _panelInitialize(app) {
     _Java.use('java.nio.ByteBuffer').wrap(bytes), app.getClassLoader());
   _panelHost = _Java.ClassFactory.get(loader).use('com.irisai.bshack.PanelHost');
   _panelHost.initialize(_Java.cast(app, _Java.use('android.app.Application')));
+  _panelHost.configure(boot.version,boot.name,boot.recovery);
   console.log('[IRIS BSHACK] UI DEX loaded');
 }
 function _panelFindActivity() {
@@ -68,6 +76,7 @@ function _panelPoll() {
         }
         _panelForeground = _panelHost.isResumed();
         if (!_panelForeground) _panelStop();
+        if(_license.sync) _license.sync(_panelHost);
         for (let i = 0; i < 8; i++) {
           const command = _panelHost.poll();
           if (!command) break;
@@ -84,10 +93,12 @@ function _panelPoll() {
         const status = _license.status();
         if (status.error && !_panelQueued) _panelWanted = false;
         _art();
+        _panelError='';_panelLastTick=Date.now();
+        if(_panelHost.recordState) _panelHost.recordState(JSON.stringify({game:_st.started,foreground:_panelForeground,enabled:_ag.enabled,phase:_ag.phase,auth:status,lastEngineError:_ag.lastError || _st.error || null}));
         _panelHost.update(_ag.enabled, _panelPhase());
-      } catch (e) { _panelError = String(e); _panelStop(); console.error('[IRIS BSHACK] UI: ' + e); }
+      } catch (e) { _panelRecordError('poll',e); _panelStop();try{if(_panelHost)_panelHost.update(false,'UI 연결 오류');}catch(_){} }
       finally { _panelPending = false; }
     }));
-  } catch (e) { _panelPending = false; _panelStop(); console.error('[IRIS BSHACK] Schedule: ' + e); }
+  } catch (e) { _panelPending = false; _panelStop(); _panelRecordError('schedule',e); }
 }
 setInterval(_panelPoll, 250);

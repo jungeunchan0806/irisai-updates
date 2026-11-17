@@ -21,7 +21,7 @@ def patch(data):
       '      const _license = createLicense(frida_java_bridge_default, {\n        surface: _panelSurface,\n        cancel() { _panelWanted = false; },\n        notice(message) { console.log("[IRIS BSHACK] " + message); },')
     # Enforce stop even when the render loop pauses but battle ticks continue.
     text=once(text,'      function _uag(bmc, now) {',
-      '      function _uag(bmc, now) {\n        if (_ag.enabled && (!_panelForeground || _st.requested === false || !_license.isActive())) {\n          _ag.enabled = false; _ag.stopPending = true; _st.requested = false;\n        }')
+      '      function _uag(bmc, now) {\n        if (_ag.enabled && (!_panelForeground || Date.now()-_panelLastTick>3000 || _st.requested === false || !_license.isActive())) {\n          _ag.enabled = false; _ag.stopPending = true; _st.requested = false;\n        }')
     # Android View UI replaces fragile native HUD allocation; retain game engine itself.
     start=text.index('      function _enu(now) {');end=text.index('      function _art() {',start)
     text=text[:start]+'      function _enu(now) {} // UI is owned by PanelHost on Android main thread.\n'+text[end:]
@@ -30,5 +30,9 @@ def patch(data):
     text=once(text,'          _uag(args[0], Date.now());','          _art();\n          _uag(args[0], Date.now());')
     # No unused original source-map or bundle metadata following the actual module.
     text=text.split('export default require_agent();')[0]+'export default require_agent();\n'
+    # Share the already initialized Java runtime with the immutable bootstrap.
+    # Two independent bridges would install competing ART/main-loop hooks.
+    helpers=text[:text.index('// frida-shim:')]
+    text=helpers+'\nvar frida_java_bridge_default=globalThis.__irisJava;\nfunction init_node_globals() {}\nfunction init_frida_java_bridge() {}\n'+text[text.index('// core.mjs\n'):]
     body=text.encode()
     return f"📦\n{len(body)} /agent.js\n✄\n".encode()+body

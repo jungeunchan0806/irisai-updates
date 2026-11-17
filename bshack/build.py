@@ -9,7 +9,11 @@ with a.baseline.open('rb') as f: assert hashlib.file_digest(f,'sha256').hexdiges
 with zipfile.ZipFile(a.baseline) as z,zipfile.ZipFile(a.ui) as ui:
     assert [n for n in ui.namelist() if n.endswith('.dex')]==['classes.dex']
     script=patch(z.read(SCRIPT));dex=ui.read('classes.dex')
-    replacements={SCRIPT:script,'assets/iris-panel.dex':dex}
+    engine=script.split('✄\n'.encode(),1)[1]
+    original=z.read(SCRIPT).decode().split('✄\n',1)[1]
+    bootstrap=(original[:original.index('// core.mjs\n')]+(Path(__file__).parent/'bootstrap.js').read_text()).encode()
+    packed=f"📦\n{len(bootstrap)} /bootstrap.js\n✄\n".encode()+bootstrap
+    replacements={SCRIPT:packed,'assets/iris-panel.dex':dex,'assets/iris-bootstrap.dex':dex,'assets/iris-engine.mjs':engine}
 a.out.parent.mkdir(parents=True,exist_ok=True);repack(a.baseline,a.out,replacements)
 (a.out.parent/'agent.mjs').write_bytes(script.split('✄\n'.encode(),1)[1])
-print(json.dumps({'unsigned_apk':str(a.out),'baseline_sha256':BASE_SHA,'modified':[SCRIPT],'added':['assets/iris-panel.dex'],'script_bytes':len(script),'ui_dex_bytes':len(dex)}))
+print(json.dumps({'unsigned_apk':str(a.out),'baseline_sha256':BASE_SHA,'modified':[SCRIPT],'added':['assets/iris-panel.dex','assets/iris-bootstrap.dex','assets/iris-engine.mjs'],'script_bytes':len(script),'ui_dex_bytes':len(dex)}))

@@ -24,6 +24,8 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         void visibilitySuppressed();
         default boolean nativeEngine() { return false; }
         default void copyHwid() {}
+        default void checkUpdates() {}
+        default void showDiagnostics() {}
     }
     public static final String DISCORD_URL = "https://discord.gg/bshack";
     public static final int TOGGLE_WIDTH_DP = 160, TOGGLE_HEIGHT_DP = 44;
@@ -217,6 +219,7 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
             autoDetail = (TextView) autoCard.getChildAt(1);
             if (actions.nativeEngine()) {
                 card(text("HWID 복사", "Copy HWID"), text("기존 인증용 기기 ID 복사", "Copy the device ID used for registration"), false, actions::copyHwid);
+                card(text("오류 확인", "Diagnostics"), text("오토골 상태와 오류 내용 복사", "View and copy Auto Goal diagnostics"), false, actions::showDiagnostics);
             } else {
             card(text("조작 위치", "Control positions"), text("이동 · 공격 · 가젯 위치 지정", "Set movement, attack and gadget positions"), false,
                 () -> { state.menuOpen = false; state.hidden = false; save(); refresh(); actions.calibrate(); });
@@ -225,6 +228,7 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
             }
         }
         if (tab == 0 || tab == 2) {
+            if(actions.nativeEngine())card(text("업데이트 확인", "Check for updates"), text("새 패치와 변경 내용 확인", "Check for patches and release notes"), false, actions::checkUpdates);
             card(text("언어", "Language"), state.english ? "English · 한국어로 전환" : "한국어 · Switch to English", false,
                 () -> { state.english = !state.english; notice = ""; save(); refresh(); });
             card(state.hidden ? text("UI 다시 표시", "Show UI") : text("UI 전부 숨기기", "Hide all UI"),
@@ -238,6 +242,10 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
     private String statusText(String value) {
         if (!state.english) return value;
         switch (value) {
+            case "요청 처리 중": return "Processing your request";
+            case "UI 응답 없음 · 오류 확인": return "UI not responding · Open Diagnostics";
+            case "UI 연결 오류": return "UI connection error · Open Diagnostics";
+            case "오토골 오류 · 다시 켜세요": return "Auto Goal error · Retry";
             case "인증 준비 중": return "Preparing authorization";
             case "인증 확인 중": return "Checking authorization";
             case "인증 연결 실패": return "Authorization connection failed";

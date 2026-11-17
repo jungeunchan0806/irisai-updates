@@ -4,11 +4,11 @@ import json, subprocess, time, frida
 
 out=Path('bridgecheck-results');out.mkdir(exist_ok=True)
 subprocess.run(['adb','install','-r','bshackcheck/build/outputs/apk/debug/bshackcheck-debug.apk'],check=True)
-subprocess.run(['adb','shell','am','start','-n','com.irisai.bshack.check/com.supercell.brawlstars.GameApp'],check=True)
+subprocess.run(['adb','shell','am','start','-n','com.irisai.bshack.check/com.supercell.brawlstars.GameApp','--ez','bridgecheck','true'],check=True)
 time.sleep(2)
-device=frida.get_usb_device(timeout=15)
-pid=int(subprocess.check_output(['adb','shell','pidof','com.irisai.bshack.check'],text=True).strip())
-session=device.attach(pid)
+subprocess.run(['adb','forward','tcp:27042','tcp:27042'],check=True)
+device=frida.get_device_manager().add_remote_device('127.0.0.1:27042')
+session=device.attach('Gadget')
 source=Path('bridgecheck/java-bridge.js').read_text()+'''
 const _st={started:true,disposed:false,requested:null};
 const _ag={enabled:false,phase:'idle'};

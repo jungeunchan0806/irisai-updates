@@ -15,12 +15,15 @@ jobs:
         with: {distribution: temurin, java-version: '17'}
       - uses: android-actions/setup-android@v3
         with: {packages: 'platform-tools platforms;android-35 build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
-      - run: ./gradlew :bshackcheck:assembleDebug --console=plain --max-workers=2
       - run: |
           pip install frida==17.5.1
-          curl --fail --location --retry 3 -o /tmp/frida.xz https://github.com/frida/frida/releases/download/17.5.1/frida-server-17.5.1-android-x86_64.xz
+          curl --fail --location --retry 3 -o /tmp/frida.xz https://github.com/frida/frida/releases/download/17.5.1/frida-gadget-17.5.1-android-x86_64.so.xz
           xz -d /tmp/frida.xz
+          mkdir -p bshackcheck/src/main/jniLibs/x86_64
+          cp /tmp/frida bshackcheck/src/main/jniLibs/x86_64/libirisgadget.so
+          echo '{"interaction":{"type":"listen","address":"127.0.0.1","port":27042,"on_load":"resume"}}' > bshackcheck/src/main/jniLibs/x86_64/libirisgadget.config.so
           sudo chmod 666 /dev/kvm
+      - run: ./gradlew :bshackcheck:assembleDebug --console=plain --max-workers=2
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -30,11 +33,6 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 2048 -cores 2
           script: |
-            adb root
-            adb wait-for-device
-            adb push /tmp/frida /data/local/tmp/frida
-            adb shell chmod 755 /data/local/tmp/frida
-            adb shell '/data/local/tmp/frida >/data/local/tmp/frida.log 2>&1 &'
             python bridgecheck/check.py
       - uses: actions/upload-artifact@v4
         if: always()
