@@ -19,6 +19,8 @@ public final class InjectPayload {
             AndroidManifestBlock manifest = game.getAndroidManifest();
             if (!"com.supercell.brawlstars".equals(manifest.getPackageName()) || manifest.getVersionCode() != 70757)
                 throw new IllegalArgumentException("Only the verified 70.757 backup is supported");
+            if (manifest.getUsesPermission("android.permission.DETECT_SCREEN_RECORDING") == null)
+                manifest.addUsesPermission("android.permission.DETECT_SCREEN_RECORDING");
             ResXmlElement provider = manifest.getApplicationElement().newElement("provider");
             provider.getOrCreateAndroidAttribute("name", 0x01010003).setValueAsString("com.irisai.autogoal.ingame.InitProvider");
             provider.getOrCreateAndroidAttribute("authorities", 0x01010018).setValueAsString("com.supercell.brawlstars.irisautogoal.init");

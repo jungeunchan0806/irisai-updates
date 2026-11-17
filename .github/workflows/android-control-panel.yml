@@ -1,0 +1,74 @@
+name: Build and verify Android control panel preview
+on:
+  push:
+    branches: [android-control-panel]
+    paths: ['controlui/**', 'uipreview/**', 'ingame/**', 'settings.gradle', 'build.gradle', 'tools/test_control_panel.py', '.github/workflows/android-control-panel.yml', 'ui-distribution/**']
+permissions:
+  contents: read
+jobs:
+  ui-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+          log-accepted-android-sdk-licenses: false
+      - name: Build the shared UI and its game integration
+        run: ./gradlew :controlui:testDebugUnitTest :uipreview:assembleDebug :uipreview:assembleDebugAndroidTest :ingame:assembleRelease :ingame:testReleaseUnitTest :controlui:lintDebug :uipreview:lintDebug :ingame:lintRelease --console=plain --max-workers=2
+      - name: Enable KVM only in this test runner
+        run: sudo chmod 666 /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 3072 -cores 2 -camera-back none -camera-front none
+          script: python tools/test_control_panel.py
+      - name: Prepare clearly named UI-only preview
+        run: |
+          mkdir -p ui-artifacts
+          cp uipreview/build/outputs/apk/debug/uipreview-debug.apk ui-artifacts/IrisAutoGoal-UI-Preview.apk
+          cd ui-artifacts
+          sha256sum IrisAutoGoal-UI-Preview.apk > IrisAutoGoal-UI-Preview.apk.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ui-preview-apk
+          path: ui-artifacts/
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: control-panel-checks
+          path: |
+            control-panel-results/
+            controlui/build/reports/
+            uipreview/build/reports/
+            ingame/build/reports/
+          retention-days: 14
+  publish-preview:
+    needs: ui-test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: {name: ui-preview-apk, path: ui-artifacts}
+      - name: Publish only the separate UI preview, never label it a repaired game
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          tag=android-control-panel-preview1
+          if ! gh release view "$tag" > /dev/null 2>&1; then
+            gh release create "$tag" --target "$GITHUB_SHA" --title 'Iris UI 미리보기 · 게임 수정 APK 아님' --notes-file ui-distribution/RELEASE-KO.md --prerelease --latest=false
+          else
+            gh release edit "$tag" --notes-file ui-distribution/RELEASE-KO.md --prerelease --latest=false
+          fi
+          gh release upload "$tag" ui-artifacts/IrisAutoGoal-UI-Preview.apk ui-artifacts/IrisAutoGoal-UI-Preview.apk.sha256 --clobber

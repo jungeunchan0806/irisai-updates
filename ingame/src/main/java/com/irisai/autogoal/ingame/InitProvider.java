@@ -24,10 +24,14 @@ public final class InitProvider extends ContentProvider {
                 catch (RuntimeException | LinkageError e) { Log.e("IrisAutoGoal", "Attach failed", e); }
             }
             @Override public void onActivityPaused(Activity a) {
-                GameController c = controllers.get(a); if (c != null) c.pause();
+                GameController c = controllers.get(a);
+                if (c != null) try { c.pause(); }
+                catch (RuntimeException | LinkageError e) { Log.e("IrisAutoGoal", "Pause failed", e); }
             }
             @Override public void onActivityDestroyed(Activity a) {
-                GameController c = controllers.remove(a); if (c != null) c.close();
+                GameController c = controllers.remove(a);
+                if (c != null) try { c.close(); }
+                catch (RuntimeException | LinkageError e) { Log.e("IrisAutoGoal", "Cleanup failed", e); }
             }
             @Override public void onActivityCreated(Activity a, Bundle b) {}
             @Override public void onActivityStarted(Activity a) {}

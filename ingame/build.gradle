@@ -29,6 +29,7 @@ tasks.register('copyPayloadAssets', Copy) {
 }
 tasks.named('preBuild').configure { dependsOn('copyPayloadAssets') }
 dependencies {
+    implementation project(':controlui')
     implementation('org.opencv:opencv:4.12.0') {
         // The game already has its own (R8-processed) Kotlin runtime. Only the Java
         // OpenCV API is used here; packaging a second stdlib would shadow game types.

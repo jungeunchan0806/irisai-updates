@@ -11,3 +11,5 @@ research-private/
 
 __pycache__/
 *.pyc
+control-panel-results/
+ui-artifacts/

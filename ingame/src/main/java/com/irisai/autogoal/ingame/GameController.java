@@ -1,12 +1,8 @@
 package com.irisai.autogoal.ingame;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.Color;
-import android.graphics.Rect;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
@@ -15,6 +11,7 @@ import android.view.*;
 import android.widget.*;
 import com.irisai.autogoal.GoalPlanner;
 import com.irisai.autogoal.SessionGate;
+import com.irisai.autogoal.ui.IrisControlPanel;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -26,7 +23,7 @@ final class GameController implements AutoCloseable {
     private final SessionGate gate = new SessionGate();
     private final SharedPreferences preferences;
     private final ControlLayer layer;
-    private final Button toggle;
+    private final IrisControlPanel panel;
     private final ViewTreeObserver.OnWindowFocusChangeListener focus;
     private NativeBridge bridge;
     private Stroke stroke;
@@ -43,14 +40,13 @@ final class GameController implements AutoCloseable {
         loadControls();
         layer = new ControlLayer();
         layer.setClipChildren(false);
-        toggle = new Button(activity);
-        toggle.setAllCaps(false); toggle.setTextSize(12); toggle.setTextColor(Color.WHITE);
-        toggle.setPadding(dp(10), dp(3), dp(10), dp(3)); toggle.setMinHeight(0); toggle.setMinimumHeight(0);
-        toggle.setContentDescription("오토골 켜기 또는 끄기. 길게 누르면 조작 위치 설정");
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(dp(190), dp(48), Gravity.TOP | Gravity.CENTER_HORIZONTAL);
-        params.topMargin = dp(48); layer.addView(toggle, params);
-        toggle.setOnClickListener(v -> { if (gate.enabled()) disable("길게 눌러 위치 설정"); else enable(); });
-        toggle.setOnLongClickListener(v -> { settings(); return true; });
+        panel = new IrisControlPanel(activity, new IrisControlPanel.Actions() {
+            @Override public void toggleAutoGoal() { if (gate.enabled()) disable("길게 눌러 위치 설정"); else enable(); }
+            @Override public void calibrate() { beginCalibration(); }
+            @Override public void resetControls() { preferences.edit().clear().apply(); loadControls(); }
+            @Override public void visibilitySuppressed() { layer.cancelCalibration(); }
+        }, false); // Local-visible/capture-invisible mode is not supported by public Android APIs.
+        layer.addView(panel, new FrameLayout.LayoutParams(-1, -1));
         focus = hasFocus -> { if (!hasFocus) disable("게임으로 돌아오면 다시 켜세요"); };
         paint();
     }
@@ -63,9 +59,11 @@ final class GameController implements AutoCloseable {
             root.getViewTreeObserver().addOnWindowFocusChangeListener(focus);
         }
         layer.bringToFront();
-        ui.removeCallbacks(poll); ui.post(poll);
+        panel.resume();
+        ui.removeCallbacks(poll);
+        if (gate.ready()) ui.post(poll);
     }
-    void pause() { resumed = false; layer.cancelCalibration(); disable("게임으로 돌아오면 다시 켜세요"); }
+    void pause() { resumed = false; layer.cancelCalibration(); disable("게임으로 돌아오면 다시 켜세요"); panel.pause(); }
     private void enable() {
         if (closed || !resumed || !activity.hasWindowFocus()) return;
         try {
@@ -81,13 +79,16 @@ final class GameController implements AutoCloseable {
                 try {
                     if (engine == null) engine = new Engine(activity.getApplicationContext());
                     engine.planner.reset();
-                    ui.post(() -> { if (!closed && gate.enabled() && epoch == gate.generation()) { gate.setAccess(true); phase = "브롤볼 대기"; paint(); } });
+                    ui.post(() -> { if (!closed && gate.enabled() && epoch == gate.generation()) {
+                        gate.setAccess(true); phase = "브롤볼 대기"; paint(); ui.removeCallbacks(poll); ui.post(poll);
+                    } });
                 } catch (Exception | LinkageError e) { ui.post(() -> fail(epoch, "모델을 시작하지 못했습니다", e)); }
             });
         } catch (Exception | LinkageError e) { fail(gate.generation(), "70.757 내부 입력 연결 실패", e); }
     }
     private void disable(String reason) {
         gate.setEnabled(false); gate.invalidate();
+        ui.removeCallbacks(poll);
         if (stroke != null) stroke.cancel();
         phase = reason; paint();
     }
@@ -101,10 +102,10 @@ final class GameController implements AutoCloseable {
                 && gate.allows(epoch, capturedAt, SystemClock.uptimeMillis());
     }
     private void tick() {
-        if (closed) return;
+        if (closed || !resumed || !gate.enabled()) return;
         if (gate.enabled() && (!resumed || !activity.hasWindowFocus() || !validSurface())) disable("게임 화면을 확인하세요");
         if (gate.ready() && !busy && (stroke == null || !stroke.busy())) capture();
-        ui.postDelayed(poll, 100);
+        if (gate.enabled() && resumed && !closed) ui.postDelayed(poll, 100);
     }
     private void capture() {
         long epoch = gate.generation(), at = SystemClock.uptimeMillis();
@@ -165,36 +166,27 @@ final class GameController implements AutoCloseable {
     private void fail(long epoch, String message, Throwable error) {
         if (closed || epoch != gate.generation()) return;
         Log.e("IrisAutoGoal", message, error); disable(message);
-        Toast.makeText(activity, message, Toast.LENGTH_LONG).show();
     }
-    private int dp(int value) { return Math.round(value * activity.getResources().getDisplayMetrics().density); }
     private void paint() {
-        toggle.setText("오토골 " + (gate.enabled() ? "ON" : "OFF") + "\n" + phase);
-        GradientDrawable background = new GradientDrawable();
-        background.setColor(gate.enabled() ? 0xe6227656 : 0xe629344a);
-        background.setCornerRadius(dp(16)); background.setStroke(dp(1), 0x99ffffff);
-        toggle.setBackground(background);
+        panel.setEngineState(gate.enabled(), phase);
     }
     private void loadControls() {
         moveX = preferences.getFloat("moveX", 220f / 1920); moveY = preferences.getFloat("moveY", 870f / 1080);
         attackX = preferences.getFloat("attackX", 1725f / 1920); attackY = preferences.getFloat("attackY", 800f / 1080);
         gadgetX = preferences.getFloat("gadgetX", 1640f / 1920); gadgetY = preferences.getFloat("gadgetY", 990f / 1080);
     }
-    private void settings() {
+    private void beginCalibration() {
         disable("길게 눌러 위치 설정");
         try {
             if (bridge == null) bridge = new NativeBridge(activity);
             surface = bridge.surface();
         } catch (Exception | LinkageError e) { fail(gate.generation(), "게임 화면 준비 중", e); return; }
-        new AlertDialog.Builder(activity).setTitle("오토골 조작 위치")
-                .setMessage("브롤볼 화면에서 이동·공격·가젯 버튼의 가운데를 차례로 지정하세요. 직접 게임 화면을 터치하면 오토골은 꺼집니다.")
-                .setPositiveButton("위치 지정", (dialog, which) -> { if (validSurface()) layer.beginCalibration(); })
-                .setNeutralButton("기본값", (dialog, which) -> { preferences.edit().clear().apply(); loadControls(); })
-                .setNegativeButton("닫기", null).show();
+        if (validSurface()) layer.beginCalibration();
     }
     @Override public void close() {
         if (closed) return;
         disable("종료"); closed = true; ui.removeCallbacks(poll);
+        panel.close();
         ViewGroup root = (ViewGroup) activity.getWindow().getDecorView();
         if (root.getViewTreeObserver().isAlive()) root.getViewTreeObserver().removeOnWindowFocusChangeListener(focus);
         root.removeView(layer);
@@ -203,25 +195,19 @@ final class GameController implements AutoCloseable {
     private final class ControlLayer extends FrameLayout {
         private int step = -1;
         private final double[] values = new double[6];
-        private TextView instruction;
         ControlLayer() { super(activity); setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO); }
         void beginCalibration() {
-            step = 0; toggle.setVisibility(View.GONE);
-            instruction = new TextView(activity); instruction.setTextColor(Color.WHITE); instruction.setTextSize(18);
-            instruction.setBackgroundColor(0xd0222938); instruction.setPadding(dp(16), dp(10), dp(16), dp(10));
-            FrameLayout.LayoutParams p = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.CENTER_HORIZONTAL);
-            p.topMargin = dp(50); addView(instruction, p); prompt();
+            step = 0; prompt();
         }
-        private void prompt() { instruction.setText(new String[]{"① 이동 조이스틱 가운데를 누르세요", "② 빨간 공격 버튼 가운데를 누르세요", "③ 가젯 버튼 가운데를 누르세요"}[step]); }
+        private void prompt() { panel.calibrationStep(step); }
         void cancelCalibration() {
             if (step < 0) return;
-            removeView(instruction); instruction = null; step = -1; toggle.setVisibility(View.VISIBLE);
+            step = -1; panel.calibrationStep(-1);
         }
         @Override public boolean dispatchTouchEvent(MotionEvent event) {
             if (step >= 0) {
                 if (event.getActionMasked() == MotionEvent.ACTION_UP && validSurface()) {
-                    Rect hint = new Rect(); instruction.getHitRect(hint);
-                    if (hint.contains((int) event.getX(), (int) event.getY())) { cancelCalibration(); return true; }
+                    if (panel.hitCalibrationHint(event.getX(), event.getY())) { cancelCalibration(); return true; }
                     int[] origin = new int[2]; surface.getLocationOnScreen(origin);
                     double x = (event.getRawX() - origin[0]) / surface.getWidth(), y = (event.getRawY() - origin[1]) / surface.getHeight();
                     if (x > .02 && x < .98 && y > .1 && y < .98) {
@@ -230,16 +216,14 @@ final class GameController implements AutoCloseable {
                             preferences.edit().putFloat("moveX", (float) values[0]).putFloat("moveY", (float) values[1])
                                     .putFloat("attackX", (float) values[2]).putFloat("attackY", (float) values[3])
                                     .putFloat("gadgetX", (float) values[4]).putFloat("gadgetY", (float) values[5]).apply();
-                            loadControls(); removeView(instruction); instruction = null; step = -1;
-                            toggle.setVisibility(View.VISIBLE); phase = "위치 저장됨"; paint();
+                            loadControls(); step = -1; panel.calibrationStep(-1); phase = "위치 저장됨"; paint();
                         } else prompt();
                     }
                 }
                 return true;
             }
             if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
-                Rect bounds = new Rect(); toggle.getHitRect(bounds);
-                if (!bounds.contains((int) event.getX(), (int) event.getY()) && gate.enabled()) disable("수동 조작 · 다시 누르면 ON");
+                if (!panel.isUiTouch(event.getX(), event.getY()) && gate.enabled()) disable("수동 조작 · 다시 누르면 ON");
             }
             return super.dispatchTouchEvent(event);
         }
