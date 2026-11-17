@@ -37,7 +37,7 @@ public final class PreviewChecks extends Instrumentation {
                 require(activity.board.taps == before + 1, "outside UI touches reach game area");
                 tap(opener.getX() + opener.getWidth() / 2f, opener.getY() + opener.getHeight() / 2f);
             });
-            waitForIdleSync(); screenshot("panel-ko.png");
+            awaitMenu(); screenshot("panel-ko.png");
             onUi(() -> {
                 require(byText(activity.root, "IRIS  /  컨트롤 센터").isShown(), "menu opens");
                 ((View) byText(activity.root, "언어").getParent()).performClick();
@@ -51,6 +51,9 @@ public final class PreviewChecks extends Instrumentation {
                 hide.requestRectangleOnScreen(new android.graphics.Rect(0, 0, hide.getWidth(), hide.getHeight()), true);
                 hide.performClick();
                 require(!byDescription(activity.root, "Toggle Auto Goal").isShown(), "hide all removes HUD");
+            });
+            screenshot("hidden.png");
+            onUi(() -> {
                 byDescription(activity.root, "Open Iris settings").performClick();
                 require(byText(activity.root, "Show UI").isShown(), "hidden UI can be recovered");
                 ((View) byText(activity.root, "Show UI").getParent()).performClick();
@@ -73,11 +76,33 @@ public final class PreviewChecks extends Instrumentation {
         if (failure.get() != null) throw new AssertionError(failure.get());
     }
     private void screenshot(String name) throws IOException {
-        waitForIdleSync(); SystemClock.sleep(150);
+        waitForIdleSync();
+        java.util.concurrent.CountDownLatch frame = new java.util.concurrent.CountDownLatch(1);
+        onUi(() -> {
+            activity.root.getViewTreeObserver().registerFrameCommitCallback(frame::countDown);
+            activity.root.postInvalidateOnAnimation();
+        });
+        try {
+            if (!frame.await(5, java.util.concurrent.TimeUnit.SECONDS)) throw new IOException("Frame did not commit");
+        } catch (InterruptedException e) { Thread.currentThread().interrupt(); throw new IOException(e); }
+        SystemClock.sleep(50);
         Bitmap b = getUiAutomation().takeScreenshot();
         if (b == null) throw new IOException("Screenshot unavailable");
         try (FileOutputStream out = new FileOutputStream(new File(directory, name))) { b.compress(Bitmap.CompressFormat.PNG, 100, out); }
         finally { b.recycle(); }
+    }
+    private void awaitMenu() {
+        long deadline = SystemClock.uptimeMillis() + 5000;
+        java.util.concurrent.atomic.AtomicBoolean shown = new java.util.concurrent.atomic.AtomicBoolean();
+        while (SystemClock.uptimeMillis() < deadline) {
+            onUi(() -> {
+                TextView title = byText(activity.root, "IRIS  /  컨트롤 센터");
+                shown.set(title != null && title.isShown() && title.getWidth() > 0);
+            });
+            if (shown.get()) return;
+            SystemClock.sleep(30);
+        }
+        throw new AssertionError("The transparent opener did not display the menu");
     }
     private void tap(float x, float y) {
         long now = SystemClock.uptimeMillis();
