@@ -6,3 +6,4 @@ include ':app'
 include(":probe")
 include(":ingame")
 include ':controlui', ':uipreview'
+include ':enginecheck'

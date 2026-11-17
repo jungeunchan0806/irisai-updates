@@ -1,0 +1,43 @@
+name: Verify actual auto-goal pipeline on recorded Android frames
+on:
+  push:
+    branches: [android-ingame-panel]
+    paths: ['app/src/**', 'ingame/**', 'controlui/**', 'enginecheck/**', 'settings.gradle', '.github/workflows/android-engine-check.yml', 'tools/test_engine_pipeline.py']
+permissions:
+  contents: read
+jobs:
+  engine-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+          log-accepted-android-sdk-licenses: false
+      - name: Build real game module and test-only host app
+        run: ./gradlew :app:testDebugUnitTest :ingame:testReleaseUnitTest :controlui:testDebugUnitTest :ingame:assembleRelease :ingame:lintRelease :enginecheck:assembleDebug :enginecheck:assembleDebugAndroidTest --console=plain --max-workers=2
+      - name: Enable KVM for disposable emulator
+        run: sudo chmod 666 /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 3072 -cores 2 -camera-back none -camera-front none
+          script: python tools/test_engine_pipeline.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: engine-pipeline-checks
+          path: |
+            engine-check-results/
+            app/build/test-results/
+            ingame/build/test-results/
+            ingame/build/reports/lint-results-release.xml
+            controlui/build/test-results/
+          retention-days: 14

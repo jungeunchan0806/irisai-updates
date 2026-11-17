@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:label="Iris engine test only" android:theme="@android:style/Theme.Material.NoActionBar.Fullscreen" android:allowBackup="false">
+        <activity android:name="com.irisai.autogoal.ingame.EngineCheckActivity" android:screenOrientation="landscape" android:exported="true" />
+    </application>
+</manifest>

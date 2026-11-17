@@ -1,0 +1,34 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.irisai.autogoal.enginecheck'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'com.irisai.autogoal.enginecheck'
+        minSdk 32
+        targetSdk 35
+        versionCode 1
+        versionName 'test-only'
+        testInstrumentationRunner 'com.irisai.autogoal.ingame.EngineChecks'
+        ndk { abiFilters 'x86_64' }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    sourceSets {
+        main {
+            java.srcDirs += ['../app/src/main/java', '../ingame/src/main/java']
+            assets.srcDirs = [layout.buildDirectory.dir('checkAssets')]
+        }
+    }
+    androidResources { noCompress += ['onnx'] }
+}
+tasks.register('copyEngineCheckAssets') {
+    doLast {
+        copy { from('../app/src/main/assets'); into(layout.buildDirectory.dir('checkAssets/iris_autogoal')) }
+        copy { from('../app/src/test/resources/fixtures'); into(layout.buildDirectory.dir('checkAssets/fixtures')) }
+    }
+}
+tasks.named('preBuild').configure { dependsOn('copyEngineCheckAssets') }
+dependencies {
+    implementation project(':controlui')
+    implementation('org.opencv:opencv:4.12.0') { exclude group: 'org.jetbrains.kotlin'; exclude group: 'org.jetbrains' }
+    implementation 'com.microsoft.onnxruntime:onnxruntime-android:1.23.2'
+}

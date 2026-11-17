@@ -4,6 +4,8 @@ local.properties
 *.jks
 *.keystore
 *.password
+*.p12
+*.pfx
 
 **/node_modules/
 inprocess/dist/

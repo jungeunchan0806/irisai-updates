@@ -37,4 +37,20 @@ public class DetectorIntegrationTest {
             assertTrue("Expected several visible walls, found "+walls,walls>=5);
         }finally{image.release();}
     }
+    @Test public void reusedTensorUpdatesPixelsAndResetsLetterboxAfterDifferentFrame()throws Exception{
+        Mat game=frame("kickoff"),blank=new Mat(640,320,CvType.CV_8UC3,new Scalar(0,0,0));
+        try(YoloDetector detector=new YoloDetector(model("mainInGameModel.onnx"))){
+            List<YoloDetector.Detection> first=detector.detect(game,.4f,12);
+            assertTrue(first.stream().anyMatch(d->d.kind==2));
+            assertTrue("A reused tensor must see the new blank pixels",detector.detect(blank,.4f,12).isEmpty());
+            List<YoloDetector.Detection> again=detector.detect(game,.4f,12);
+            assertEquals(first.size(),again.size());
+            for(int i=0;i<first.size();i++){
+                assertEquals(first.get(i).kind,again.get(i).kind);
+                assertEquals(first.get(i).score,again.get(i).score,1e-5);
+                assertEquals(first.get(i).box.x1,again.get(i).box.x1,1e-4);
+                assertEquals(first.get(i).box.y1,again.get(i).box.y1,1e-4);
+            }
+        }finally{game.release();blank.release();}
+    }
 }
