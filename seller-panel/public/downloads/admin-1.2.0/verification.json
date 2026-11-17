@@ -1,0 +1,31 @@
+{
+  "version": "1.2.0",
+  "files": [
+    {
+      "name": "BSHACK-Admin-Android-1.2.0.apk",
+      "bytes": 16861,
+      "sha256": "4b0f301e70403afaff1c737bc340f6c1fdf39e79527a131aba9136725c8fac54"
+    },
+    {
+      "name": "BSHACK-Admin-Windows-1.2.0.exe",
+      "bytes": 1817088,
+      "sha256": "b7f76d31af52ac604b331663e346ff6222fb5ea9a11207e8c18a161b4668e9ea"
+    }
+  ],
+  "android_signer_matches_previous": true,
+  "android_version_code": 3,
+  "android_signature_schemes": [
+    "v1",
+    "v2",
+    "v3"
+  ],
+  "android_zip_crc": "pass",
+  "android_alignment": "pass",
+  "windows_arch": "amd64",
+  "windows_subsystem": "GUI",
+  "server_auth_tests_passed": 18,
+  "typescript": "pass",
+  "actual_android_device_test": false,
+  "actual_windows_device_test": false,
+  "credentials_in_binaries": false
+}

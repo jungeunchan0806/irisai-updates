@@ -7,3 +7,7 @@ include(":probe")
 include(":ingame")
 include ':controlui', ':uipreview'
 include ':enginecheck'
+
+include ':bshackui'
+
+include ":bshackcheck"

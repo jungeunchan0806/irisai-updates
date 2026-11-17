@@ -1,0 +1,21 @@
+{
+  "baseline_sha256": "8d595381fe0247dbfc06bd03879f68828d1dc1967647e830d0c51745d810f082",
+  "sha256": "809079b2bea554c3908405794835d4d84ef630c5554397e94ca5b097c5926c3d",
+  "bytes": 2003359222,
+  "unchanged_entries_byte_verified": 38360,
+  "modified_entries": [
+    "lib/arm64-v8a/libosu.data.so"
+  ],
+  "added_entries": [
+    "assets/iris-panel.dex"
+  ],
+  "manifest_and_original_dex_preserved": true,
+  "game_native_libraries_preserved": true,
+  "all_crc": "pass",
+  "physical_device_test": "not performed",
+  "friendly_match_test": "not performed",
+  "baseline_url": "https://github.com/jungeunchan0806/irisai-updates/releases/download/android-bshack-hwid-v2.0.0/BSHACK-Autogoal-Licensed.apk",
+  "patch_sha256": "30edeada405ace38af4f9f08a871fc6b678a10966664b05ceec95906dcaac493",
+  "filename": "BSHACK-Autogoal-2.1.0-panel-test.apk",
+  "signer_certificate_sha256": "a40da80a59d170caa950cf15c18c454d47a39b26989d8b640ecd745ba71bf5dc"
+}

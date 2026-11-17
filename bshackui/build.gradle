@@ -1,0 +1,9 @@
+plugins { id 'com.android.application' }
+android {
+ namespace 'com.irisai.bshack'
+ compileSdk 35
+ defaultConfig { applicationId 'com.irisai.bshack.payload'; minSdk 32; targetSdk 35; versionCode 1; versionName '2.1.0-test' }
+ buildTypes { release { minifyEnabled false } }
+ compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+dependencies { implementation project(':controlui') }

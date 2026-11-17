@@ -22,6 +22,9 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         void calibrate();
         void resetControls();
         void visibilitySuppressed();
+        default boolean nativeEngine() { return false; }
+        default void copyHwid() {}
+        default void showLicenseDialog() {}
     }
     public static final String DISCORD_URL = "https://discord.gg/bshack";
     public static final int TOGGLE_WIDTH_DP = 160, TOGGLE_HEIGHT_DP = 44;
@@ -66,7 +69,7 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         hud = new LinearLayout(activity); hud.setOrientation(LinearLayout.VERTICAL);
         auto = button(""); auto.setTextSize(12); auto.setMaxLines(2); auto.setEllipsize(android.text.TextUtils.TruncateAt.END);
         auto.setOnClickListener(v -> actions.toggleAutoGoal());
-        auto.setOnLongClickListener(v -> { state.menuOpen = true; tab = 1; refresh(); return true; });
+        auto.setOnLongClickListener(v -> { if (actions.nativeEngine()) { actions.copyHwid(); return true; } state.menuOpen = true; tab = 1; refresh(); return true; });
         hud.addView(auto, new LinearLayout.LayoutParams(dp(TOGGLE_WIDTH_DP), dp(TOGGLE_HEIGHT_DP)));
         link = button("discord.gg/bshack"); link.setTextSize(11);
         link.setBackground(tile(0xe51b2949, 0xe5101830, 0xff4677b0, 8));
@@ -213,10 +216,15 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
             autoCard = card(text("오토골", "Auto Goal"), (enabled ? "ON · " : "OFF · ") + statusText(phase), enabled,
                 () -> { actions.toggleAutoGoal(); refresh(); });
             autoDetail = (TextView) autoCard.getChildAt(1);
+            if (actions.nativeEngine()) {
+                card(text("HWID 복사", "Copy HWID"), text("기존 인증용 기기 ID 복사", "Copy the device ID used for registration"), false, actions::copyHwid);
+                card(text("키 등록", "Register key"), text("기존 구매자 키 입력", "Enter your buyer key"), false, actions::showLicenseDialog);
+            } else {
             card(text("조작 위치", "Control positions"), text("이동 · 공격 · 가젯 위치 지정", "Set movement, attack and gadget positions"), false,
                 () -> { state.menuOpen = false; state.hidden = false; save(); refresh(); actions.calibrate(); });
             card(text("위치 초기화", "Reset positions"), text("조작 위치를 기본값으로 되돌립니다", "Restore default control positions"), false,
                 () -> { actions.resetControls(); notice = text("기본 위치로 되돌렸습니다", "Default positions restored"); refresh(); });
+            }
         }
         if (tab == 0 || tab == 2) {
             card(text("언어", "Language"), state.english ? "English · 한국어로 전환" : "한국어 · Switch to English", false,

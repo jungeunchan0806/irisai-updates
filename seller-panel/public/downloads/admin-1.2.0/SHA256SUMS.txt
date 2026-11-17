@@ -1,0 +1,2 @@
+4b0f301e70403afaff1c737bc340f6c1fdf39e79527a131aba9136725c8fac54  BSHACK-Admin-Android-1.2.0.apk
+b7f76d31af52ac604b331663e346ff6222fb5ea9a11207e8c18a161b4668e9ea  BSHACK-Admin-Windows-1.2.0.exe
