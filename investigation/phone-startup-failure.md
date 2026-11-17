@@ -2,6 +2,14 @@
 
 Status: **unresolved; no fixed game APK has been produced**. The diagnostic APK is a temporary replacement used to read prior app exits, not a game fix. Its own successful emulator tests do not establish that the game works.
 
+## Latest report, 2026-11-17
+
+The user now reports reaching a loading-success indication before intermittent stuttering and exit. They could not provide a fresh trace because the diagnostic app itself does not open. The older `nv.s: 01` stack below therefore does **not** establish the cause of this later failure. No new APK has been tested on the user's phone in this session.
+
+The previous diagnostic replaces the game package but uses its own launcher activity, labelled **Iris 오류 확인**. The installer **Open** action or that app-drawer entry must be used; an older Brawl Stars shortcut can point to an activity absent from the diagnostic package. This is a launch-path check, not an established diagnosis or repair. Do not uninstall the game or clear its data to try it.
+
+The control-panel branch stops Iris polling while OFF or paused and catches its own controller lifecycle failures. Those changes compile and the separate UI preview passes emulator checks, but they do not prove a repair of the original game's exit. The old game signing key is unavailable in this workspace, so no same-certificate game update was built. See [current UI verification and limits](control-panel-validation.json).
+
 ## Evidence
 
 The user supplied a diagnostic report from an ARM64 Android 17 / API 37 phone. The game exits before the logo. The user reports that the official game ran normally on the same phone. The official app's exact version was not independently established, and the assistant has no direct connection to this phone.
