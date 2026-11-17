@@ -1,7 +1,7 @@
 {
   "baseline_sha256": "8d595381fe0247dbfc06bd03879f68828d1dc1967647e830d0c51745d810f082",
-  "sha256": "809079b2bea554c3908405794835d4d84ef630c5554397e94ca5b097c5926c3d",
-  "bytes": 2003359222,
+  "sha256": "2eb17f97040dd941f20fbc3dea0c56170e98415e8a8d2711bf3b6b8866237cb4",
+  "bytes": 2003359186,
   "unchanged_entries_byte_verified": 38360,
   "modified_entries": [
     "lib/arm64-v8a/libosu.data.so"

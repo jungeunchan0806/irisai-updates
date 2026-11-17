@@ -1,6 +1,6 @@
 다운로드할 파일: **BSHACK-Autogoal-2.1.0-panel-test.apk**
 
-사용자가 제공한 `BSHACK-Autogoal-Licensed.apk`를 기준으로 수정했습니다. 이 파일과 같은 AOSP 테스트 인증서로 서명했습니다. Supercell 공식 서명이나 이전 Iris panel3 서명이 아닙니다.
+사용자가 제공한 `BSHACK-Autogoal-Licensed.apk`를 기준으로 수정했습니다. 이 파일과 같은 AOSP 테스트 인증서로 서명했습니다. Supercell 공식 서명이나 이전 Iris panel3 서명이 아닙니다. 제공된 기준 APK의 매니페스트 버전은 `70.648 (70648)`이며 그대로 유지했습니다.
 
 - 기존 AndroidManifest, 게임 DEX, 네이티브 라이브러리와 실제 게임 내부 오토골 엔진 보존.
 - 네이티브 렌더링 콜백의 Java 호출을 분리하고 기존 네이티브 HUD 할당 대신 별도 Android UI 사용.

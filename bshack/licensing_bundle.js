@@ -389,7 +389,7 @@ function createLicense(Java, handlers, options = {}) {
       if (consent()) refresh();
     });
   }, 6e4);
-  return { tap: () => deferred(tap), copy: () => deferred(copy2), dialog: () => deferred(showDialog),
+  return { tap: () => { initError = null; deferred(tap); }, copy: () => deferred(copy2), dialog: () => deferred(showDialog),
     bindView(value) { if (!view || !view.equals(value)) { if (view) view.$dispose(); view = Java.retain(value); } },
     isActive: () => ready && lease.active(), press: () => {
     try {

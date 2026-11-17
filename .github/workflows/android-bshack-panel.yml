@@ -107,5 +107,5 @@ jobs:
           notes+='\n[이번 검사 결과](https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GITHUB_RUN_ID']+')\n'
           Path('release-notes.md').write_text(notes)
           PY
-          gh release create android-bshack-70.757-panel4 --target "$GITHUB_SHA" --title 'BSHACK 오토골 · 기존 서명 보존 · panel4 시험판' --notes-file release-notes.md --prerelease --latest=false
-          gh release upload android-bshack-70.757-panel4 apk/* bshack-game-launch/result.json
+          gh release create android-bshack-panel4 --target "$GITHUB_SHA" --title 'BSHACK 오토골 · 기존 서명 보존 · panel4 시험판' --notes-file release-notes.md --prerelease --latest=false
+          gh release upload android-bshack-panel4 apk/* bshack-game-launch/result.json

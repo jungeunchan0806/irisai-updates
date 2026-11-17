@@ -28,7 +28,7 @@ public final class Checks extends Instrumentation {
    ui(()->{
     View toggle=find(root(),"오토골 켜기 또는 끄기"),opener=find(root(),"Iris 설정 열기");
     require(toggle!=null&&toggle.isShown(),"in-memory DEX attaches UI to game-shaped Activity");
-    require(opener.getWidth()==toggle.getWidth()*2&&opener.getHeight()==toggle.getHeight()*2,"opener exactly 2x toggle dimensions");
+    require(Math.abs(opener.getWidth()-toggle.getWidth()*2)<=1&&Math.abs(opener.getHeight()-toggle.getHeight()*2)<=1,"opener 2x toggle dimensions within pixel rounding");
     toggle.performClick();require(poll()==1&&poll()==0,"tap queues one engine toggle");
     toggle.performLongClick();require(poll()==3,"long press requests original HWID copy");
     call("update",new Class<?>[]{boolean.class,String.class},true,"골대로 운반");require(((TextView)toggle).getText().toString().contains("ON"),"native state updates HUD");

@@ -1,7 +1,7 @@
 {
   "baseline_sha256": "8d595381fe0247dbfc06bd03879f68828d1dc1967647e830d0c51745d810f082",
-  "sha256": "809079b2bea554c3908405794835d4d84ef630c5554397e94ca5b097c5926c3d",
-  "bytes": 2003359222,
+  "sha256": "2eb17f97040dd941f20fbc3dea0c56170e98415e8a8d2711bf3b6b8866237cb4",
+  "bytes": 2003359186,
   "unchanged_entries_byte_verified": 38360,
   "modified_entries": [
     "lib/arm64-v8a/libosu.data.so"
@@ -15,7 +15,10 @@
   "physical_device_test": "not performed",
   "friendly_match_test": "not performed",
   "baseline_url": "https://github.com/jungeunchan0806/irisai-updates/releases/download/android-bshack-hwid-v2.0.0/BSHACK-Autogoal-Licensed.apk",
-  "patch_sha256": "30edeada405ace38af4f9f08a871fc6b678a10966664b05ceec95906dcaac493",
+  "patch_sha256": "f978e860b3b596ca95e8f3eddd9a13fd9ef938affe4370af4cfbf55c2588cf43",
   "filename": "BSHACK-Autogoal-2.1.0-panel-test.apk",
-  "signer_certificate_sha256": "a40da80a59d170caa950cf15c18c454d47a39b26989d8b640ecd745ba71bf5dc"
+  "signer_certificate_sha256": "a40da80a59d170caa950cf15c18c454d47a39b26989d8b640ecd745ba71bf5dc",
+  "baseline_manifest_version_name": "70.648",
+  "baseline_manifest_version_code": 70648,
+  "baseline_manifest_compile_sdk": 37
 }
