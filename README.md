@@ -2,6 +2,12 @@
 
 **UI 작업 (`android-control-panel`):** 큰 설정창, 오토골 버튼의 가로·세로 2배인 투명 열기 영역, 전체 UI 숨김/복원, 한국어·영어, Discord 링크를 공유 모듈 `controlui`에 구현했습니다. 라이선스 항목은 사용자 요청으로 제외했습니다. `uipreview`는 별도 앱으로 UI만 검증하며 게임 실행이나 조작은 하지 않습니다. [현재 범위와 제한](ui-distribution/RELEASE-KO.md). 기존 게임의 종료 문제는 여전히 미해결이며 같은 서명의 업데이트용 키가 현재 작업환경에 없습니다.
 
+[UI 미리보기 APK 받기](https://github.com/jungeunchan0806/irisai-updates/releases/tag/android-control-panel-preview1) · [검증 결과](investigation/control-panel-validation.json) · [작은 화면](docs/control-panel/compact-panel-ko.png) · [전체 UI 숨김 상태](docs/control-panel/wide-hidden.png)
+
+API 35 에뮬레이터의 두 화면 크기에서 UI 검사 각각 10개, 단위 테스트 12개와 Lint를 통과했습니다. 사용자의 Android 17 실기기 및 게임 실행은 이 검증에 포함되지 않습니다.
+
+![별도 UI 미리보기의 한국어 메뉴](docs/control-panel/wide-panel-ko.png)
+
 **재시도 시험본:** `IrisAutoGoal-BrawlStars-70.757-packaging2-test.apk`는 기존 패키징이 삭제한 메타데이터 128개를 보존합니다. 서비스 등록 파일 2개가 포함됩니다. 이 누락은 확인해 수정했으나 **실기기 `nv.s: 01` 종료 해결은 아직 미확인**입니다. [변경·설치 안내](distribution/packaging2/RELEASE-SECTION-KO.md), [정적 검증 결과](investigation/packaging2-validation.json).
 
 **실기기 시작 실패가 보고됐으며 수정 완료본은 없습니다.** Android 17/API 37 ARM64에서 원본 게임 라이브러리 초기화 중 `nv.s: 01`로 종료됩니다. 같은 폰의 공식 앱은 정상 실행됐다는 사용자 보고가 있습니다. 기존 후보를 재설치해도 해결되지 않습니다. [분석과 확인 한계](investigation/phone-startup-failure.md)

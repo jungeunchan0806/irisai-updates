@@ -1,0 +1,82 @@
+{
+  "date": "2026-11-17",
+  "source_commit": "f461171f1f3b88227b0c2699936e5a6fa1633e5d",
+  "workflow_run": "https://github.com/jungeunchan0806/irisai-updates/actions/runs/44060742024",
+  "release": "https://github.com/jungeunchan0806/irisai-updates/releases/tag/android-control-panel-preview1",
+  "apk_name": "IrisAutoGoal-UI-Preview.apk",
+  "apk_sha256": "c9fbc35cff30d67207c8a409043e8fcb84237e7cbc80fb7d7d5cff46ba049a76",
+  "package": "com.irisai.autogoal.preview",
+  "device": "Android API 35 Google APIs x86_64 emulator",
+  "viewports": [
+    {
+      "name": "wide",
+      "size": "1280x720",
+      "density": 160
+    },
+    {
+      "name": "compact",
+      "size": "960x540",
+      "density": 240
+    }
+  ],
+  "android_ui_results": {
+    "wide": {
+      "passed": true,
+      "checks": [
+        "default toggle visible",
+        "invisible opener is 2x width and height",
+        "outside UI touches reach game area",
+        "menu opens",
+        "language changes immediately",
+        "exact Discord destination",
+        "no license controls",
+        "hide all removes HUD",
+        "hidden UI can be recovered",
+        "HUD restored"
+      ],
+      "game_startup_tested": false,
+      "streamer_actual_capture_tested": false
+    },
+    "compact": {
+      "passed": true,
+      "checks": [
+        "default toggle visible",
+        "invisible opener is 2x width and height",
+        "outside UI touches reach game area",
+        "menu opens",
+        "language changes immediately",
+        "exact Discord destination",
+        "no license controls",
+        "hide all removes HUD",
+        "hidden UI can be recovered",
+        "HUD restored"
+      ],
+      "game_startup_tested": false,
+      "streamer_actual_capture_tested": false
+    }
+  },
+  "unit_tests": {
+    "panel_state": 5,
+    "ingame_stroke": 7
+  },
+  "lint_errors": 0,
+  "game_startup_tested": false,
+  "user_android_17_phone_tested": false,
+  "game_crash_fixed": false,
+  "streamer_mode_enabled": false,
+  "same_signature_game_update_built": false,
+  "blocking_information": [
+    "No current crash trace: user reports the diagnostic app does not open.",
+    "The prior game signing keystore is unavailable in this workspace."
+  ],
+  "known_limitations": [
+    "Preview toggles UI state only; no game inputs or model inference.",
+    "The requested local-visible capture-invisible UI is unavailable; local auto-hide fallback awaits user choice.",
+    "Game integration compiles but is not packaged into a new signed game APK."
+  ],
+  "screenshots": [
+    "docs/control-panel/wide-panel-ko.png",
+    "docs/control-panel/compact-panel-ko.png",
+    "docs/control-panel/wide-hidden.png"
+  ]
+}
