@@ -16,6 +16,7 @@ export async function admin(r:Request){
  try{
   const p=await body(r),now=Date.now();
   if(p.action==='create')return await createLicense(p);
+  if(p.action==='update_device')return await updateLicenseDevice(p);
   if(typeof p.id!=='string')return json({error:'구독을 선택해 주세요.'},400);
   const row=await db().prepare('SELECT * FROM licenses WHERE id=?').bind(p.id).first<LicenseRow>();if(!row)return json({error:'구독을 찾을 수 없습니다.'},404);
   if(p.action==='extend'||p.action==='set_term'){
@@ -66,3 +67,26 @@ export async function createLicense(p:any,sellerId:string|null=null){
    try{await db().batch([db().prepare('INSERT INTO licenses(id,key_hash,key_suffix,hwid,note,duration_ms,permanent,activated_at,expires_at,revoked,created_at,updated_at,seller_id) VALUES(?,?,?,?,?,?,?,?,?,0,?,?,?)').bind(id,await hash(k),k.slice(-8),hwid,note,term.duration_ms,term.permanent,hwid?now:null,term.expires_at,now,now,sellerId),event(id,hwid?'register':'issue',now)]);}catch(e){if(String(e).includes('UNIQUE'))return json({error:'이미 등록된 HWID입니다. 기존 구독을 연장해 주세요.'},409);throw e;}
    return json({id,key:k},201);
   }
+
+/** Edit only device identity and note; preserve the key, ownership and subscription terms. */
+export async function updateLicenseDevice(p:any,sellerId?:string){
+ if(typeof p.id!=='string'||typeof p.hwid!=='string')return json({error:'구독과 HWID를 확인해 주세요.'},400);
+ const hwid=normalizeHwid(p.hwid)||null;
+ if(hwid&&!HWID_RE.test(hwid))return json({error:'HWID는 BS-로 시작하는 64자리 영문·숫자 식별값이어야 합니다.'},400);
+ if(p.note!==undefined&&(typeof p.note!=='string'||p.note.trim().length>100))return json({error:'메모는 100자 이내로 입력해 주세요.'},400);
+ const where=sellerId===undefined?'id=?':'id=? AND seller_id=?';
+ const scope=sellerId===undefined?[p.id]:[p.id,sellerId];
+ const row=await db().prepare('SELECT id FROM licenses WHERE '+where).bind(...scope).first<{id:string}>();
+ if(!row)return json({error:'구독을 찾을 수 없습니다.'},404);
+ const now=Date.now();
+ try{
+  await db().batch([
+   db().prepare(`UPDATE licenses SET hwid=?,note=COALESCE(?,note),
+    activated_at=CASE WHEN ? IS NOT NULL THEN COALESCE(activated_at,?) ELSE activated_at END,
+    expires_at=CASE WHEN ? IS NOT NULL AND permanent=0 AND expires_at IS NULL AND activated_at IS NULL THEN ?+duration_ms ELSE expires_at END,
+    updated_at=? WHERE `+where).bind(hwid,p.note===undefined?null:p.note.trim(),hwid,now,hwid,now,now,...scope),
+   event(row.id,sellerId===undefined?'update_device':'seller_update_device',now)
+  ]);
+ }catch(e){if(String(e).includes('UNIQUE'))return json({error:'이미 다른 구독에 등록된 HWID입니다.'},409);throw e;}
+ return json({ok:true});
+}

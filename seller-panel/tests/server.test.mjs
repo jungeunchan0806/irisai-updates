@@ -115,6 +115,45 @@ await test('admin deletion removes buyer and seller keys and invalidates seller 
  assert.equal((await sessionGet(pc2,session.data.token)).status,401);
  assert.equal((await SS({action:'activate',key:k.key},pc2)).status,403);
 });
+await test('admin edits HWID without rotating key, extending time, or restoring a suspended buyer',async()=>{
+ const first='BS-'+'1'.repeat(64),next='BS-'+'2'.repeat(64);
+ const issued=await A({action:'create',hwid:first,note:'before',term:{kind:'duration',unit:'hours',value:4}});
+ const original=sql.prepare('SELECT * FROM licenses WHERE id=?').get(issued.data.id);
+ await A({action:'revoke',id:issued.data.id});now+=1000;
+ const changed=await A({action:'update_device',id:issued.data.id,hwid:next.toLowerCase(),note:' after ',term:{kind:'permanent'},revoked:0});assert.equal(changed.status,200);
+ const row=sql.prepare('SELECT * FROM licenses WHERE id=?').get(issued.data.id);
+ assert.equal(row.hwid,next);assert.equal(row.note,'after');assert.equal(row.key_hash,original.key_hash);assert.equal(row.expires_at,original.expires_at);assert.equal(row.activated_at,original.activated_at);assert.equal(row.revoked,1);assert.equal(row.permanent,0);
+ assert.equal((await C({hwid:first})).data.active,false);assert.equal((await C({hwid:next})).data.active,false);
+ await A({action:'restore',id:issued.data.id});assert.equal((await C({hwid:next})).data.active,true);
+ assert.equal((await C({hwid:first,key:issued.data.key},true)).status,403);
+});
+await test('missing HWID starts duration once; clear/rebind preserves its expiration and fixed deadlines',async()=>{
+ const hwid='BS-'+'3'.repeat(64),issued=await A({action:'create',term:{kind:'duration',unit:'hours',value:3}});now+=1000;
+ assert.equal((await A({action:'update_device',id:issued.data.id,hwid})).status,200);
+ const row=sql.prepare('SELECT * FROM licenses WHERE id=?').get(issued.data.id);assert.equal(row.expires_at,now+10800000);assert.equal(row.activated_at,now);
+ now+=1000;assert.equal((await A({action:'update_device',id:issued.data.id,hwid:''})).status,200);assert.equal((await C({hwid})).data.active,false);
+ now+=1000;assert.equal((await A({action:'update_device',id:issued.data.id,hwid})).status,200);assert.equal(sql.prepare('SELECT expires_at FROM licenses WHERE id=?').get(issued.data.id).expires_at,row.expires_at);
+ const end=now+1800000,fixed=await A({action:'create',term:{kind:'until',value:new Date(end).toISOString()}});now+=1000;
+ await A({action:'update_device',id:fixed.data.id,hwid:'BS-'+'4'.repeat(64)});assert.equal(sql.prepare('SELECT expires_at FROM licenses WHERE id=?').get(fixed.data.id).expires_at,end);
+});
+await test('device edits validate input and roll back duplicate HWID conflicts',async()=>{
+ const created=await A({action:'create',term:{kind:'permanent'}});
+ for(const hwid of [null,{},'BS-bad'])assert.equal((await A({action:'update_device',id:created.data.id,hwid})).status,400);
+ assert.equal((await A({action:'update_device',id:created.data.id,hwid:'',note:'x'.repeat(101)})).status,400);
+ assert.equal((await A({action:'update_device',id:created.data.id,hwid:'BS-'+'3'.repeat(64)})).status,409);
+ assert.equal(sql.prepare('SELECT hwid FROM licenses WHERE id=?').get(created.data.id).hwid,null);
+ assert.equal((await admin(req({action:'update_device',id:created.data.id,hwid:''}))).status,403);
+ assert.equal((await admin(req({action:'update_device',id:created.data.id,hwid:''},true,'https://evil.example'))).status,403);
+});
+await test('seller updates only its own buyer; paired Windows session sees changes and periods are protected',async()=>{
+ const issued=await SL({action:'create',term:{kind:'duration',unit:'minutes',value:25}},phone,token1);
+ const hwid='BS-'+'5'.repeat(64);assert.equal((await SL({action:'update_device',id:issued.data.id,hwid,note:'corrected',term:{kind:'permanent'}},pc,winToken)).status,200);
+ const row=(await list(phone,token1)).data.licenses.find(r=>r.id===issued.data.id);assert.equal(row.hwid,hwid);assert.equal(row.note,'corrected');assert.equal(row.expires_at,now+1500000);assert.equal(row.permanent,0);
+ const foreign=await A({action:'create',term:{kind:'permanent'}});assert.equal((await SL({action:'update_device',id:foreign.data.id,hwid:''},phone,token1)).status,404);
+ sql.prepare('UPDATE licenses SET seller_id=? WHERE id=?').run('different-seller-group',foreign.data.id);assert.equal((await SL({action:'update_device',id:foreign.data.id,hwid:''},pc,winToken)).status,404);
+ assert.equal((await SL({action:'update_device',id:issued.data.id,hwid:'BS-'+'3'.repeat(64)},phone,token1)).status,409);
+ assert.equal((await C({hwid})).data.active,true);
+});
 await test('admin password is required to recover exact key; copying cannot reset its device binding',async()=>{
  assert.equal((await PK({action:'reveal',id:sellerId,password:'wrong'})).status,403);
  const recovered=await PK({action:'reveal',id:sellerId,password:'Test8pwd'});assert.equal(recovered.status,200);assert.equal(recovered.data.keys[0].key,apkKey.key);

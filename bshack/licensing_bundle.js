@@ -108,7 +108,7 @@ function createLicense(Java, handlers, options = {}) {
   const delay = options.delay || setTimeout;
   const repeat = options.repeat || setInterval;
   const BASE = "https://bshack-license-panel.jungeunchan0806.chatgpt.site";
-  let ready = false, initError = null, ctx = null, hwid = null, prefs = null, view = null, job = null, dialog = null, input = null, lease = new Lease(now);
+  let ready = false, checked = false, initError = null, ctx = null, hwid = null, prefs = null, view = null, job = null, dialog = null, input = null, lease = new Lease(now);
   let StringJ, Toast, ClipData, Clipboard, Builder, EditText, URL, Http, Thread2, Runnable, Click, Dismiss;
   function report(where, error) {
     initError = where + ": " + String(error);
@@ -225,7 +225,7 @@ function createLicense(Java, handlers, options = {}) {
     deferred(() => {
       job = null;
       try {
-        if (response) lease.accept(response);
+        if (response) { lease.accept(response); checked = true; }
       } catch (e) {
         error = String(e);
       }
@@ -401,7 +401,7 @@ function createLicense(Java, handlers, options = {}) {
     } catch (e) {
       report("\uBC84\uD2BC \uC785\uB825", e);
     }
-  }, status: () => ({ ready, pending: !!job || !!dialog, error: initError, active: lease.active() }) };
+  }, status: () => ({ ready, checked, licenseStatus: lease.status, pending: !!job || !!dialog, error: initError, active: lease.active() }) };
 }
 var init_licensing = __esm({
   "licensing.mjs"() {

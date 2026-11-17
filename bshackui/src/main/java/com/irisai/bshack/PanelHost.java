@@ -40,7 +40,6 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
                 public void visibilitySuppressed() {}
                 public boolean nativeEngine() { return true; }
                 public void copyHwid() { queue(3); }
-                public void showLicenseDialog() { queue(4); }
             }, false);
             ((ViewGroup) next.findViewById(android.R.id.content)).addView(panel, new ViewGroup.LayoutParams(-1, -1));
         }

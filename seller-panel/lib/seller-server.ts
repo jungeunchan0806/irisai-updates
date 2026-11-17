@@ -1,4 +1,4 @@
-import {adminAllowed,db,json,body,hash,key,event,sameOrigin,createLicense} from './license-server';
+import {adminAllowed,db,json,body,hash,key,event,sameOrigin,createLicense,updateLicenseDevice} from './license-server';
 import {resolveTerm,statusOf} from './license-domain';
 import {deviceProof,type Device} from './device-proof';
 import {encryptKey,decryptKey} from './key-vault';
@@ -104,6 +104,7 @@ export async function sellerLicenses(r:Request){
  try{
   const p=await body(r),owner=seller.group_id||seller.id;
   if(p.action==='create')return await createLicense(p,owner);
+  if(p.action==='update_device')return await updateLicenseDevice(p,owner);
   if(!['revoke','restore','delete'].includes(p.action))return json({error:'판매자는 기존 구독의 기간 변경·연장을 할 수 없습니다.'},403);
   if(typeof p.id!=='string')return json({error:'구독을 선택해 주세요.'},400);
   const row=await db().prepare('SELECT id FROM licenses WHERE id=? AND seller_id=?').bind(p.id,owner).first<{id:string}>();

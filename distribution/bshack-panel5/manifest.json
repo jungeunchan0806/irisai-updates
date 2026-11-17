@@ -1,0 +1,24 @@
+{
+  "baseline_sha256": "8d595381fe0247dbfc06bd03879f68828d1dc1967647e830d0c51745d810f082",
+  "sha256": "28b2cb0df2145613348432e0cc29c2b745b1ace21d638e8cd0158baed667d110",
+  "bytes": 2003358835,
+  "unchanged_entries_byte_verified": 38360,
+  "modified_entries": [
+    "lib/arm64-v8a/libosu.data.so"
+  ],
+  "added_entries": [
+    "assets/iris-panel.dex"
+  ],
+  "manifest_and_original_dex_preserved": true,
+  "game_native_libraries_preserved": true,
+  "all_crc": "pass",
+  "physical_device_test": "not performed",
+  "friendly_match_test": "not performed",
+  "baseline_url": "https://github.com/jungeunchan0806/irisai-updates/releases/download/android-bshack-hwid-v2.0.0/BSHACK-Autogoal-Licensed.apk",
+  "filename": "BSHACK-Autogoal-2.1.1.apk",
+  "patch_sha256": "ab4c11f7666826a8d8812ffbe378a0b8bbd476f1b270bbd7d82503ea52b188bc",
+  "signer_certificate_sha256": "a40da80a59d170caa950cf15c18c454d47a39b26989d8b640ecd745ba71bf5dc",
+  "previous_panel4_phone_launch": "User confirmed no crash on Samsung Android 17",
+  "engine_state_tests": 6,
+  "license_server_tests": 24
+}

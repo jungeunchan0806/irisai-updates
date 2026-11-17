@@ -24,7 +24,6 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         void visibilitySuppressed();
         default boolean nativeEngine() { return false; }
         default void copyHwid() {}
-        default void showLicenseDialog() {}
     }
     public static final String DISCORD_URL = "https://discord.gg/bshack";
     public static final int TOGGLE_WIDTH_DP = 160, TOGGLE_HEIGHT_DP = 44;
@@ -218,7 +217,6 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
             autoDetail = (TextView) autoCard.getChildAt(1);
             if (actions.nativeEngine()) {
                 card(text("HWID 복사", "Copy HWID"), text("기존 인증용 기기 ID 복사", "Copy the device ID used for registration"), false, actions::copyHwid);
-                card(text("키 등록", "Register key"), text("기존 구매자 키 입력", "Enter your buyer key"), false, actions::showLicenseDialog);
             } else {
             card(text("조작 위치", "Control positions"), text("이동 · 공격 · 가젯 위치 지정", "Set movement, attack and gadget positions"), false,
                 () -> { state.menuOpen = false; state.hidden = false; save(); refresh(); actions.calibrate(); });
@@ -229,12 +227,6 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         if (tab == 0 || tab == 2) {
             card(text("언어", "Language"), state.english ? "English · 한국어로 전환" : "한국어 · Switch to English", false,
                 () -> { state.english = !state.english; notice = ""; save(); refresh(); });
-            String desc = !streamerAllowed ? text("내 화면만 표시하는 방식은 지원되지 않습니다", "Keeping UI visible only locally is not supported")
-                : !recording.supported() ? text("Android 15 이상에서 녹화 감지 가능", "Recording detection requires Android 15+")
-                : text("녹화 감지 시 내 화면에서도 UI 숨김", "Hide UI locally too when recording is detected");
-            LinearLayout streamerCard = card(text("스트리머 모드", "Streamer mode"), (state.streamer ? "ON · " : "OFF · ") + desc, state.streamer, this::toggleStreamer);
-            streamerCard.setEnabled(streamerAllowed && recording.supported());
-            streamerCard.setAlpha(streamerCard.isEnabled() ? 1f : .58f);
             card(state.hidden ? text("UI 다시 표시", "Show UI") : text("UI 전부 숨기기", "Hide all UI"),
                 text("투명 열기 영역은 계속 사용할 수 있습니다", "The invisible opener remains available"), state.hidden,
                 () -> { if (state.hidden) state.showAll(); else { state.hideAll(); actions.visibilitySuppressed(); } save(); refresh(); });
@@ -246,6 +238,17 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
     private String statusText(String value) {
         if (!state.english) return value;
         switch (value) {
+            case "인증 준비 중": return "Preparing authorization";
+            case "인증 확인 중": return "Checking authorization";
+            case "인증 연결 실패": return "Authorization connection failed";
+            case "HWID 등록 필요": return "Register HWID in the panel";
+            case "이용 정지": return "Subscription suspended";
+            case "기간 만료": return "Subscription expired";
+            case "조이스틱을 한 번 움직이세요": return "Move the joystick once to connect input";
+            case "게임 입력 연결 대기": return "Waiting for game input connection";
+            case "게임 로딩 중": return "Game is loading";
+            case "게임 연결 실패": return "Game connection failed";
+            case "오토골 실행 중": return "Auto Goal running";
             case "모델 준비 중": return "Loading models";
             case "브롤볼 대기": return "Waiting for Brawl Ball";
             case "길게 눌러 위치 설정": return "Open settings for control positions";

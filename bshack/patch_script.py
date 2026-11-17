@@ -16,7 +16,7 @@ def patch(data):
     text=text[:start]+(ROOT/'licensing_bundle.js').read_text()+'\n'+text[end:]
     text=once(text,'      const _license = createLicense', (ROOT/'panel_bridge.js').read_text()+'\n      const _license = createLicense')
     text=once(text,'          _st.requested = !(_st.requested === null ? _ag.enabled : _st.requested);',
-      '          if (_panelWanted && _panelForeground && _st.started) _st.requested = true;\n          _panelWanted = false;')
+      '          _panelActivate();')
     text=once(text,'      const _license = createLicense(frida_java_bridge_default, {',
       '      const _license = createLicense(frida_java_bridge_default, {\n        surface: _panelSurface,\n        cancel() { _panelWanted = false; },\n        notice(message) { console.log("[IRIS BSHACK] " + message); },')
     # Enforce stop even when the render loop pauses but battle ticks continue.
@@ -25,8 +25,9 @@ def patch(data):
     # Android View UI replaces fragile native HUD allocation; retain game engine itself.
     start=text.index('      function _enu(now) {');end=text.index('      function _art() {',start)
     text=text[:start]+'      function _enu(now) {} // UI is owned by PanelHost on Android main thread.\n'+text[end:]
-    start=text.index('        if (changed) {',text.index('      function _art() {'));end=text.index('      function _ih() {',start)
-    text=text[:start]+'      }\n'+text[end:]
+    start=text.index('      function _art() {');end=text.index('      function _ih() {',start)
+    text=text[:start]+(ROOT/'engine_state.js').read_text()+'\n'+text[end:]
+    text=once(text,'          _uag(args[0], Date.now());','          _art();\n          _uag(args[0], Date.now());')
     # No unused original source-map or bundle metadata following the actual module.
     text=text.split('export default require_agent();')[0]+'export default require_agent();\n'
     body=text.encode()

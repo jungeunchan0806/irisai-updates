@@ -19,13 +19,32 @@ test('native callback status uses injected monotonic clock without invoking Andr
  const license=vm.runInContext('createLicense(Java,handlers,options)',c);
  assert.equal(license.isActive(),false);license.status();license.press();assert.equal(javaCalls,0);
 });
-test('panel queues authentication without losing intent; second tap cancels and leaving game stops',()=>{
- let command=1,foreground=true,phase='',tap=0;
- const c=vm.createContext({console,setInterval(){},_st:{started:true,disposed:false,requested:null},_ag:{enabled:false,phase:'idle'},_license:{status:()=>({ready:true,error:null,pending:false}),tap(){tap++;},isActive:()=>false},frida_java_bridge_default:{perform:f=>f(),scheduleOnMainThread:f=>f()}});
- vm.runInContext(fs.readFileSync(new URL('./panel_bridge.js',import.meta.url),'utf8'),c);
- c.fake={isResumed:()=>foreground,poll:()=>{const n=command;command=0;return n;},update:(enabled,p)=>{phase=p;}};vm.runInContext('_panelHost=fake;_panelPoll()',c);
- assert.equal(tap,1);assert.equal(phase,'인증 확인 중');assert.equal(c._st.requested,null);
- command=1;vm.runInContext('_panelPoll()',c);assert.equal(c._st.requested,false);assert.equal(tap,1);
- command=1;vm.runInContext('_panelPoll()',c);assert.equal(tap,2);
- foreground=false;vm.runInContext('_panelAttempts=40;_panelPoll()',c);assert.equal(c._st.requested,false);
+function panelFixture({ready=true,started=true,active=false}={}) {
+ let command=0,foreground=true,phase='',taps=0;
+ const auth={ready,error:null,pending:false,active};
+ const c=vm.createContext({console,setInterval(){},_st:{started,disposed:false,requested:null},_ag:{enabled:false,phase:'idle'},_MS:{checked:0},_license:{status:()=>auth,tap(){taps++;},isActive:()=>auth.active},frida_java_bridge_default:{perform:f=>f(),scheduleOnMainThread:f=>f()}});
+ vm.runInContext(fs.readFileSync(new URL('./engine_state.js',import.meta.url),'utf8')+'\n'+fs.readFileSync(new URL('./panel_bridge.js',import.meta.url),'utf8'),c);
+ c.fake={isResumed:()=>foreground,poll:()=>{const n=command;command=0;return n;},update:(enabled,p)=>{phase=p;}};
+ vm.runInContext('_panelHost=fake;',c);
+ return {c,auth,poll(n=0){command=n;vm.runInContext('_panelPoll()',c);},activate(){vm.runInContext('_panelActivate()',c);},background(){foreground=false;vm.runInContext('_panelAttempts=40;',c);},get taps(){return taps;},get phase(){return phase;}};
+}
+test('queued ON reaches the real engine state without requiring a render callback',()=>{
+ const f=panelFixture();f.poll(1);assert.equal(f.taps,1);assert.equal(f.phase,'인증 확인 중');assert.equal(f.c._ag.enabled,false);
+ f.auth.active=true;f.activate();f.poll();assert.equal(f.c._ag.enabled,true);assert.equal(f.c._ag.phase,'findBall');assert.equal(f.c._st.requested,null);
+ f.poll(1);assert.equal(f.c._ag.enabled,false);assert.equal(f.c._ag.stopPending,true);
+});
+test('a loading-time tap waits for both game and authorization readiness and runs once',()=>{
+ const f=panelFixture({ready:false,started:false});f.poll(1);assert.equal(f.taps,0);
+ f.c._st.started=true;f.poll();assert.equal(f.taps,0);
+ f.auth.ready=true;f.poll();assert.equal(f.taps,1);f.poll();assert.equal(f.taps,1);
+ f.auth.active=true;f.activate();f.poll();assert.equal(f.c._ag.enabled,true);
+});
+test('cancelled initialization and delayed authorization cannot re-enable auto goal',()=>{
+ const f=panelFixture({ready:false,started:false});f.poll(1);f.poll(1);f.c._st.started=true;f.auth.ready=true;f.poll();assert.equal(f.taps,0);
+ f.poll(1);assert.equal(f.taps,1);f.poll(1);f.auth.active=true;f.activate();f.poll();assert.equal(f.c._ag.enabled,false);
+});
+test('backgrounding and lease expiry stop input even with the render loop idle',()=>{
+ const f=panelFixture({active:true});f.poll(1);f.activate();f.poll();assert.equal(f.c._ag.enabled,true);
+ f.auth.active=false;f.poll();assert.equal(f.c._ag.enabled,false);assert.equal(f.c._ag.stopPending,true);
+ f.auth.active=true;f.poll(1);f.activate();f.poll();assert.equal(f.c._ag.enabled,true);f.background();f.poll();assert.equal(f.c._ag.enabled,false);
 });

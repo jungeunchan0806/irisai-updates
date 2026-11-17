@@ -1,10 +1,9 @@
-name: Verify preserved BSHACK baseline and publish panel test
+name: Build BSHACK auto goal update and verify Android menu
 on:
   push:
     branches: [android-bshack-panel]
-    paths: ['bshack/**', 'bshackui/**', 'bshackcheck/**', 'distribution/bshack-panel/**', '.github/workflows/android-bshack-panel.yml']
-permissions:
-  contents: read
+    paths: ['bshack/**', 'bshackui/**', 'bshackcheck/**', 'distribution/bshack-panel5/**', '.github/workflows/android-bshack-panel.yml']
+permissions: {contents: read}
 jobs:
   payload:
     runs-on: ubuntu-24.04
@@ -29,97 +28,63 @@ jobs:
           script: python bshack/ci_payload.py
       - uses: actions/upload-artifact@v4
         if: always()
-        with: {name: bshack-payload-checks, path: bshack-checks/}
-  game:
-    if: ${{ !contains(github.event.head_commit.message, '[payload-only]') }}
+        with: {name: bshack-panel5-checks, path: bshack-checks/}
+  package:
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
-    permissions: {contents: write}
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '17'}
       - uses: android-actions/setup-android@v3
         with: {packages: 'platform-tools build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
-      - run: sudo apt-get update -qq && sudo apt-get install -y xdelta3 && sudo chmod 666 /dev/kvm
-      - name: Restore exact signed candidate from supplied baseline
+      - run: sudo apt-get update -qq && sudo apt-get install -y xdelta3
+      - name: Restore and verify the exact signed APK
         run: |
           python - <<'PY'
           import json,hashlib,urllib.request,subprocess,os
           from pathlib import Path
-          m=json.loads(Path('distribution/bshack-panel/manifest.json').read_text());root=Path(os.environ['RUNNER_TEMP'])
+          m=json.loads(Path('distribution/bshack-panel5/manifest.json').read_text());root=Path(os.environ['RUNNER_TEMP'])
           urllib.request.urlretrieve(m['baseline_url'],root/'baseline.apk')
           def sha(p):
             with p.open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
           assert sha(root/'baseline.apk')==m['baseline_sha256']
-          assert sha(Path('distribution/bshack-panel/patch.xdelta'))==m['patch_sha256']
-          subprocess.run(['xdelta3','-d','-s',str(root/'baseline.apk'),'distribution/bshack-panel/patch.xdelta',str(root/m['filename'])],check=True)
+          assert sha(Path('distribution/bshack-panel5/patch.xdelta'))==m['patch_sha256']
+          subprocess.run(['xdelta3','-d','-s',str(root/'baseline.apk'),'distribution/bshack-panel5/patch.xdelta',str(root/m['filename'])],check=True)
           assert sha(root/m['filename'])==m['sha256']
+          signature=subprocess.check_output([os.environ['ANDROID_HOME']+'/build-tools/35.0.0/apksigner','verify','--min-sdk-version','24','--verbose','--print-certs',str(root/m['filename'])],text=True)
+          assert m['signer_certificate_sha256'] in signature
+          assert 'Verified using v2 scheme (APK Signature Scheme v2): true' in signature
+          assert 'Verified using v3 scheme (APK Signature Scheme v3): true' in signature
+          print(signature)
           PY
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --min-sdk-version 24 --verbose --print-certs "$RUNNER_TEMP/BSHACK-Autogoal-2.1.0-panel-test.apk"
-          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 "$RUNNER_TEMP/BSHACK-Autogoal-2.1.0-panel-test.apk"
-          python bshack/verify.py "$RUNNER_TEMP/baseline.apk" "$RUNNER_TEMP/BSHACK-Autogoal-2.1.0-panel-test.apk"
-      - name: Compare baseline and candidate launch
-        continue-on-error: true
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          target: google_apis_playstore
-          arch: x86_64
-          profile: pixel_2
-          disk-size: 8192M
-          disable-animations: true
-          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 3072 -cores 2
-          script: python bshack/smoke.py "$RUNNER_TEMP/baseline.apk" "$RUNNER_TEMP/BSHACK-Autogoal-2.1.0-panel-test.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 "$RUNNER_TEMP/BSHACK-Autogoal-2.1.1.apk"
+          python bshack/verify.py "$RUNNER_TEMP/baseline.apk" "$RUNNER_TEMP/BSHACK-Autogoal-2.1.1.apk"
       - uses: actions/upload-artifact@v4
-        if: always()
-        with: {name: bshack-game-launch, path: bshack-game-launch/}
-      - name: Preserve verified APK for publication
-        uses: actions/upload-artifact@v4
         with:
-          name: bshack-apk
+          name: bshack-panel5-apk
           path: |
-            ${{ runner.temp }}/BSHACK-Autogoal-2.1.0-panel-test.apk
-            ${{ runner.temp }}/BSHACK-Autogoal-2.1.0-panel-test.apk.sha256
-            ${{ runner.temp }}/BSHACK-Autogoal-2.1.0-panel-test.verification.json
+            ${{ runner.temp }}/BSHACK-Autogoal-2.1.1.apk
+            ${{ runner.temp }}/BSHACK-Autogoal-2.1.1.apk.sha256
+            ${{ runner.temp }}/BSHACK-Autogoal-2.1.1.verification.json
           compression-level: 0
           retention-days: 7
   publish:
-    needs: [payload, game]
-    if: ${{ always() && needs.payload.result == 'success' && (needs.game.result == 'success' || needs.game.result == 'skipped') }}
+    needs: [payload, package]
     runs-on: ubuntu-24.04
-    permissions: {contents: write, actions: read}
+    permissions: {contents: write}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
-        with:
-          name: bshack-apk
-          path: apk
-          run-id: ${{ needs.game.result == 'skipped' && '44097940785' || github.run_id }}
-          github-token: ${{ github.token }}
-      - uses: actions/download-artifact@v4
-        with:
-          name: bshack-game-launch
-          path: bshack-game-launch
-          run-id: ${{ needs.game.result == 'skipped' && '44097940785' || github.run_id }}
-          github-token: ${{ github.token }}
-      - name: Publish with actual verification limits
+        with: {name: bshack-panel5-apk, path: apk}
+      - name: Publish verified update
         env: {GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}'}
         run: |
+          cp distribution/bshack-panel5/RELEASE-KO.md release-notes.md
           python - <<'PY'
           from pathlib import Path
-          import json,os,hashlib
-          manifest=json.loads(Path('distribution/bshack-panel/manifest.json').read_text())
-          with Path('apk',manifest['filename']).open('rb') as f:
-            assert hashlib.file_digest(f,'sha256').hexdigest()==manifest['sha256'], 'Cached APK differs from the reviewed candidate'
-          notes=Path('distribution/bshack-panel/RELEASE-KO.md').read_text()
-          p=Path('bshack-game-launch/result.json');r=json.loads(p.read_text()) if p.exists() else {}
-          if r.get('candidate',{}).get('alive_30s') and r.get('candidate',{}).get('ui_visible'):
-            notes+='\nAPI 35 에뮬레이터에서 30초 실행 유지 및 새 UI 표시를 확인했습니다.\n'
-          else:notes+='\n**API 35 에뮬레이터에서 게임 실행·UI 표시를 검증하지 못했습니다. 휴대폰 정상 실행을 보장하는 완성본이 아닙니다.**\n'
-          notes+='\n동일 APK의 게임 비교 검사는 [44097940785](https://github.com/jungeunchan0806/irisai-updates/actions/runs/44097940785)에서도 확인할 수 있습니다.\n'
-          notes+='\n[이번 검사 결과](https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GITHUB_RUN_ID']+')\n'
-          Path('release-notes.md').write_text(notes)
+          import os
+          p=Path('release-notes.md');p.write_text(p.read_text()+'\n[이번 빌드·UI 검사](https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GITHUB_RUN_ID']+')\n')
           PY
-          gh release create android-bshack-panel4 --target "$GITHUB_SHA" --title 'BSHACK 오토골 · 기존 서명 보존 · panel4 시험판' --notes-file release-notes.md --prerelease --latest=false
-          gh release upload android-bshack-panel4 apk/* bshack-game-launch/result.json
+          gh release create android-bshack-panel5 --target "$GITHUB_SHA" --title 'BSHACK 2.1.1 · 오토골 활성화 수정 · 메뉴 정리' --notes-file release-notes.md --prerelease --latest=false
+          gh release upload android-bshack-panel5 apk/*

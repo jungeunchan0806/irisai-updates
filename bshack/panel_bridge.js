@@ -1,8 +1,12 @@
 // Executed inside the existing licensed engine closure. No Java calls from game hooks.
 let _panelHost = null, _panelPending = false, _panelAttempts = 0;
-let _panelWanted = false, _panelForeground = false, _panelError = '';
+let _panelWanted = false, _panelQueued = false, _panelForeground = false, _panelError = '';
 const _Java = frida_java_bridge_default;
-function _panelStop() { _panelWanted = false; _st.requested = false; }
+function _panelStop() { _panelWanted = false; _panelQueued = false; _st.requested = false; }
+function _panelActivate() {
+  if (_panelWanted && _panelForeground && _st.started) _st.requested = true;
+  _panelWanted = false; _panelQueued = false;
+}
 function _panelSurface(surface) {
   if (!_panelHost) return;
   try { _panelHost.attach(_Java.cast(surface.getContext(), _Java.use('android.app.Activity'))); }
@@ -36,9 +40,14 @@ function _panelFindActivity() {
 function _panelPhase() {
   if (_panelError) return 'UI 연결 오류';
   if (!_st.started) return _st.error ? '게임 연결 실패' : '게임 로딩 중';
+  const auth = _license.status();
+  if (!auth.ready) return '인증 준비 중';
+  if (auth.error) return '인증 연결 실패';
   if (_panelWanted) return '인증 확인 중';
+  if (auth.checked && !auth.active) return auth.licenseStatus === 'revoked' ? '이용 정지' : auth.licenseStatus === 'expired' ? '기간 만료' : 'HWID 등록 필요';
   if (_ag.lastError) return '오토골 오류 · 다시 켜세요';
-  const labels = {idle:'브롤볼 대기',findBall:'공 찾는 중',carry:'골대로 운반',shoot:'조준 슛'};
+  if (_ag.enabled && _ag.lastWaitReason === 'inputRejected') return _MS.checked ? '게임 입력 연결 대기' : '조이스틱을 한 번 움직이세요';
+  const labels = {idle:'브롤볼 대기',findBall:'공 찾는 중',dribble:'골대로 운반',carry:'골대로 운반',shoot:'조준 슛'};
   return labels[_ag.phase] || (_ag.enabled ? '오토골 실행 중' : '브롤볼 대기');
 }
 function _panelPoll() {
@@ -64,14 +73,17 @@ function _panelPoll() {
           if (!command) break;
           if (command === 2) _panelStop();
           else if (command === 3) _license.copy();
-          else if (command === 4) { _panelWanted = _panelForeground; _license.dialog(); }
           else if (command === 1) {
             if (_ag.enabled || _st.requested === true || _panelWanted) _panelStop();
-            else if (_panelForeground && _st.started && _license.status().ready) { _panelWanted = true; _license.tap(); }
+            else if (_panelForeground && !_st.error) { _panelWanted = true; _panelQueued = true; }
           }
         }
+        if (_panelWanted && _panelQueued && _st.started && _license.status().ready) {
+          _panelQueued = false; _license.tap();
+        }
         const status = _license.status();
-        if (status.error) _panelWanted = false;
+        if (status.error && !_panelQueued) _panelWanted = false;
+        _art();
         _panelHost.update(_ag.enabled, _panelPhase());
       } catch (e) { _panelError = String(e); _panelStop(); console.error('[IRIS BSHACK] UI: ' + e); }
       finally { _panelPending = false; }

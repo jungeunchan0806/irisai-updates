@@ -32,9 +32,9 @@ public final class Checks extends Instrumentation {
     toggle.performClick();require(poll()==1&&poll()==0,"tap queues one engine toggle");
     toggle.performLongClick();require(poll()==3,"long press requests original HWID copy");
     call("update",new Class<?>[]{boolean.class,String.class},true,"골대로 운반");require(((TextView)toggle).getText().toString().contains("ON"),"native state updates HUD");
-    opener.performClick();require(find(root(),"키 등록")!=null,"native authentication action available");
+    opener.performClick();require(find(root(),"키 등록")==null,"buyer key registration absent from menu");
+    require(find(root(),"스트리머 모드")==null,"streamer mode absent from menu");
     require(find(root(),"조작 위치")==null,"no coordinate calibration in native engine mode");
-    find(root(),"키 등록").getParent();((View)find(root(),"키 등록").getParent()).performClick();require(poll()==4,"registration request routes to existing license dialog");
     ((View)find(root(),"UI 전부 숨기기").getParent()).performClick();require(!toggle.isShown(),"hide all hides toggle");require(poll()==0,"hiding HUD does not toggle engine");
     opener.performClick();require(find(root(),"UI 다시 표시").isShown(),"invisible opener recovers hidden UI");
     ((View)find(root(),"언어").getParent()).performClick();require(find(root(),"IRIS  /  CONTROL CENTER")!=null,"language switching works");

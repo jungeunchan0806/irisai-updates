@@ -11,3 +11,7 @@ The license runtime incorporates the Java-thread separation from the user's BSHA
 Tests: `node --test bshack/runtime.test.mjs`, `:controlui:testDebugUnitTest`, and the `bshackcheck` Android in-memory DEX fixture. The fixture has no game native library. The GitHub workflow separately compares baseline/game startup in a disposable emulator; neither test is a friendly match or Samsung API 37 verification.
 
 No official startup protection or signature checks are edited. Recorder-only UI hiding is unsupported and disabled. The original licensed native auto-goal engine is retained, not replaced with the older Iris screen-analysis controller.
+
+## 2.1.1 update
+
+`engine_state.js` commits an authorized ON/OFF request without depending on native UI rendering. The Android main-thread scheduler and native battle update both call this pure state transition. Initialization-time taps are retained and can be cancelled. The game panel no longer lists buyer-key registration or streamer mode. HWID authorization remains enforced. Server/administrator device corrections preserve license keys, expiry and suspension.
