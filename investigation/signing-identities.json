@@ -1,0 +1,45 @@
+{
+  "date": "2026-11-17",
+  "latest_user_report": "After receiving panel3, the user reports that the new APK exits before the Supercell logo. No new trace or explicit installed filename has been supplied.",
+  "signature_cause_confirmed": false,
+  "identities": [
+    {
+      "name": "Original supplied Supercell backup",
+      "certificate_sha256": "731a29e80b7ca89c7e9b39d381821ee8dccd1b0456782f788650945e7d60d8d3",
+      "private_key_available": false,
+      "evidence": "ingame-candidate-validation.json"
+    },
+    {
+      "name": "Iris candidate1 / packaging2 / startup diagnostic1",
+      "certificate_sha256": "487be061bdbadf1269cb5b81c051d897624c5373f5734f46274e5da8465ae591",
+      "private_key_available": false,
+      "evidence": "packaging2-validation.json"
+    },
+    {
+      "name": "Iris panel3 new-key build",
+      "certificate_sha256": "75fbedd4009cc3f38872ef4b2d12646a7b0fef4eac40f2f6c42e4cfff2a66f7b",
+      "private_key_available": true,
+      "evidence": "panel3-validation.json"
+    },
+    {
+      "name": "BSHACK-Autogoal-2.0.1.apk",
+      "certificate_sha256": "a40da80a59d170caa950cf15c18c454d47a39b26989d8b640ecd745ba71bf5dc",
+      "certificate_source": "The release APK v2 and v3 signing-block certificates read using explicit HTTP byte ranges",
+      "whole_remote_apk_signature_verified_in_this_investigation": false,
+      "matches_AOSP_public_test_certificate": true,
+      "public_test_key_source": "https://android.googlesource.com/platform/build/+/refs/heads/main/target/product/security/",
+      "sample_key_matches_certificate_public_key": true,
+      "local_scratch_apk_sign_and_verify_v2_v3": true,
+      "same_certificate_game_rebuild_possible": true,
+      "game_crash_fix_established": false
+    }
+  ],
+  "pending_clarification": "Which earlier APK reached the logo/game and is the intended signing baseline?",
+  "game_rebuild_published_for_this_signature_investigation": false,
+  "limitations": [
+    "Copying a certificate/signing block cannot preserve a valid signature after changing APK content.",
+    "An APK does not contain its signing private key.",
+    "The public BSHACK test key is neither the Supercell key nor the earlier Iris-only private key.",
+    "Matching a previous signer permits compatible signing, but does not prove game initialization or integrity acceptance."
+  ]
+}

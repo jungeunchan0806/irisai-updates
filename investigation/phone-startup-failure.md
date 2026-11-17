@@ -4,6 +4,10 @@ Status: **unresolved; no fixed game APK has been produced**. The diagnostic APK 
 
 ## Latest report, 2026-11-17
 
+After receiving panel3, the user reports that the new APK exits immediately before the Supercell logo and suggests restoring the previous signature. No fresh trace or explicit installed filename was provided. This is a reported phone failure, not a confirmed signature-only diagnosis. The previous paragraphs below describe earlier reports.
+
+Signing investigation distinguishes four certificates: the original Supercell backup, the earlier Iris candidates, the new-key panel3 build, and the separately published BSHACK 2.0.1 build. BSHACK's v2/v3 certificate bytes match the public AOSP test certificate; its matching sample key successfully signs and verifies a local scratch APK. That makes BSHACK-compatible signing possible, but does not recover Supercell's or the earlier Iris-only private key. The intended previously working APK is awaiting user clarification. [Certificate evidence and limits](signing-identities.json).
+
 The user now reports reaching a loading-success indication before intermittent stuttering and exit. They could not provide a fresh trace because the diagnostic app itself does not open. The older `nv.s: 01` stack below therefore does **not** establish the cause of this later failure. No new APK has been tested on the user's phone in this session.
 
 The previous diagnostic replaces the game package but uses its own launcher activity, labelled **Iris 오류 확인**. The installer **Open** action or that app-drawer entry must be used; an older Brawl Stars shortcut can point to an activity absent from the diagnostic package. This is a launch-path check, not an established diagnosis or repair. Do not uninstall the game or clear its data to try it.
