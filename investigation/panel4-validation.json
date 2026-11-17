@@ -1,0 +1,30 @@
+{
+  "apk": "BSHACK-Autogoal-2.1.0-panel-test.apk",
+  "sha256": "2eb17f97040dd941f20fbc3dea0c56170e98415e8a8d2711bf3b6b8866237cb4",
+  "github_release": "https://github.com/jungeunchan0806/irisai-updates/releases/tag/android-bshack-panel4",
+  "uploaded_asset_id": 759298688,
+  "uploaded_bytes": 2003359186,
+  "signer_matches_user_baseline": true,
+  "official_supercell_signer": false,
+  "unchanged_original_entries": 38360,
+  "android_ui_fixture_checks": 14,
+  "fixture_gameplay": false,
+  "license_runtime_tests": 3,
+  "license_server_tests": 20,
+  "apk_installation": {
+    "run": 44099321018,
+    "api": 35,
+    "abi": "x86_64,arm64-v8a",
+    "fresh_install_success": true,
+    "game_alive_after_30s": false,
+    "native_error": "SIGABRT in libosu.so under ARM translation; unchanged baseline also exits at the same native offsets"
+  },
+  "physical_android_17_tested": false,
+  "friendly_match_tested": false,
+  "recording_only_ui_exclusion": "unsupported; disabled",
+  "seller_panel_native_app_update": "pending original build project and signing access",
+  "seller_client_html_prepared": true,
+  "sites_version": 9,
+  "sites_source_commit": "2e5bde2ef3cfdec441bd7acfff9668a7f585b8e6",
+  "sites_deployed_url": "https://bshack-license-panel.jungeunchan0806.chatgpt.site"
+}
