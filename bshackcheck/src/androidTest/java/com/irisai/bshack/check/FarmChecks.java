@@ -6,6 +6,8 @@ import com.supercell.brawlstars.GameApp;
 import java.lang.reflect.*;
 import java.util.List;
 import java.util.concurrent.atomic.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /** Actual child-loaded ONNX/OpenCV, PixelCopy and lifecycle input tests. */
 final class FarmChecks {
@@ -36,6 +38,15 @@ final class FarmChecks {
             try{controller.set(type.getConstructor(android.app.Activity.class,boundary).newInstance(activity,callback));}catch(Exception e){throw new AssertionError(e);}
             call(controller.get(),"toggle");require(!(Boolean)invoke(controller.get(),"enabled",new Class<?>[]{}),"farm refuses to start without authorization",checks);
         });
+        // Fail at the capture boundary instead of reporting a generic input
+        // timeout when an emulator renderer cannot read its surface format.
+        android.graphics.Bitmap capture=android.graphics.Bitmap.createBitmap(960,540,android.graphics.Bitmap.Config.ARGB_8888);
+        AtomicInteger copied=new AtomicInteger(-1);CountDownLatch captured=new CountDownLatch(1);
+        ui(i,()->android.view.PixelCopy.request(activity.getView(),capture,result->{copied.set(result);captured.countDown();},new android.os.Handler(android.os.Looper.getMainLooper())));
+        require(captured.await(5,TimeUnit.SECONDS)&&copied.get()==android.view.PixelCopy.SUCCESS,"fixture PixelCopy succeeds, status="+copied.get(),checks);
+        int first=capture.getPixel(0,0);boolean varied=false;
+        for(int y=0;y<540&&!varied;y+=20)for(int x=0;x<960;x+=20)if(capture.getPixel(x,y)!=first){varied=true;break;}
+        capture.recycle();require(varied,"fixture capture contains the recorded game frame",checks);
         Object farm=controller.get();try{
             allowed.set(true);ui(i,()->call(farm,"toggle"));awaitInput(i,phase,0);
             require(count(i)>0,"child-loaded ONNX and OpenCV read game SurfaceView and generate JNI-boundary input",checks);
