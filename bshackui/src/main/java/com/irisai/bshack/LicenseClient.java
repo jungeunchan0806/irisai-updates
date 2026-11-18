@@ -24,6 +24,7 @@ final class LicenseClient {
  private String hwid="",error="",status="unregistered";
  private boolean ready,checked,busy,consentDialog;
  private long until,request,completed;
+ private long lastNetworkRetry;
  private AlertDialog dialog;
  private Activity dialogActivity;
  LicenseClient(Application app){
@@ -37,6 +38,11 @@ final class LicenseClient {
   main.post(this::refreshTimer);
  }
  private void refreshTimer(){if(ready&&prefs.getBoolean("license_consent_v1",false))refresh();main.postDelayed(this::refreshTimer,60000);}
+ void networkRestored(){
+  long now=SystemClock.elapsedRealtime();
+  if(!ready||busy||!prefs.getBoolean("license_consent_v1",false)||now-lastNetworkRetry<10000)return;
+  if(!checked||!error.isEmpty()){lastNetworkRetry=now;refresh();}
+ }
  synchronized String state(){
   try{return new JSONObject().put("ready",ready).put("checked",checked).put("pending",busy||consentDialog)
    .put("remainingMs",Math.max(0,until-SystemClock.elapsedRealtime())).put("status",status).put("error",error)

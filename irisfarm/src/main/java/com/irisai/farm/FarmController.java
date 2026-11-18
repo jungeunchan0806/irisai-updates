@@ -36,6 +36,8 @@ public final class FarmController implements AutoCloseable {
     private String selected,phase="브롤러를 선택하세요",lastStage="";
     private int stageFrames;
     private boolean repeat;
+    private boolean connectionPaused;
+    private long inputEpoch;
     private FarmPolicy.Brawler profile;
     private final Runnable tick=this::tick;
 
@@ -49,6 +51,11 @@ public final class FarmController implements AutoCloseable {
         publish();
     }
     public boolean enabled(){return enabled;}
+    public void setConnectionPaused(boolean paused){
+        if(connectionPaused==paused)return;connectionPaused=paused;inputEpoch++;
+        if(paused)cancelInputs();
+        if(enabled){phase=paused?"연결 복구 대기":"화면 다시 확인 중";publish();}
+    }
     public void toggle(){if(enabled)stop("중지됨");else start();}
     private void start(){
         if(closed||!host.allowed())return;
@@ -73,22 +80,22 @@ public final class FarmController implements AutoCloseable {
     }
     private boolean surfaceReady(){return surface!=null&&surface.isAttachedToWindow()&&surface.isShown()&&surface.getHolder().getSurface().isValid()&&surface.getWidth()>surface.getHeight()&&surface.getHeight()>0;}
     private boolean current(long ticket){return !closed&&enabled&&epoch==ticket;}
-    private boolean permitted(long ticket){return current(ticket)&&host.allowed()&&!host.suspended()&&activity.hasWindowFocus()&&surfaceReady();}
+    private boolean permitted(long ticket){return current(ticket)&&!connectionPaused&&host.allowed()&&!host.suspended()&&activity.hasWindowFocus()&&surfaceReady();}
     private void tick(){
         if(closed||!enabled)return;
         if(!host.allowed()){stop("인증 또는 게임 연결을 확인하세요");return;}
         long now=SystemClock.uptimeMillis();
-        if(!permitted(epoch)){cancelInputs();phase="메뉴를 닫으면 계속합니다";publish();}
+        if(!permitted(epoch)){cancelInputs();phase=connectionPaused?"연결 복구 대기":"메뉴를 닫으면 계속합니다";publish();}
         else if(ready&&!busy)capture();
         if(moving&&now-lastMove>1000)cancelInputs();
         if(attacking&&now-holdAt>Math.min(5000,(long)(profile.holdSeconds*1000+1500)))cancelInputs();
         if(enabled)ui.postDelayed(tick,150);
     }
     private void capture(){
-        final long ticket=epoch,at=SystemClock.uptimeMillis();final int width=surface.getWidth(),height=surface.getHeight();final float scaleX=surface.getScaleX(),scaleY=surface.getScaleY();final boolean repeatNow=repeat;
+        final long ticket=epoch,inputs=inputEpoch,at=SystemClock.uptimeMillis();final int width=surface.getWidth(),height=surface.getHeight();final float scaleX=surface.getScaleX(),scaleY=surface.getScaleY();final boolean repeatNow=repeat;
         Bitmap bitmap=Bitmap.createBitmap(960,540,Bitmap.Config.ARGB_8888);busy=true;
         try {PixelCopy.request(surface,bitmap,result->{
-            if(result!=PixelCopy.SUCCESS||!permitted(ticket)){bitmap.recycle();busy=false;
+            if(result!=PixelCopy.SUCCESS||!permitted(ticket)||inputs!=inputEpoch){bitmap.recycle();busy=false;
                 if(current(ticket)&&result!=PixelCopy.SUCCESS){phase="화면 읽기 재시도 · "+result;publish();}return;}
             worker.execute(()->{
                 FarmVision.Observation observation=null;Throwable error=null;
@@ -96,7 +103,7 @@ public final class FarmController implements AutoCloseable {
                 final FarmVision.Observation outcome=observation;final Throwable problem=error;
                 ui.post(()->{busy=false;if(!current(ticket))return;
                     if(problem!=null){stop("화면 분석 오류: "+problem.getClass().getSimpleName());return;}
-                    if(!permitted(ticket)){cancelInputs();return;}
+                    if(!permitted(ticket)||inputs!=inputEpoch){cancelInputs();return;}
                     if(surface.getWidth()!=width||surface.getHeight()!=height||surface.getScaleX()!=scaleX||surface.getScaleY()!=scaleY){cancelInputs();phase="화면 크기 변경 · 다시 분석 중";publish();return;}
                     long age=SystemClock.uptimeMillis()-at;
                     if(age>1200){cancelInputs();phase="화면 분석 지연 · "+age+"ms";publish();return;}

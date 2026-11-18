@@ -1,0 +1,11 @@
+{
+  "version": 23001,
+  "base": "bshack-70648-panel7-v1",
+  "tag": "android-bshack-connection-2.3.1",
+  "title": "BSHACK 통합 2.3.1 · 연결 복구 보호",
+  "filename": "Iris-connection-patch-2.3.1.zip",
+  "channel": "android-bshack-integrated-updates",
+  "baseline_version": 23000,
+  "baseline_folder": "distribution/bshack-panel7",
+  "baseline_zip": "BSHACK-patch-2.3.0.zip"
+}

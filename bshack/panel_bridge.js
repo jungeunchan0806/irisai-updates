@@ -55,6 +55,11 @@ function _panelPhase() {
   if (auth.error) return '인증 연결 실패';
   if (_panelWanted) return '인증 확인 중';
   if (auth.checked && !auth.active) return auth.licenseStatus === 'revoked' ? '이용 정지' : auth.licenseStatus === 'expired' ? '기간 만료' : 'HWID 등록 필요';
+  if(_ag.enabled){
+    const reason=_connection.status().reason;
+    const labels={offline:'네트워크 연결 대기',screen:'게임 화면 복귀 대기',stalled:'게임 상태 갱신 대기',recovering:'연결 안정화 중',waiting:'브롤볼 대기'};
+    if(labels[reason])return labels[reason];
+  }
   if (_ag.lastError) return '오토골 오류 · 다시 켜세요';
   if (_ag.enabled && _ag.lastWaitReason === 'inputRejected') return _MS.checked ? '게임 입력 연결 대기' : '조이스틱을 한 번 움직이세요';
   const labels = {idle:'브롤볼 대기',findBall:'공 찾는 중',dribble:'골대로 운반',carry:'골대로 운반',shoot:'조준 슛'};
@@ -94,11 +99,12 @@ function _panelPoll() {
         }
         const status = _license.status();
         if (status.error && !_panelQueued) _panelWanted = false;
+        _connectionPoll();
         _art();
         _featuresPoll();
         _panelHost.autoGoalPriority(_ag.enabled && !!(_ag.carriedKey || _ag.ball));
         _panelError='';_panelLastTick=_panelTime();
-        if(_panelHost.recordState) _panelHost.recordState(JSON.stringify({game:_st.started,foreground:_panelForeground,enabled:_ag.enabled,phase:_ag.phase,auth:status,lastEngineError:_ag.lastError || _st.error || null}));
+        if(_panelHost.recordState) _panelHost.recordState(JSON.stringify({game:_st.started,foreground:_panelForeground,enabled:_ag.enabled,phase:_ag.phase,auth:status,connection:_connection.status(),lastEngineError:_ag.lastError || _st.error || null}));
         _panelHost.update(_ag.enabled, _panelPhase());
       } catch (e) { _panelRecordError('poll',e); _panelStop();try{if(_panelHost)_panelHost.update(false,'UI 연결 오류');}catch(_){} }
       finally { _panelPending = false; }

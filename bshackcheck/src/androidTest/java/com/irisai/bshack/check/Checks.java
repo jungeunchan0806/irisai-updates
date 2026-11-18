@@ -51,6 +51,7 @@ public final class Checks extends Instrumentation {
     String command=(String)call("pollFeature",new Class<?>[]{});require(command.contains("\"slot\":1")&&command.contains("\"value\":1"),"feature card queues correct native setting");
     require(find(root(),"TheSeven Auto Farm")==null,"excluded farm has no menu entry");
    });
+   ui(()->ConnectionChecks.run(activity,host,checks));
    // Input tests need the game's focused window. Run before updater dialog
    // lifecycle checks, whose dismissal can outlive waitForIdleSync on emulators.
    FarmChecks.run(this,activity,host,checks);

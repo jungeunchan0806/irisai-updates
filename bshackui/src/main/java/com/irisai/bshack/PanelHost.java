@@ -32,6 +32,9 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     private boolean engineEnabled;
     private UpdateManager updates;
     private LicenseClient license;
+    private ConnectionMonitor connection;
+    private boolean connectionPaused;
+    private String connectionReport="";
     private long lastHeartbeat, nextHealthAttempt;
     private boolean markedHealthy, healthPending, freshBridgeState;
     private int healthyResponses;
@@ -39,7 +42,8 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     private final Handler handler = new Handler(Looper.getMainLooper());
     public static void initialize(Application app) {
         if (host != null) return;
-        host = new PanelHost();host.application=app; host.updates = new UpdateManager(app);host.license=new LicenseClient(app);app.registerActivityLifecycleCallbacks(host);
+        host = new PanelHost();host.application=app; host.updates = new UpdateManager(app);host.license=new LicenseClient(app);
+        host.connection=new ConnectionMonitor(app,()->host.license.networkRestored());app.registerActivityLifecycleCallbacks(host);
         host.handler.postDelayed(host::watchdog, 1500);
     }
     public static void configure(long version,String name,String recovery) {
@@ -123,7 +127,7 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
             public boolean autoGoalPriority(){return autoGoalPriority;}
             public boolean nativeAutoFire(){return nativeAutoFire;}
             public void state(boolean running,String phase,String brawler){if(panel!=null)panel.setFarmState(running,phase,brawler);}
-        });return true;}catch(Exception|LinkageError e){latestError="farm: "+e;panel.setFarmState(false,"오토팜 연결 오류 · 오류 확인","");return false;}
+        });farm.setConnectionPaused(connectionPaused);return true;}catch(Exception|LinkageError e){latestError="farm: "+e;panel.setFarmState(false,"오토팜 연결 오류 · 오류 확인","");return false;}
     }
     private void toggleFarmController(){
         if(!ensureFarm())return;
@@ -132,6 +136,19 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     }
     public static int poll() { return host == null || host.commands.isEmpty() ? 0 : host.commands.remove(); }
     public static boolean isResumed() { return host != null && host.resumed; }
+    public static String connectionStatus(){
+        return host==null?"{\"network\":\"unknown\",\"focused\":false,\"generation\":0}":
+            host.connection.snapshot(host.resumed&&host.activity!=null&&host.activity.hasWindowFocus());
+    }
+    public static void updateConnection(String report){
+        if(host==null)return;
+        try{
+            org.json.JSONObject data=new org.json.JSONObject(report);host.connectionReport=report;
+            host.connectionPaused=data.optBoolean("farmBlocked",true);
+            if(host.panel!=null)host.panel.setConnectionState(data.optString("reason","waiting"));
+            if(host.farm!=null)host.farm.setConnectionPaused(host.connectionPaused);
+        }catch(Exception e){host.connectionPaused=true;if(host.farm!=null)host.farm.setConnectionPaused(true);}
+    }
     public static void update(boolean enabled, String phase) {
         if (host != null && host.panel != null) {
             host.lastHeartbeat=SystemClock.uptimeMillis();host.engineEnabled = enabled; host.panel.setEngineState(enabled, phase);
@@ -162,7 +179,7 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     }
     private void diagnostics() {
         if(activity==null)return;
-        String report="IRIS "+bootName+"\nAndroid "+android.os.Build.VERSION.RELEASE+" / API "+android.os.Build.VERSION.SDK_INT+"\n"+android.os.Build.MANUFACTURER+" "+android.os.Build.MODEL+"\n"+diagnosticState+"\n"+latestError+"\n"+recovery;
+        String report="IRIS "+bootName+"\nAndroid "+android.os.Build.VERSION.RELEASE+" / API "+android.os.Build.VERSION.SDK_INT+"\n"+android.os.Build.MANUFACTURER+" "+android.os.Build.MODEL+"\n"+diagnosticState+"\nConnection: "+connectionReport+"\n"+latestError+"\n"+recovery;
         new AlertDialog.Builder(activity).setTitle(panel.english()?"Diagnostics":"오류 확인").setMessage(report)
             .setPositiveButton(panel.english()?"Copy":"내용 복사",(d,w)->{
                 ((ClipboardManager)activity.getSystemService(Context.CLIPBOARD_SERVICE)).setPrimaryClip(ClipData.newPlainText("IRIS diagnostic",report));

@@ -61,6 +61,11 @@ final class FarmChecks {
             require(count(i)==stopped,"farm yields all inputs while Auto Goal handles the ball",checks);
             ui(i,()->require(GameApp.inputs.get(GameApp.inputs.size()-1)[0]==3,"goal priority releases held virtual touches",checks));
             priority.set(false);awaitInput(i,phase,stopped);
+            ui(i,()->invoke(farm,"setConnectionPaused",new Class<?>[]{boolean.class},true));
+            SystemClock.sleep(500);stopped=count(i);SystemClock.sleep(450);
+            require(count(i)==stopped,"network loss cancels held touches and discards in-flight farm inference",checks);
+            require((Boolean)invoke(farm,"enabled",new Class<?>[]{}),"connection hold preserves farm intent while authorization remains valid",checks);
+            ui(i,()->invoke(farm,"setConnectionPaused",new Class<?>[]{boolean.class},false));awaitInput(i,phase,stopped);
             suspended.set(true);SystemClock.sleep(500);stopped=count(i);SystemClock.sleep(450);
             require(count(i)==stopped,"opening menu suspends new farm inputs",checks);
             suspended.set(false);awaitInput(i,phase,stopped);
