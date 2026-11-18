@@ -15,9 +15,9 @@ jobs:
       - name: Require the exact patch source to pass Android checks
         env: {GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}'}
         run: |
-          gh run watch 44257831657 --exit-status --interval 15
-          test "$(gh run view 44257831657 --json headSha --jq .headSha)" = bbeb87e74021499a07f0c55d5da3e528e59c88f3
-          git diff --exit-code bbeb87e74021499a07f0c55d5da3e528e59c88f3 HEAD -- controlui bshackui bshack distribution/bshack-patch-2.2.2
+          gh run watch 44258603248 --exit-status --interval 15
+          test "$(gh run view 44258603248 --json headSha --jq .headSha)" = a342e08aa6b2a5f86c4a66f06cb8ccdc221e4fab
+          git diff --exit-code a342e08aa6b2a5f86c4a66f06cb8ccdc221e4fab HEAD -- controlui bshackui bshack distribution/bshack-patch-2.2.2
       - name: Verify signed patch and publish the update channel
         env: {GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}'}
         run: |
@@ -41,7 +41,7 @@ jobs:
           if current['version']==m['version']:assert current==m, 'Refusing to replace an existing version with different contents'
           Path('/tmp/stable.json').write_bytes((root/'manifest.json').read_bytes())
           Path('/tmp/stable.json.sig').write_bytes((root/'manifest.sig').read_bytes())
-          notes=(root/'RELEASE-KO.md').read_text()+'\n[Android 15·16 복구 오류 재현 및 반복 재실행 검사 통과](https://github.com/jungeunchan0806/irisai-updates/actions/runs/44257831657)\n'
+          notes=(root/'RELEASE-KO.md').read_text()+'\n[Android 15·16 복구 오류 재현 및 반복 재실행 검사 통과](https://github.com/jungeunchan0806/irisai-updates/actions/runs/44258603248)\n'
           Path('/tmp/patch-release-notes.md').write_text(notes)
           PY
           gh release upload android-bshack-patch-2.2.2 distribution/bshack-patch-2.2.2/BSHACK-patch-2.2.2.zip --clobber
