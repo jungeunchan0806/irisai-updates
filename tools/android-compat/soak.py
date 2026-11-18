@@ -22,12 +22,27 @@ def main():
     emulator = str(Path(os.environ["ANDROID_HOME"]) / "emulator/emulator")
     os.environ["ANDROID_SERIAL"] = "emulator-5554"
     avd = "irisqa" + api
+    user_home = Path(os.environ.get("RUNNER_TEMP", "/tmp")) / ("iris-soak-" + api)
+    avd_home = user_home / "avd"
+    avd_home.mkdir(parents=True, exist_ok=True)
+    os.environ.update(ANDROID_USER_HOME=str(user_home), ANDROID_EMULATOR_HOME=str(user_home),
+                      ANDROID_AVD_HOME=str(avd_home))
+    avd_path = avd_home / (avd + ".avd")
     image = "system-images;android-" + api + ";google_apis;x86_64"
     out = Path("compat-evidence")
     out.mkdir(exist_ok=True)
     subprocess.run(["avdmanager", "create", "avd", "--force", "--name", avd,
-                    "--package", image, "--device", "pixel_2"], input="no\n",
+                    "--path", str(avd_path), "--package", image, "--device", "pixel_2"], input="no\n",
                    text=True, check=True)
+    if not (avd_path / "config.ini").is_file():
+        raise RuntimeError("avdmanager did not create the requested device at " + str(avd_path))
+    # Older command-line tools may put the registry entry in a different user directory.
+    # The emulator and the device data always use this job's private registry.
+    entry = avd_home / (avd + ".ini")
+    if not entry.exists():
+        entry.write_text(f"avd.ini.encoding=UTF-8\npath={avd_path}\ntarget=android-{api}\n")
+    if avd not in capture([emulator, "-list-avds"]).splitlines():
+        raise RuntimeError("Emulator cannot resolve the generated AVD registry entry")
     subprocess.run(["adb", "start-server"], check=True)
     attempts = 0
     empty_attempts = 0
