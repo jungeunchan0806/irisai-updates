@@ -51,16 +51,18 @@ public final class Checks extends Instrumentation {
     String command=(String)call("pollFeature",new Class<?>[]{});require(command.contains("\"slot\":1")&&command.contains("\"value\":1"),"feature card queues correct native setting");
     require(find(root(),"TheSeven Auto Farm")==null,"excluded farm has no menu entry");
    });
+   // Input tests need the game's focused window. Run before updater dialog
+   // lifecycle checks, whose dismissal can outlive waitForIdleSync on emulators.
+   FarmChecks.run(this,activity,host,checks);
    ui(()->DialogChecks.run(activity,host.getClassLoader(),checks));
    HealthChecks.run(this,activity,host,checks);
    UpdateChecks.run(getTargetContext(),host.getClassLoader(),checks);
-   FarmChecks.run(this,activity,host,checks);
    ui(()->activity.finish());
    java.util.concurrent.atomic.AtomicBoolean active=new java.util.concurrent.atomic.AtomicBoolean(true);
    long deadline=SystemClock.uptimeMillis()+5000;
    while(active.get()&&SystemClock.uptimeMillis()<deadline){waitForIdleSync();ui(()->active.set((Boolean)call("isResumed",new Class<?>[]{})));if(active.get())SystemClock.sleep(50);}
    ui(()->{require(!(Boolean)call("isResumed",new Class<?>[]{}),"activity destruction clears foreground state");require(poll()==2,"leaving game queues engine stop");});
    result.putString("stream","PASS "+checks.size()+" in-memory payload checks\n"+String.join("\n",checks)+"\n");finish(Activity.RESULT_OK,result);
-  }catch(Throwable e){result.putString("stream","FAIL "+e+"\n");finish(Activity.RESULT_CANCELED,result);}
+  }catch(Throwable e){result.putString("stream","FAIL "+e+"\nCompleted checks:\n"+String.join("\n",checks)+"\n");finish(Activity.RESULT_CANCELED,result);}
  }
 }

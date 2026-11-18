@@ -16,12 +16,16 @@ final class FarmChecks {
     private static void call(Object target,String name){invoke(target,name,new Class<?>[]{});}
     private static void require(boolean yes,String message,List<String> checks){if(!yes)throw new AssertionError(message);checks.add(message);}
     private static int count(Instrumentation i){AtomicInteger n=new AtomicInteger();ui(i,()->n.set(GameApp.inputs.size()));return n.get();}
+    private static String windowState(Instrumentation i,GameApp activity){AtomicReference<String> state=new AtomicReference<>();ui(i,()->{android.view.SurfaceView v=activity.getView();state.set("focus="+activity.hasWindowFocus()+", attached="+v.isAttachedToWindow()+", shown="+v.isShown()+", valid="+v.getHolder().getSurface().isValid()+", size="+v.getWidth()+"x"+v.getHeight());});return state.get();}
     private static void awaitInput(Instrumentation i,AtomicReference<String> phase,int previous)throws Exception{
         long deadline=SystemClock.uptimeMillis()+25000;
         while(count(i)<=previous&&SystemClock.uptimeMillis()<deadline){if(phase.get().contains("오류"))throw new AssertionError(phase.get());SystemClock.sleep(100);}
         if(count(i)<=previous)throw new AssertionError("No game input; last farm state="+phase.get());
     }
     static void run(Instrumentation i,GameApp activity,Class<?> host,List<String> checks)throws Exception {
+        AtomicBoolean focused=new AtomicBoolean();long focusDeadline=SystemClock.uptimeMillis()+5000;
+        while(!focused.get()&&SystemClock.uptimeMillis()<focusDeadline){i.waitForIdleSync();ui(i,()->focused.set(activity.hasWindowFocus()));if(!focused.get())SystemClock.sleep(50);}
+        require(focused.get(),"game window is focused before input checks: "+windowState(i,activity),checks);
         ClassLoader loader=host.getClassLoader();Class<?> type=loader.loadClass("com.irisai.farm.FarmController"),boundary=loader.loadClass("com.irisai.farm.FarmController$Host");
         AtomicBoolean allowed=new AtomicBoolean(false),suspended=new AtomicBoolean(false),priority=new AtomicBoolean(false);
         AtomicReference<String> phase=new AtomicReference<>("");AtomicReference<Object> controller=new AtomicReference<>();
@@ -66,6 +70,7 @@ final class FarmChecks {
             allowed.set(true);ui(i,()->call(farm,"toggle"));awaitInput(i,phase,stopped);
             ui(i,()->call(farm,"pause"));stopped=count(i);SystemClock.sleep(900);
             require(count(i)==stopped,"activity pause releases input and rejects queued frames",checks);
-        }finally{ui(i,()->call(farm,"close"));}
+        }catch(AssertionError e){throw new AssertionError(e.getMessage()+"; "+windowState(i,activity),e);}
+        finally{ui(i,()->call(farm,"close"));}
     }
 }
