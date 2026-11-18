@@ -66,8 +66,11 @@ def real_install(name,user,api,abis):
             info=shell('dumpsys','package',GAME)
             assert 'versionCode=70648' in info and 'versionName=70.648' in info
             code,msg=adb('uninstall',GAME);assert code==0 and 'Success' in msg,msg
+        elif result=='INSTALL_FAILED_NO_MATCHING_ABIS' and 'arm64-v8a' not in abis:
+            # Some Android 9/10 installers reject the CPU before checking minSdk.
+            # The ABI-independent APK below exercises the SDK check on those devices.
+            pass
         elif api<32:assert result=='INSTALL_FAILED_OLDER_SDK',reason
-        elif result=='INSTALL_FAILED_NO_MATCHING_ABIS' and 'arm64-v8a' not in abis:pass
         else:raise RuntimeError(name+' install: '+result+' '+reason)
     finally:path.unlink(missing_ok=True)
 def launch(user,variant,action):
@@ -108,8 +111,11 @@ def main():
                 note({'type':'apk-test-error','variant':k,'error':str(e)[:480]})
                 errors.append(k+': '+str(e))
                 adb('uninstall',GAME)
-    if api>=32:
-        result,detail=install(Path('/tmp/iris-platform-qa.apk'),APP,user)
+    result,detail=install(Path('/tmp/iris-platform-qa.apk'),APP,user)
+    note({'type':'abi-independent-installer','api':api,'install':result,'reason':detail})
+    if api<32:
+        if result!='INSTALL_FAILED_OLDER_SDK':raise RuntimeError('minSdk probe: '+result+' '+detail)
+    else:
         if result!='installed':raise RuntimeError('test app: '+result+' '+detail)
         i=0
         densities=[None,'300','400','360','440']
