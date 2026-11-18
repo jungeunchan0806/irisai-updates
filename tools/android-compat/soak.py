@@ -65,28 +65,40 @@ def main():
                         break
                     time.sleep(3)
                 status = None
+                interrupted_at_deadline = False
                 if booted and time.time() < deadline:
                     env = dict(os.environ, COMPAT_OUT=str(session))
-                    status = subprocess.run([sys.executable, str(Path(__file__).with_name("check.py")),
-                        "--skip-apks", "--soak-until", str(deadline)], env=env).returncode
+                    try:
+                        status = subprocess.run(
+                            [sys.executable, str(Path(__file__).with_name("check.py")),
+                             "--skip-apks", "--soak-until", str(deadline)],
+                            env=env, timeout=max(0.1, deadline-time.time())
+                        ).returncode
+                    except subprocess.TimeoutExpired:
+                        interrupted_at_deadline = True
                 state = capture(["adb", "get-state"])
                 package = capture(["adb", "shell", "service", "check", "package"])
                 transport_lost = device.poll() is not None or state != "device" or "package: found" not in package
                 results = session / "results.jsonl"
-                count = 0
+                entries = []
                 if results.exists():
-                    count = sum(json.loads(line).get("type") == "panel-update-cycle"
-                                for line in results.read_text().splitlines())
+                    for line in results.read_text().splitlines(keepends=True):
+                        if interrupted_at_deadline and not line.endswith("\n"):
+                            break
+                        entries.append(json.loads(line))
+                count = sum(row.get("type") == "panel-update-cycle" for row in entries)
+                recorded_failure = any(row.get("type") == "failure" for row in entries)
                 completed += count
                 report = dict(session=attempts, api=api, booted=booted, suiteExit=status,
                     emulatorExit=device.poll(), adbState=state[:150], package=package[:160],
-                    cycleVariants=count, hostFreeMiB=shutil.disk_usage(".").free // (1024*1024))
+                    cycleVariants=count, interruptedAtDeadline=interrupted_at_deadline,
+                    hostFreeMiB=shutil.disk_usage(".").free // (1024*1024))
                 with (out / "sessions.jsonl").open("a") as summaries:
                     print(json.dumps(report), file=summaries)
                 print(json.dumps(report), flush=True)
-                if status not in (None, 0) and not transport_lost:
+                if (status not in (None, 0) or recorded_failure) and not transport_lost:
                     raise RuntimeError("Test failed on a connected emulator; see " + str(session))
-                if status == 0:
+                if status == 0 or interrupted_at_deadline:
                     break
                 empty_attempts = 0 if count else empty_attempts + 1
                 if empty_attempts >= 3:
