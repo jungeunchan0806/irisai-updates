@@ -128,9 +128,10 @@ def main():
     user=wait_package_service()
     api=int(shell('getprop','ro.build.version.sdk'));abis=shell('getprop','ro.product.cpu.abilist').split(',')
     assert api==int(os.environ['EXPECTED_API'])
+    page_size=adb('shell','getconf','PAGE_SIZE')[1]
     note({'type':'environment','api':api,'abis':abis,'user':user,
           'fingerprint':shell('getprop','ro.build.fingerprint'),
-          'pageSize':adb('shell','getconf','PAGE_SIZE')[1],
+          'pageSize':page_size,
           'hostDisk':cmd('df','-h','/tmp')[1], 'guestDisk':adb('shell','df','-h','/data')[1]})
     required_abi=os.environ.get('REQUIRED_NATIVE_ABI')
     if required_abi and abis[0]!=required_abi:
@@ -138,6 +139,9 @@ def main():
     install_abi=os.environ.get('REQUIRED_INSTALL_ABI')
     if install_abi and install_abi not in abis:
         raise RuntimeError(f'Emulator must support installation of {install_abi} packages, got {abis}')
+    expected_page_size=os.environ.get('EXPECTED_PAGE_SIZE')
+    if expected_page_size and page_size!=expected_page_size:
+        raise RuntimeError(f'Expected {expected_page_size}-byte pages, got {page_size!r}')
     errors=[]
     try:
         exercise_signed_ui(user,api,p.soak_until,p.display_cycles)
