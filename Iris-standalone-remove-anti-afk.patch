@@ -1,0 +1,169 @@
+diff --git a/bridgecheck/check.py b/bridgecheck/check.py
+index 7f97b5d..10f2984 100644
+--- a/bridgecheck/check.py
++++ b/bridgecheck/check.py
+@@ -58,8 +58,8 @@ try:
+   held=connection_wait(lambda s:s['reason']==reason,'connection hold '+fault)
+   time.sleep(.4);after=script.exports_sync.connection()
+-  check(after['inputs']==held['inputs'] and after['enabled'],'connection hold stops input without losing intent: '+fault)
++  check(after['inputs']==held['inputs'] and not after['enabled'],'interruption stops the active session: '+fault)
+   script.exports_sync.link('online')
+-  connection_wait(lambda s:s['ready'] and s['inputs']>held['inputs'],'recovery '+fault)
+-  check(state(script)['enabled'],'stable fresh state resumes enabled Auto Goal: '+fault)
++  restored=connection_wait(lambda s:s['ready'],'connection available again: '+fault)
++  check(not restored['enabled'] and restored['inputs']==held['inputs'],'connection recovery leaves the session off: '+fault)
+  script.exports_sync.link('offline');connection_wait(lambda s:s['reason']=='offline','offline before stop')
+  script.exports_sync.click();time.sleep(.35);script.exports_sync.link('online')
+diff --git a/bshack/connection.test.mjs b/bshack/connection.test.mjs
+index 9c669dd..29e03d8 100644
+--- a/bshack/connection.test.mjs
++++ b/bshack/connection.test.mjs
+@@ -6,4 +6,5 @@ const source=fs.readFileSync(new URL('./connection_guard.js',import.meta.url),'u
+ function fixture(){
+  let time=10000;const c=vm.createContext({_panelTime:()=>time,NULL2:null,_bs:{snapshot:{}},_MS:{},_O:{j:76},_ag:{enabled:true,ball:{},carriedKey:'old',route:[1],ballDataNames:new Map([['old',true]])}});
++ c._panelStop=()=>{c._ag.enabled=false;};
+  vm.runInContext(source,c);const gate=vm.runInContext('_connection',c);
+  const f={c,gate,advance(ms=100){time+=ms;},sync(network='online',focused=true,generation=1){gate.sync({network,focused,generation});},
+@@ -58,2 +59,21 @@ test('game hook rejects an old or unreadable battle pointer without dereferencin
+  assert.equal(f.state.ready,true);assert.ok(reads>0);
+ });
++
++test('an interrupted active session stays off after fresh game-state samples', () => {
++  for (const interrupt of [
++    f => f.sync('offline',true,2),
++    f => f.sync('online',false),
++    f => f.sync('online',true,2),
++    f => { f.advance(1900); f.gate.status(); },
++    f => f.gate.clear(),
++  ]) {
++    const f=fixture();
++    f.warm();
++    assert.equal(f.c._ag.enabled,true);
++    interrupt(f);
++    f.sync('online',true,3);
++    f.warm('battle',20);
++    assert.equal(f.state.ready,true);
++    assert.equal(f.c._ag.enabled,false);
++  }
++});
+diff --git a/bshack/connection_guard.js b/bshack/connection_guard.js
+index 7a9ecbb..d9c6aa8 100644
+--- a/bshack/connection_guard.js
++++ b/bshack/connection_guard.js
+@@ -8,4 +8,6 @@ class ConnectionGate {
+   }
+   hold(reason,now=this.clock()) {
++    // A session that was active must be enabled again by the user.
++    if (!this.barrier || reason === 'stalled' || reason === 'context') _panelStop();
+     if(this.barrier!==reason){this.epoch++;this.barrier=reason;}
+     this.samples=0;this.stableAt=now;
+@@ -14,4 +16,5 @@ class ConnectionGate {
+     const state=['online','offline','unknown'].includes(data.network)?data.network:'unknown';
+     const focused=data.focused===true;
++    if (state === 'offline' || !focused) _panelStop();
+     const generation=Number.isSafeInteger(data.generation)?data.generation:0;
+     if(this.network!==state||this.focused!==focused||this.networkGeneration!==generation)
+@@ -40,5 +43,8 @@ class ConnectionGate {
+   }
+   clear() {
+-    if(this.key!==null)this.epoch++;
++    if (this.key !== null) {
++      _panelStop();
++      this.epoch++;
++    }
+     this.key=null;this.tick=null;this.samples=0;this.barrier='waiting';
+   }
+diff --git a/bshack/runtime.test.mjs b/bshack/runtime.test.mjs
+index 85773a0..ecf45b2 100644
+--- a/bshack/runtime.test.mjs
++++ b/bshack/runtime.test.mjs
+@@ -74,2 +74,23 @@ test('a recovered native observer error does not permanently discard taps; faile
+  const bad=panelFixture({started:false,active:true});bad.c._st.error='incompatible game build';bad.poll(1);assert.equal(bad.taps,0);assert.equal(bad.c._ag.enabled,false);assert.equal(bad.phase,'게임 연결 실패');
+ });
++
++test('connection loss cancels pending and running requests across recovery', () => {
++  for (const running of [false, true]) {
++    const fixture = panelFixture({active: true});
++    fixture.poll(1);
++    if (running) {
++      fixture.activate();
++      fixture.poll();
++      assert.equal(fixture.c._ag.enabled, true);
++    }
++
++    let network = 'offline';
++    fixture.c.fake.connectionStatus = () => JSON.stringify({network, focused: true, generation: 2});
++    fixture.poll();
++    assert.equal(fixture.c._ag.enabled, false);
++    network = 'online';
++    fixture.activate(); // A delayed response to the old request.
++    fixture.poll();
++    assert.equal(fixture.c._ag.enabled, false);
++  }
++});
+diff --git a/bshackui/src/main/java/com/irisai/bshack/PanelHost.java b/bshackui/src/main/java/com/irisai/bshack/PanelHost.java
+index 1d33faf..8f2d8f3 100644
+--- a/bshackui/src/main/java/com/irisai/bshack/PanelHost.java
++++ b/bshackui/src/main/java/com/irisai/bshack/PanelHost.java
+@@ -97,10 +97,9 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
+     }
+     public static void updateConnection(String report){
+-        if(host==null)return;
+-        try{
+-            org.json.JSONObject data=new org.json.JSONObject(report);host.connectionReport=report;
+-
+-            if(host.panel!=null)host.panel.setConnectionState(data.optString("reason","waiting"));
+-        }catch(Exception e){}
++        if (host == null || report == null) return;
++        try {
++            new org.json.JSONObject(report);
++            host.connectionReport = report;
++        } catch (org.json.JSONException ignored) {}
+     }
+     public static void update(boolean enabled, String phase) {
+diff --git a/controlui/src/main/java/com/irisai/autogoal/ui/IrisControlPanel.java b/controlui/src/main/java/com/irisai/autogoal/ui/IrisControlPanel.java
+index e5485fb..6e80e6d 100644
+--- a/controlui/src/main/java/com/irisai/autogoal/ui/IrisControlPanel.java
++++ b/controlui/src/main/java/com/irisai/autogoal/ui/IrisControlPanel.java
+@@ -49,27 +49,4 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
+     private LinearLayout autoCard;
+ 
+-    private TextView connectionDetail;
+-    private String connectionState="waiting";
+-    public void setConnectionState(String state){
+-        connectionState=state;
+-        if(connectionDetail!=null)connectionDetail.setText(connectionText());
+-    }
+-    private String connectionText(){
+-        switch(connectionState){
+-            case "ready":return text("게임 상태 갱신 중","Game state updating");
+-            case "offline":return text("네트워크 연결 대기","Waiting for network");
+-            case "screen":return text("게임 화면 복귀 대기","Waiting for game focus");
+-            case "stalled":return text("게임 상태 갱신 대기","Waiting for game state updates");
+-            case "recovering":return text("정상 상태 확인 중","Checking recovery");
+-            default:return text("전투 대기 · 보호 켜짐","Waiting for battle · protection on");
+-        }
+-    }
+-    private void connectionHelp(){
+-        new android.app.AlertDialog.Builder(activity).setTitle("Anti AFK")
+-            .setMessage(text("일시적으로 연결이나 전투 상태가 멈추면 입력을 기다립니다. 정상 상태가 확인되면 켜져 있던 오토골을 계속합니다.\n\n직접 끄거나 게임을 벗어나거나 인증이 만료되면 다시 켜야 합니다. 서버 중단이나 게임 자체의 재접속 요구를 없애는 기능은 아닙니다.",
+-                "Input waits during a connection loss or stalled game state. Auto Goal continues after stable updates return if you left it on.\n\nTurning it off, leaving the game or license expiry requires enabling it again. This cannot prevent a server outage or override the game's reconnect requirement."))
+-            .setPositiveButton(text("확인","OK"),null).show();
+-    }
+-
+     /** streamerAllowed is enabled only for the explicitly selected auto-hide fallback. */
+     public IrisControlPanel(Activity activity, Actions actions, boolean streamerAllowed) {
+@@ -233,5 +210,5 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
+     private void refreshCards() {
+         if (grid == null) return;
+-        grid.removeAllViews(); autoDetail = null; autoCard = null;connectionDetail=null;
++        grid.removeAllViews(); autoDetail = null; autoCard = null;
+         int available = lastWidth - getPaddingLeft() - getPaddingRight();
+         int columns = available >= dp(720) ? 3 : available >= dp(430) ? 2 : 1;
+@@ -244,6 +221,4 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
+                 card(text("HWID 복사", "Copy HWID"), text("기존 인증용 기기 ID 복사", "Copy the device ID used for registration"), false, actions::copyHwid);
+                 card(text("오류 확인", "Diagnostics"), text("오토골 상태와 오류 내용 복사", "View and copy Auto Goal diagnostics"), false, actions::showDiagnostics);
+-                LinearLayout guard=card("Anti AFK",connectionText(),false,this::connectionHelp);
+-                connectionDetail=(TextView)guard.getChildAt(1);
+             } else {
+             card(text("조작 위치", "Control positions"), text("이동 · 공격 · 가젯 위치 지정", "Set movement, attack and gadget positions"), false,
