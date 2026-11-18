@@ -1,0 +1,19 @@
+name: November 19 offline UI and update endurance checks
+on:
+  push:
+    branches: [android-compat-nov19]
+    paths: ['.github/workflows/android-overnight-nov19.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency:
+  group: android-offline-soak-nov19
+  cancel-in-progress: false
+jobs:
+  early:
+    uses: ./.github/workflows/android-overnight-stage.yml
+    with: {stage: early, api: '35', until_utc: '2026-11-18T19:20:00Z'}
+  late:
+    needs: early
+    if: always() && !cancelled()
+    uses: ./.github/workflows/android-overnight-stage.yml
+    with: {stage: late, api: '36', until_utc: '2026-11-18T22:58:00Z'}

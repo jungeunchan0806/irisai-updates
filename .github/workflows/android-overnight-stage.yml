@@ -1,0 +1,49 @@
+name: Run one bounded offline update soak
+on:
+  workflow_call:
+    inputs:
+      stage: {type: string, required: true}
+      api: {type: string, required: true}
+      until_utc: {type: string, required: true}
+permissions: {contents: read}
+jobs:
+  soak:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 275
+    steps:
+      - name: Check the requested time window
+        id: clock
+        env: {UNTIL: '${{ inputs.until_utc }}'}
+        run: |
+          deadline=$(date -u -d "$UNTIL" +%s)
+          echo "deadline=$deadline" >> "$GITHUB_OUTPUT"
+          if (( $(date -u +%s) < deadline )); then echo 'active=true' >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/checkout@v4
+        if: steps.clock.outputs.active == 'true'
+      - uses: actions/setup-java@v4
+        if: steps.clock.outputs.active == 'true'
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+        if: steps.clock.outputs.active == 'true'
+        with: {packages: 'platforms;android-35 build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
+      - if: steps.clock.outputs.active == 'true'
+        run: |
+          sudo chmod 666 /dev/kvm
+          bash tools/android-compat/build.sh
+      - uses: reactivecircus/android-emulator-runner@v2
+        if: steps.clock.outputs.active == 'true'
+        env:
+          EXPECTED_API: '${{ inputs.api }}'
+          DEADLINE: '${{ steps.clock.outputs.deadline }}'
+        with:
+          api-level: ${{ inputs.api }}
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disk-size: 6144M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 4096 -cores 4
+          script: python tools/android-compat/check.py --skip-apks --soak-until "$DEADLINE"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.clock.outputs.active == 'true'
+        with: {name: 'soak-${{ inputs.stage }}-api-${{ inputs.api }}', path: compat-evidence/, retention-days: 14, if-no-files-found: warn}
