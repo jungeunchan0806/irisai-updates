@@ -30,6 +30,7 @@ public final class GameApp extends Activity {
     private static String processToken;
     private static boolean configured;
     private static boolean requestedRecreation;
+    private static boolean reported;
     private static final class Boot {
         final Class<?> panel;
         final String name, log, terminal;
@@ -43,6 +44,9 @@ public final class GameApp extends Activity {
     private File directory;
     private Object store;
     private Class<?> verifier, manifest, panelHost;
+    private Boot preparedBoot;
+    private boolean resumed, attached;
+    private int inspections, foregroundReports;
     private long started;
     private String logResult = "not-applicable";
 
@@ -64,16 +68,37 @@ public final class GameApp extends Activity {
                 catch (Throwable error) { processBoot.completeExceptionally(error); }
             }).start();
         } else if (!processToken.equals(token)) {
-            fail(new AssertionError("scenario started in an existing process")); return;
+            Log.e("IrisReleaseQA",token+" FAIL "+variant+" "+action+" scenario started in an existing process");
+            return;
         }
         Log.i("IrisReleaseQA", token+" ACTIVITY "+action+" saved="+(saved!=null));
+        if (reported) {
+            if ("recreate".equals(action) && saved!=null) {
+                Log.i("IrisReleaseQA",token+" TERMINAL-RECREATION");
+            }
+            return;
+        }
         processBoot.whenComplete((boot,error)->main.post(()->{
-            if (isDestroyed() || isFinishing()) return;
+            if (reported || isDestroyed() || isFinishing()) return;
             if (error!=null) {fail(error);return;}
-            attachBoot(boot);
+            preparedBoot=boot;
+            presentWhenResumed();
         }));
     }
 
+    @Override protected void onResume() {
+        super.onResume();
+        resumed=true;
+        main.post(this::presentWhenResumed);
+    }
+    @Override protected void onPause() {
+        resumed=false;
+        super.onPause();
+    }
+    @Override protected void onDestroy() {
+        main.removeCallbacksAndMessages(null);
+        super.onDestroy();
+    }
     private byte[] asset(String name) throws Exception {
         try (InputStream in = getAssets().open(variant+"/"+name); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] bytes = new byte[16384]; int n;
@@ -160,7 +185,10 @@ public final class GameApp extends Activity {
         }
         return new Boot(panelClass,selected.getString("name"),logResult,null);
     }
-    private void attachBoot(Boot boot) {
+    private void presentWhenResumed() {
+        if (reported || attached || !resumed || preparedBoot==null || isDestroyed() || isFinishing()) return;
+        attached=true;
+        Boot boot=preparedBoot;
         if (boot.terminal!=null) {pass(boot.terminal);return;}
         if ("recreate".equals(action) && !requestedRecreation) {
             requestedRecreation=true;
@@ -192,14 +220,22 @@ public final class GameApp extends Activity {
     }
     private void inspect() {
         try {
-            if (isDestroyed() || isFinishing()) return;
-            if (SystemClock.uptimeMillis()-started > 12000) throw new AssertionError("panel layout or health timeout");
+            if (reported || isDestroyed() || isFinishing()) return;
             View root=findViewById(android.R.id.content),opener=find(root,"Iris 설정 열기");
-            if(opener==null||!opener.isLaidOut()||!opener.isShown()){main.postDelayed(this::inspect,100);return;}
+            inspections++;
+            if (SystemClock.uptimeMillis()-started > 12000) {
+                throw new AssertionError("panel timeout: resumed="+resumed+" focus="+hasWindowFocus()
+                        +" opener="+(opener!=null)+" laidOut="+(opener!=null && opener.isLaidOut())
+                        +" shown="+(opener!=null && opener.isShown())+" inspections="+inspections
+                        +" foregroundReports="+foregroundReports+" active="+marker("active")
+                        +" pending="+marker("pending")+" highest="+marker("highest"));
+            }
+            if(!resumed||opener==null||!opener.isLaidOut()||!opener.isShown()){main.postDelayed(this::inspect,100);return;}
             View parent=(View)opener.getParent();
             int midpoint2=parent.getPaddingLeft()+parent.getWidth()-parent.getPaddingRight();
             require(Math.abs(opener.getLeft()+opener.getRight()-midpoint2)<=2,"opener not centered");
             require(opener.getTop()==parent.getPaddingTop(),"opener not at safe top edge");
+            foregroundReports++;
             panelHost.getMethod("recordState",String.class).invoke(null,"{\"foreground\":true,\"game\":false,\"enabled\":false,\"phase\":\"idle\",\"auth\":{\"ready\":false}}");
             panelHost.getMethod("update",boolean.class,String.class).invoke(null,false,"QA");
             if (!marker("pending").isEmpty()){main.postDelayed(this::inspect,100);return;}
@@ -209,6 +245,15 @@ public final class GameApp extends Activity {
             pass("top-center, menu, patch ready; log="+logResult);
         }catch(Throwable e){fail(e);}
     }
-    private void pass(String details){Log.i("IrisReleaseQA",token+" PASS "+variant+" "+action+" "+details);}
-    private void fail(Throwable e){Log.e("IrisReleaseQA",token+" FAIL "+variant+" "+action+" "+e,e);}
+    private void pass(String details){
+        if (reported) return;
+        reported=true;
+        Log.i("IrisReleaseQA",token+" PASS "+variant+" "+action+" "+details);
+        if ("recreate".equals(action)) recreate();
+    }
+    private void fail(Throwable e){
+        if (reported) return;
+        reported=true;
+        Log.e("IrisReleaseQA",token+" FAIL "+variant+" "+action+" "+e,e);
+    }
 }

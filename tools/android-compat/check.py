@@ -83,9 +83,13 @@ def launch(user,variant,action):
     deadline=time.monotonic()+30
     while time.monotonic()<deadline:
         _,output=adb('logcat','-d','-s','IrisReleaseQA:I')
+        passes=[]
         for line in output.splitlines():
             if token+' FAIL ' in line:raise RuntimeError(line[-420:])
-            if token+' PASS ' in line:return line.split(token+' PASS ',1)[1]
+            if token+' PASS ' in line:passes.append(line.split(token+' PASS ',1)[1])
+        if len(passes)>1:raise RuntimeError('multiple terminal results: '+variant+' '+action)
+        if passes and (action!='recreate' or token+' TERMINAL-RECREATION' in output):
+            return passes[0]
         time.sleep(.3)
     raise RuntimeError('no result before deadline: '+variant+' '+action+' '+start[-150:])
 def series(user,variant,restarts,iteration):
@@ -94,6 +98,24 @@ def series(user,variant,restarts,iteration):
     results=[]
     for action in actions:results.append(launch(user,variant,action))
     note({'type':'panel-update-cycle','variant':variant,'cycle':iteration,'checks':results})
+
+def record_display_failure():
+    queries = {
+        'window': ('window', r'mCurrentFocus|mFocusedApp|mKeyguardShowing'),
+        'power': ('power', r'mWakefulness=|Display Power: state=|mUserActivitySummary='),
+        'activity': ('activity', r'(?:topResumedActivity|mResumedActivity)\s*[:=]'),
+    }
+    state = {}
+    for name, (service, pattern) in queries.items():
+        try:
+            code, response = adb('shell', 'dumpsys', service, timeout=8)
+            if code == 0:
+                state[name] = [line.strip()[:350] for line in response.splitlines()
+                               if re.search(pattern, line, re.I)][:12]
+        except (OSError, subprocess.TimeoutExpired):
+            continue
+    (OUT / 'display-at-failure.json').write_text(json.dumps(state, indent=2))
+
 def exercise_signed_ui(user,api,soak_until,display_cycles):
     result,detail=install(Path('/tmp/iris-platform-qa.apk'),APP,user)
     note({'type':'abi-independent-installer','api':api,'install':result,'reason':detail})
@@ -114,6 +136,11 @@ def exercise_signed_ui(user,api,soak_until,display_cycles):
                 for variant in PACKAGES:series(user,variant,2+i%4 if vary_display else 3,i)
                 i+=1
                 if (time.time()>=soak_until if soak_until else i>=display_cycles): break
+        except Exception:
+            # Restoring font scale and density recreates the activity. Capture its
+            # original window and device state before doing that.
+            record_display_failure()
+            raise
         finally:
             if vary_display:
                 adb('shell','wm','density','reset')
