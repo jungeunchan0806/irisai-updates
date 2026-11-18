@@ -1,0 +1,69 @@
+name: Verify and publish TheSeven transparent UI
+on:
+  push:
+    branches: [android-theseven-ui]
+    paths: ['theseven/**', 'distribution/theseven-ui-v1/**', '.github/workflows/android-theseven-ui.yml']
+permissions: {contents: read}
+jobs:
+  verify-and-publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+        with: {packages: 'platform-tools build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xdelta3
+          python -m pip install -r theseven/requirements.txt
+      - name: Restore exact signed APK and check native behavior
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,shutil,subprocess,urllib.request,zipfile
+          from pathlib import Path
+          root=Path(os.environ['RUNNER_TEMP'])
+          manifest=json.loads(Path('distribution/theseven-ui-v1/manifest.json').read_text())
+          baseline=root/'original.apk';output=root/manifest['filename']
+          with urllib.request.urlopen(manifest['baseline_url'],timeout=90) as response, baseline.open('wb') as stream:
+              shutil.copyfileobj(response,stream,8*1024*1024)
+          def sha(p):
+              with open(p,'rb') as stream:return hashlib.file_digest(stream,'sha256').hexdigest()
+          assert sha(baseline)==manifest['baseline_sha256']
+          delta=Path('distribution/theseven-ui-v1/patch.xdelta')
+          assert sha(delta)==manifest['patch_sha256']
+          subprocess.run(['xdelta3','-d','-s',str(baseline),str(delta),str(output)],check=True)
+          assert sha(output)==manifest['sha256']
+          with zipfile.ZipFile(baseline) as z:(root/'libbrf.so').write_bytes(z.read('lib/arm64-v8a/libbrf.so'))
+          subprocess.run(['python','theseven/test_native.py',str(root/'libbrf.so'),'--report',str(root/'native-validation.json')],check=True)
+          subprocess.run(['python','theseven/verify.py',str(baseline),str(output),'--report',str(root/'apk-validation.json')],check=True)
+          build_tools=Path(os.environ['ANDROID_HOME'])/'build-tools/35.0.0'
+          signature=subprocess.check_output([str(build_tools/'apksigner'),'verify','--verbose','--print-certs',str(output)],text=True)
+          assert manifest['signer_certificate_sha256'] in signature
+          assert 'Verified using v2 scheme (APK Signature Scheme v2): true' in signature
+          assert 'Verified using v3 scheme (APK Signature Scheme v3): true' in signature
+          subprocess.run([str(build_tools/'zipalign'),'-c','-P','16','4',str(output)],check=True)
+          (root/'signature.txt').write_text(signature)
+          (root/'SHA256SUMS.txt').write_text(manifest['sha256']+'  '+manifest['filename']+'\n')
+          print('APK payloads, native UI, signatures and alignment verified.')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: theseven-ui-validation
+          path: |
+            ${{ runner.temp }}/native-validation.json
+            ${{ runner.temp }}/apk-validation.json
+            ${{ runner.temp }}/signature.txt
+          retention-days: 30
+      - name: Publish separate release
+        env: {GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}'}
+        run: |
+          if ! gh release view android-theseven-transparent-ui-v1 >/dev/null 2>&1; then
+            gh release create android-theseven-transparent-ui-v1 --target "$GITHUB_SHA" --title 'TheSeven · 상단 중앙 투명 메뉴 버튼' --notes-file distribution/theseven-ui-v1/RELEASE-KO.md --draft --prerelease --latest=false
+          fi
+          gh release upload android-theseven-transparent-ui-v1 "$RUNNER_TEMP/TheSeven-Transparent-UI-1.0.apk" "$RUNNER_TEMP/SHA256SUMS.txt" --clobber
+          gh release edit android-theseven-transparent-ui-v1 --notes-file distribution/theseven-ui-v1/RELEASE-KO.md --draft=false --prerelease --latest=false

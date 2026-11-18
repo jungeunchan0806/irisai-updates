@@ -1,0 +1,17 @@
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): true
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+Signer #1 certificate DN: CN=Iris Android Test Build, O=Iris
+Signer #1 certificate SHA-256 digest: 75fbedd4009cc3f38872ef4b2d12646a7b0fef4eac40f2f6c42e4cfff2a66f7b
+Signer #1 certificate SHA-1 digest: afa8d86c3f2cc1578ca85ca192d52064c95e0c7e
+Signer #1 certificate MD5 digest: 4cdb037c09692635330472df72640aad
+Signer #1 key algorithm: RSA
+Signer #1 key size (bits): 3072
+Signer #1 public key SHA-256 digest: d660b3dc6f6cc1938da2124e10ac96020d0828d4d3b6a364d45eceba188346e6
+Signer #1 public key SHA-1 digest: 6716f42d8e7488498517360eeba02e242b6cf591
+Signer #1 public key MD5 digest: 8059671b2bfbec664cf0d3af3671568f

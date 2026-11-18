@@ -1,0 +1,332 @@
+{
+  "native_cases": [
+    {
+      "capacity": 0,
+      "viewport": [
+        1280,
+        720
+      ],
+      "tab": 0,
+      "pass": true
+    },
+    {
+      "capacity": 0,
+      "viewport": [
+        1280,
+        720
+      ],
+      "tab": 1,
+      "pass": true
+    },
+    {
+      "capacity": 0,
+      "viewport": [
+        1280,
+        720
+      ],
+      "tab": 2,
+      "pass": true
+    },
+    {
+      "capacity": 0,
+      "viewport": [
+        2400,
+        1080
+      ],
+      "tab": 0,
+      "pass": true
+    },
+    {
+      "capacity": 0,
+      "viewport": [
+        2400,
+        1080
+      ],
+      "tab": 1,
+      "pass": true
+    },
+    {
+      "capacity": 0,
+      "viewport": [
+        2400,
+        1080
+      ],
+      "tab": 2,
+      "pass": true
+    },
+    {
+      "capacity": 0,
+      "viewport": [
+        800,
+        360
+      ],
+      "tab": 0,
+      "pass": true
+    },
+    {
+      "capacity": 0,
+      "viewport": [
+        800,
+        360
+      ],
+      "tab": 1,
+      "pass": true
+    },
+    {
+      "capacity": 0,
+      "viewport": [
+        800,
+        360
+      ],
+      "tab": 2,
+      "pass": true
+    },
+    {
+      "capacity": 0,
+      "viewport": [
+        720,
+        1280
+      ],
+      "tab": 0,
+      "pass": true
+    },
+    {
+      "capacity": 0,
+      "viewport": [
+        720,
+        1280
+      ],
+      "tab": 1,
+      "pass": true
+    },
+    {
+      "capacity": 0,
+      "viewport": [
+        720,
+        1280
+      ],
+      "tab": 2,
+      "pass": true
+    },
+    {
+      "capacity": 1,
+      "viewport": [
+        1280,
+        720
+      ],
+      "tab": 0,
+      "pass": true
+    },
+    {
+      "capacity": 1,
+      "viewport": [
+        1280,
+        720
+      ],
+      "tab": 1,
+      "pass": true
+    },
+    {
+      "capacity": 1,
+      "viewport": [
+        1280,
+        720
+      ],
+      "tab": 2,
+      "pass": true
+    },
+    {
+      "capacity": 1,
+      "viewport": [
+        2400,
+        1080
+      ],
+      "tab": 0,
+      "pass": true
+    },
+    {
+      "capacity": 1,
+      "viewport": [
+        2400,
+        1080
+      ],
+      "tab": 1,
+      "pass": true
+    },
+    {
+      "capacity": 1,
+      "viewport": [
+        2400,
+        1080
+      ],
+      "tab": 2,
+      "pass": true
+    },
+    {
+      "capacity": 1,
+      "viewport": [
+        800,
+        360
+      ],
+      "tab": 0,
+      "pass": true
+    },
+    {
+      "capacity": 1,
+      "viewport": [
+        800,
+        360
+      ],
+      "tab": 1,
+      "pass": true
+    },
+    {
+      "capacity": 1,
+      "viewport": [
+        800,
+        360
+      ],
+      "tab": 2,
+      "pass": true
+    },
+    {
+      "capacity": 1,
+      "viewport": [
+        720,
+        1280
+      ],
+      "tab": 0,
+      "pass": true
+    },
+    {
+      "capacity": 1,
+      "viewport": [
+        720,
+        1280
+      ],
+      "tab": 1,
+      "pass": true
+    },
+    {
+      "capacity": 1,
+      "viewport": [
+        720,
+        1280
+      ],
+      "tab": 2,
+      "pass": true
+    },
+    {
+      "capacity": 256,
+      "viewport": [
+        1280,
+        720
+      ],
+      "tab": 0,
+      "pass": true
+    },
+    {
+      "capacity": 256,
+      "viewport": [
+        1280,
+        720
+      ],
+      "tab": 1,
+      "pass": true
+    },
+    {
+      "capacity": 256,
+      "viewport": [
+        1280,
+        720
+      ],
+      "tab": 2,
+      "pass": true
+    },
+    {
+      "capacity": 256,
+      "viewport": [
+        2400,
+        1080
+      ],
+      "tab": 0,
+      "pass": true
+    },
+    {
+      "capacity": 256,
+      "viewport": [
+        2400,
+        1080
+      ],
+      "tab": 1,
+      "pass": true
+    },
+    {
+      "capacity": 256,
+      "viewport": [
+        2400,
+        1080
+      ],
+      "tab": 2,
+      "pass": true
+    },
+    {
+      "capacity": 256,
+      "viewport": [
+        800,
+        360
+      ],
+      "tab": 0,
+      "pass": true
+    },
+    {
+      "capacity": 256,
+      "viewport": [
+        800,
+        360
+      ],
+      "tab": 1,
+      "pass": true
+    },
+    {
+      "capacity": 256,
+      "viewport": [
+        800,
+        360
+      ],
+      "tab": 2,
+      "pass": true
+    },
+    {
+      "capacity": 256,
+      "viewport": [
+        720,
+        1280
+      ],
+      "tab": 0,
+      "pass": true
+    },
+    {
+      "capacity": 256,
+      "viewport": [
+        720,
+        1280
+      ],
+      "tab": 1,
+      "pass": true
+    },
+    {
+      "capacity": 256,
+      "viewport": [
+        720,
+        1280
+      ],
+      "tab": 2,
+      "pass": true
+    }
+  ],
+  "noninteractive_cases": 2,
+  "wrong_input_rejected": true,
+  "scope": "Actual ARM64 menu renderer and click handler; mocked platform boundaries",
+  "physical_device_game_tested": false
+}

@@ -1,0 +1,12 @@
+{
+  "sha256": "d14df8e8b912b75405b82a3b1a7f84e0bf404585f6b4535fc6ed180bbf3140d1",
+  "bytes": 1989346436,
+  "baseline_sha256": "309be672f46987a109f7eb8690c6b32b51e4fe6f24867c9566bb1ba145345a7b",
+  "modified_entries": [
+    "lib/arm64-v8a/libbrf.so"
+  ],
+  "unchanged_entries": 38355,
+  "all_entry_crc_and_hashes_checked": true,
+  "stored_entry_alignment_checked": true,
+  "physical_device_game_tested": false
+}
