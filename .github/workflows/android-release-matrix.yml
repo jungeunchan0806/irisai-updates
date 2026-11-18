@@ -33,8 +33,9 @@ jobs:
           if not all(api in range(28, 38) for api in apis):
               raise ValueError('Supported API levels are 28 through 37')
           platforms = [
-              dict(api=api, image='37.0' if api == 37 else str(api),
-                   target='default' if api == 37 else 'google_apis') for api in apis
+              dict(api=api, image='37.2' if api == 37 else str(api),
+                   target='google_apis_ps16k' if api == 37 else 'google_apis',
+                   gpu='software' if api == 37 else 'swiftshader_indirect') for api in apis
           ]
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
               print('platforms=' + json.dumps(platforms), file=output)
@@ -69,7 +70,7 @@ jobs:
           profile: pixel_2
           disk-size: 8192M
           disable-animations: true
-          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 4096 -cores 4
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu ${{ matrix.gpu }} -memory 4096 -cores 4
           script: python tools/android-compat/check.py
       - uses: actions/upload-artifact@v4
         if: always()

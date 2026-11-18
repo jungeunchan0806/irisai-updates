@@ -102,7 +102,9 @@ def main():
     user=wait_package_service()
     api=int(shell('getprop','ro.build.version.sdk'));abis=shell('getprop','ro.product.cpu.abilist').split(',')
     assert api==int(os.environ['EXPECTED_API'])
-    note({'type':'environment','api':api,'abis':abis,'user':user})
+    note({'type':'environment','api':api,'abis':abis,'user':user,
+          'fingerprint':shell('getprop','ro.build.fingerprint'),
+          'pageSize':adb('shell','getconf','PAGE_SIZE')[1]})
     errors=[]
     if not p.skip_apks:
         for k in PACKAGES:
