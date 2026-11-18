@@ -69,3 +69,7 @@ test('a transient UI exception stops the engine and clears after successful reco
  f.poll();assert.equal(f.c._ag.enabled,false);assert.notEqual(f.phase,'UI 연결 오류');
  f.poll(1);f.activate();f.poll();assert.equal(f.c._ag.enabled,true);
 });
+test('a recovered native observer error does not permanently discard taps; failed startup stays blocked',()=>{
+ const f=panelFixture({active:true});f.c._st.error='temporary input observation error';f.poll(1);assert.equal(f.taps,1);f.activate();f.poll();assert.equal(f.c._ag.enabled,true);
+ const bad=panelFixture({started:false,active:true});bad.c._st.error='incompatible game build';bad.poll(1);assert.equal(bad.taps,0);assert.equal(bad.c._ag.enabled,false);assert.equal(bad.phase,'게임 연결 실패');
+});

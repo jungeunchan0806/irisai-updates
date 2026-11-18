@@ -122,6 +122,7 @@ function createLicense(Java, handlers, options = {}) {
   }
   return {
     sync,
+    clock: now,
     tap() { if (!host) return; waiting = Number(host.authorize()); sync(host); },
     copy() { if (host) host.copyHwid(); },
     bindView() {},

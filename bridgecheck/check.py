@@ -1,6 +1,6 @@
 """Real bootstrap, dynamic module, Android authorization and DEX bridge round trip."""
 from pathlib import Path
-import json,subprocess,time,frida
+import json,subprocess,time,frida,os,re
 out=Path('bridgecheck-results');out.mkdir(exist_ok=True)
 subprocess.run(['adb','install','-r','bshackcheck/build/outputs/apk/debug/bshackcheck-debug.apk'],check=True)
 subprocess.run(['adb','shell','pm','clear','com.irisai.bshack.check'],check=True)
@@ -46,12 +46,43 @@ try:
  script.exports_sync.failonce();time.sleep(1)
  check(not state(script)['error'],'UI bridge recovers after transient exception')
  check(script.exports_sync.installfixture(),'verified small patch installs without replacing APK')
- restart(session);session,script=attach();time.sleep(1)
- b=script.exports_sync.boot()
+ restart(session);session,script=attach()
+ deadline=time.monotonic()+15
+ while time.monotonic()<deadline:
+  b=script.exports_sync.boot()
+  if b['engineAvailable']:break
+  time.sleep(.25)
  check(b['selected']['version']==22001 and b['engineAvailable'],'signed full production engine loads on next start')
  restart(session);session,script=attach();time.sleep(1)
  b=script.exports_sync.boot()
  check(b['selected']['version']==22000 and bool(b['selected']['recovery']),'unfinished patched startup rolls back to embedded engine')
+ deadline=time.monotonic()+15
+ while time.monotonic()<deadline:
+  try:
+   s=state(script)
+   if s.get('foreground') and s.get('auth',{}).get('ready'):break
+  except frida.core.RPCException:pass
+  time.sleep(.25)
+ check(s.get('foreground') and s.get('auth',{}).get('ready'),'embedded UI and authorization recover after rollback')
+ minutes=int(os.environ.get('ENDURANCE_MINUTES','0'))
+ if minutes:
+  checkpoints=[];stop=time.monotonic()+minutes*60;last_grant=0;last_memory=0;cycles=0;max_rpc=0
+  while time.monotonic()<stop:
+   start=time.monotonic()
+   if start-last_grant>40:script.exports_sync.grant();last_grant=start
+   script.exports_sync.click();time.sleep(.4);s=state(script)
+   assert not s['error'] and s['auth']['ready'] and s['foreground'],s
+   max_rpc=max(max_rpc,time.monotonic()-start);cycles+=1
+   if start-last_memory>30:
+    memory=subprocess.check_output(['adb','shell','dumpsys','meminfo','com.irisai.bshack.check'],text=True)
+    match=re.search(r'TOTAL PSS:\s*(\d+)',memory)
+    checkpoints.append({'cycle':cycles,'remaining_seconds':round(stop-start),'pss_kb':int(match.group(1)) if match else None})
+    print('Endurance',checkpoints[-1],flush=True);last_memory=start
+   time.sleep(1.6)
+  (out/'endurance.json').write_text(json.dumps({'minutes':minutes,'cycles':cycles,'max_rpc_seconds':max_rpc,'checkpoints':checkpoints},indent=2))
+  check(cycles>=minutes*15,'sustained authorization and UI bridge remains responsive')
+  measured=[x['pss_kb'] for x in checkpoints if x['pss_kb'] is not None]
+  if len(measured)>2:check(measured[-1]-measured[1]<80*1024,'bridge memory growth remains below 80 MiB across endurance run')
  print('PASS',len(checks),'real bootstrap/bridge checks',flush=True)
 finally:
  (out/'messages.json').write_text(json.dumps(messages,ensure_ascii=False,indent=2))

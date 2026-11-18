@@ -3,6 +3,7 @@ let _panelHost = null, _panelPending = false, _panelAttempts = 0;
 let _panelWanted = false, _panelQueued = false, _panelForeground = false, _panelError = '';
 let _panelLastTick = 0;
 const _Java = frida_java_bridge_default;
+function _panelTime() { return _license.clock ? _license.clock() : Date.now(); }
 function _panelStop() { _panelWanted = false; _panelQueued = false; _st.requested = false; }
 function _panelActivate() {
   if (_panelWanted && _panelForeground && _st.started) _st.requested = true;
@@ -84,7 +85,7 @@ function _panelPoll() {
           else if (command === 3) _license.copy();
           else if (command === 1) {
             if (_ag.enabled || _st.requested === true || _panelWanted) _panelStop();
-            else if (_panelForeground && !_st.error) { _panelWanted = true; _panelQueued = true; }
+            else if (_panelForeground && (_st.started || !_st.error)) { _panelWanted = true; _panelQueued = true; }
           }
         }
         if (_panelWanted && _panelQueued && _st.started && _license.status().ready) {
@@ -93,7 +94,7 @@ function _panelPoll() {
         const status = _license.status();
         if (status.error && !_panelQueued) _panelWanted = false;
         _art();
-        _panelError='';_panelLastTick=Date.now();
+        _panelError='';_panelLastTick=_panelTime();
         if(_panelHost.recordState) _panelHost.recordState(JSON.stringify({game:_st.started,foreground:_panelForeground,enabled:_ag.enabled,phase:_ag.phase,auth:status,lastEngineError:_ag.lastError || _st.error || null}));
         _panelHost.update(_ag.enabled, _panelPhase());
       } catch (e) { _panelRecordError('poll',e); _panelStop();try{if(_panelHost)_panelHost.update(false,'UI 연결 오류');}catch(_){} }

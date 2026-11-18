@@ -1,11 +1,14 @@
-name: Build BSHACK auto goal update and verify Android menu
+name: Build BSHACK 2.2.0 and publish signed patch channel
 on:
   push:
-    branches: [android-bshack-panel]
-    paths: ['bshack/**', 'bshackui/**', 'bshackcheck/**', 'distribution/bshack-panel5/**', '.github/workflows/android-bshack-panel.yml']
+    branches: [android-bshack-panel6]
+    paths: ['distribution/bshack-panel6/**', '.github/workflows/android-bshack-panel.yml']
 permissions: {contents: read}
 jobs:
-  payload:
+  validate:
+    uses: ./.github/workflows/android-bridgecheck.yml
+    with: {endurance_minutes: 15}
+  package:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -13,78 +16,77 @@ jobs:
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '17'}
       - uses: android-actions/setup-android@v3
-        with: {packages: 'platform-tools platforms;android-35 build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
-      - run: node --test bshack/runtime.test.mjs
-      - run: ./gradlew :controlui:testDebugUnitTest :bshackcheck:assembleDebug :bshackcheck:assembleDebugAndroidTest --console=plain --max-workers=2
-      - run: sudo chmod 666 /dev/kvm
-      - uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          target: google_apis
-          arch: x86_64
-          profile: pixel_2
-          disable-animations: true
-          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 2048 -cores 2
-          script: python bshack/ci_payload.py
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with: {name: bshack-panel5-checks, path: bshack-checks/}
-  package:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with: {distribution: temurin, java-version: '17'}
-      - uses: android-actions/setup-android@v3
         with: {packages: 'platform-tools build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
       - run: sudo apt-get update -qq && sudo apt-get install -y xdelta3
-      - name: Restore and verify the exact signed APK
+      - name: Restore the exact signed game APK
         run: |
           python - <<'PY'
-          import json,hashlib,urllib.request,subprocess,os
+          import json,hashlib,urllib.request,subprocess,os,zipfile
           from pathlib import Path
-          m=json.loads(Path('distribution/bshack-panel5/manifest.json').read_text());root=Path(os.environ['RUNNER_TEMP'])
+          m=json.loads(Path('distribution/bshack-panel6/manifest.json').read_text());root=Path(os.environ['RUNNER_TEMP'])
           urllib.request.urlretrieve(m['baseline_url'],root/'baseline.apk')
           def sha(p):
             with p.open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
           assert sha(root/'baseline.apk')==m['baseline_sha256']
-          assert sha(Path('distribution/bshack-panel5/patch.xdelta'))==m['patch_sha256']
-          subprocess.run(['xdelta3','-d','-s',str(root/'baseline.apk'),'distribution/bshack-panel5/patch.xdelta',str(root/m['filename'])],check=True)
+          assert sha(Path('distribution/bshack-panel6/patch.xdelta'))==m['patch_sha256']
+          subprocess.run(['xdelta3','-d','-s',str(root/'baseline.apk'),'distribution/bshack-panel6/patch.xdelta',str(root/m['filename'])],check=True)
           assert sha(root/m['filename'])==m['sha256']
           signature=subprocess.check_output([os.environ['ANDROID_HOME']+'/build-tools/35.0.0/apksigner','verify','--min-sdk-version','24','--verbose','--print-certs',str(root/m['filename'])],text=True)
           assert m['signer_certificate_sha256'] in signature
           assert 'Verified using v2 scheme (APK Signature Scheme v2): true' in signature
           assert 'Verified using v3 scheme (APK Signature Scheme v3): true' in signature
+          with zipfile.ZipFile(root/m['filename']) as z:assert hashlib.sha256(z.read('assets/iris-panel.dex')).hexdigest()==m['ui_sha256']
           print(signature)
           PY
-          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 "$RUNNER_TEMP/BSHACK-Autogoal-2.1.1.apk"
-          python bshack/verify.py "$RUNNER_TEMP/baseline.apk" "$RUNNER_TEMP/BSHACK-Autogoal-2.1.1.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 "$RUNNER_TEMP/BSHACK-Autogoal-2.2.0.apk"
+          python bshack/verify.py "$RUNNER_TEMP/baseline.apk" "$RUNNER_TEMP/BSHACK-Autogoal-2.2.0.apk"
+      - name: Prepare panel signing handoff
+        run: |
+          python seller-panel/native-panels/build.py --sdk-tools "$ANDROID_HOME/build-tools/35.0.0" --out "$RUNNER_TEMP/prepared-panels" --prepare-only
+          git archive --format=zip --output="$RUNNER_TEMP/BSHACK-Panel-Update-Sources-2.2.0.zip" HEAD seller-panel/native-panels seller-panel/native-admin seller-panel/seller-client seller-panel/public/downloads/admin-1.2.0 seller-panel/public/downloads/seller-2.0.0
+          python - <<'PY'
+          from pathlib import Path
+          import os,zipfile
+          root=Path(os.environ['RUNNER_TEMP'])
+          with zipfile.ZipFile(root/'BSHACK-Panel-Update-Sources-2.2.0.zip','a',compression=zipfile.ZIP_DEFLATED) as z:
+            for p in (root/'prepared-panels').iterdir():z.write(p,'prepared-not-installable/'+p.name)
+          PY
       - uses: actions/upload-artifact@v4
         with:
-          name: bshack-panel5-apk
+          name: bshack-panel6-release
           path: |
-            ${{ runner.temp }}/BSHACK-Autogoal-2.1.1.apk
-            ${{ runner.temp }}/BSHACK-Autogoal-2.1.1.apk.sha256
-            ${{ runner.temp }}/BSHACK-Autogoal-2.1.1.verification.json
+            ${{ runner.temp }}/BSHACK-Autogoal-2.2.0.apk
+            ${{ runner.temp }}/BSHACK-Autogoal-2.2.0.apk.sha256
+            ${{ runner.temp }}/BSHACK-Autogoal-2.2.0.verification.json
+            ${{ runner.temp }}/BSHACK-Panel-Update-Sources-2.2.0.zip
           compression-level: 0
           retention-days: 7
   publish:
-    needs: [payload, package]
+    needs: [validate, package]
     runs-on: ubuntu-24.04
     permissions: {contents: write}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
-        with: {name: bshack-panel5-apk, path: apk}
-      - name: Publish verified update
+        with: {name: bshack-panel6-release, path: apk}
+      - name: Publish verified APK and signed small-patch channel
         env: {GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}'}
         run: |
-          cp distribution/bshack-panel5/RELEASE-KO.md release-notes.md
+          cp distribution/bshack-panel6/RELEASE-KO.md release-notes.md
           python - <<'PY'
           from pathlib import Path
           import os
-          p=Path('release-notes.md');p.write_text(p.read_text()+'\n[이번 빌드·UI 검사](https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GITHUB_RUN_ID']+')\n')
+          p=Path('release-notes.md');p.write_text(p.read_text()+'\n[Android 15·16 검사 및 각 15분 연속 검사](https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GITHUB_RUN_ID']+')\n')
+          Path('channel-notes.md').write_text('앱 자동 패치용 채널입니다. 직접 설치하는 파일이 아닙니다.\n\n설치 APK: https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/releases/tag/android-bshack-panel6\n')
           PY
-          gh release create android-bshack-panel5 --target "$GITHUB_SHA" --title 'BSHACK 2.1.1 · 오토골 활성화 수정 · 메뉴 정리' --notes-file release-notes.md --prerelease --latest=false
-          gh release upload android-bshack-panel5 apk/*
+          if ! gh release view android-bshack-panel6 >/dev/null 2>&1; then
+            gh release create android-bshack-panel6 --target "$GITHUB_SHA" --title 'BSHACK 2.2.0 · HWID/UI 수정 · 앱 내부 패치' --notes-file release-notes.md --draft --prerelease --latest=false
+          fi
+          gh release upload android-bshack-panel6 apk/* distribution/bshack-panel6/BSHACK-patch-2.2.0.zip --clobber
+          if ! gh release view android-bshack-updates >/dev/null 2>&1; then
+            gh release create android-bshack-updates --target "$GITHUB_SHA" --title 'BSHACK 자동 패치 채널 · 설치 파일 아님' --notes-file channel-notes.md --draft --prerelease --latest=false
+          fi
+          gh release upload android-bshack-updates distribution/bshack-panel6/stable.json.sig --clobber
+          gh release upload android-bshack-updates distribution/bshack-panel6/stable.json --clobber
+          gh release edit android-bshack-updates --notes-file channel-notes.md --draft=false --prerelease --latest=false
+          gh release edit android-bshack-panel6 --notes-file release-notes.md --draft=false --prerelease --latest=false

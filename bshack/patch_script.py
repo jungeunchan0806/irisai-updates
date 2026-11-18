@@ -21,7 +21,7 @@ def patch(data):
       '      const _license = createLicense(frida_java_bridge_default, {\n        surface: _panelSurface,\n        cancel() { _panelWanted = false; },\n        notice(message) { console.log("[IRIS BSHACK] " + message); },')
     # Enforce stop even when the render loop pauses but battle ticks continue.
     text=once(text,'      function _uag(bmc, now) {',
-      '      function _uag(bmc, now) {\n        if (_ag.enabled && (!_panelForeground || Date.now()-_panelLastTick>3000 || _st.requested === false || !_license.isActive())) {\n          _ag.enabled = false; _ag.stopPending = true; _st.requested = false;\n        }')
+      '      function _uag(bmc, now) {\n        if (_ag.enabled && (!_panelForeground || _panelTime()-_panelLastTick>3000 || _st.requested === false || !_license.isActive())) {\n          _ag.enabled = false; _ag.stopPending = true; _st.requested = false;\n        }')
     # Android View UI replaces fragile native HUD allocation; retain game engine itself.
     start=text.index('      function _enu(now) {');end=text.index('      function _art() {',start)
     text=text[:start]+'      function _enu(now) {} // UI is owned by PanelHost on Android main thread.\n'+text[end:]
