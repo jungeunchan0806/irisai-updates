@@ -18,13 +18,20 @@ public final class Checks extends Instrumentation {
  private void ui(Runnable r) { java.util.concurrent.atomic.AtomicReference<Throwable> e=new java.util.concurrent.atomic.AtomicReference<>();runOnMainSync(()->{try{r.run();}catch(Throwable t){e.set(t);}});if(e.get()!=null)throw new AssertionError(e.get()); }
  private View find(View v,String value) { if(value.contentEquals(v.getContentDescription()==null?"":v.getContentDescription()))return v;if(v instanceof TextView&&value.contentEquals(((TextView)v).getText()))return v;if(v instanceof ViewGroup)for(int i=0;i<((ViewGroup)v).getChildCount();i++){View r=find(((ViewGroup)v).getChildAt(i),value);if(r!=null)return r;}return null; }
  private View root(){return activity.findViewById(android.R.id.content);}
+ private void isolateAutomaticUpdates(){try{
+  // This suite tests updater dialogs/signatures with fixtures below. A newer
+  // public release must not open a modal over the unrelated farm input test.
+  java.lang.reflect.Field f=host.getDeclaredField("host");f.setAccessible(true);Object value=f.get(null);
+  f=host.getDeclaredField("updates");f.setAccessible(true);Object manager=f.get(value);
+  f=manager.getClass().getDeclaredField("startupChecked");f.setAccessible(true);f.setBoolean(manager,true);
+ }catch(Exception e){throw new AssertionError(e);}}
  @Override public void onStart() {
   Bundle result=new Bundle();try{
    getTargetContext().getSharedPreferences("iris_control_panel_v1",0).edit().clear().commit();
    byte[] bytes;try(InputStream in=getTargetContext().getAssets().open("iris-panel.dex");ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] b=new byte[8192];int n;while((n=in.read(b))>0)out.write(b,0,n);bytes=out.toByteArray();}
    host=new InMemoryDexClassLoader(new ByteBuffer[]{ByteBuffer.wrap(bytes)},getTargetContext().getApplicationInfo().nativeLibraryDir,getTargetContext().getClassLoader()).loadClass("com.irisai.bshack.PanelHost");
    activity=(GameApp)startActivitySync(new Intent(getTargetContext(),GameApp.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));waitForIdleSync();
-   ui(()->{call("initialize",new Class<?>[]{Application.class},activity.getApplication());call("attach",new Class<?>[]{Activity.class},activity);while(poll()!=0){};});waitForIdleSync();SystemClock.sleep(250);
+   ui(()->{call("initialize",new Class<?>[]{Application.class},activity.getApplication());isolateAutomaticUpdates();call("attach",new Class<?>[]{Activity.class},activity);while(poll()!=0){};});waitForIdleSync();SystemClock.sleep(250);
    ui(()->{
     require("".equals(call("loadNativeFeatures",new Class<?>[]{})),"native feature library loads through app DEX class loader");
     require("yes".equals(System.getProperty("iris.fixture.brf.jni")),"System.load invokes JNI_OnLoad and resolves parent game class");
