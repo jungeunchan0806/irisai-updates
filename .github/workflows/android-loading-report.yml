@@ -1,0 +1,27 @@
+name: Publish the offline Android loading report reader
+on:
+  push:
+    branches: [android-loading-report]
+    paths: ['.github/workflows/android-loading-report.yml']
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: b265000afe6e4499b4f5c5deb8380555ddb54b89
+      - name: Attach the verified HTML file
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          tag=android-loading-report-v1
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --target "$(git rev-parse HEAD)" --title 'Android 로딩 진단 도구' --notes 'HTML 파일을 브라우저에서 열고 Android 버그 신고 ZIP을 선택하세요. 원본 보고서는 기기에서 처리됩니다.' --prerelease --latest=false --draft
+          fi
+          if ! gh release view "$tag" --json assets --jq '.assets[].name' | grep -qx 'iris-loading-report.html'; then
+            gh release upload "$tag" tools/iris-loading-report.html
+          fi
+          gh release edit "$tag" --draft=false --prerelease --latest=false
