@@ -1,0 +1,37 @@
+name: Check prepared seller and admin APK startup
+on:
+  push:
+    branches: [android-bshack-panel6]
+    paths: ['seller-panel/native-panels/**', '.github/workflows/android-panel-appcheck.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  panel-apps:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+        with: {packages: 'platform-tools build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
+      - name: Prepare apps and sign isolated test copies
+        run: |
+          python seller-panel/native-panels/build.py --sdk-tools "$ANDROID_HOME/build-tools/35.0.0" --out "$RUNNER_TEMP/prepared-panels" --prepare-only
+          keytool -genkeypair -alias fixture -keyalg RSA -keysize 2048 -validity 1 -dname 'CN=Disposable Panel Fixture' -keystore "$RUNNER_TEMP/fixture.jks" -storepass android -keypass android
+          for role in Seller Admin; do
+            "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --ks "$RUNNER_TEMP/fixture.jks" --ks-key-alias fixture --ks-pass pass:android --v4-signing-enabled false --out "$RUNNER_TEMP/prepared-panels/$role-fixture-only.apk" "$RUNNER_TEMP/prepared-panels/BSHACK-$role-Android-2.2.0.unsigned.apk"
+          done
+          sudo chmod 666 /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 2048 -cores 2
+          script: python seller-panel/native-panels/check_launch.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: panel-app-startup-evidence, path: panel-app-checks/}
