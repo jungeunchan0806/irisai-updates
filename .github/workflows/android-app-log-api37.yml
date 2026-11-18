@@ -18,16 +18,15 @@ jobs:
           bash bshackcheck/app-log-fixture/build.sh
       - uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: '37.0'
-          target: google_apis
+          api-level: '37.1'
+          target: google_apis_ps16k
           arch: x86_64
           disk-size: 8192M
           profile: pixel_2
-          emulator-options: -no-window -no-audio -no-snapshot -no-boot-anim -gpu swiftshader -memory 4096 -cores 4
+          emulator-options: -no-window -no-audio -no-snapshot -no-boot-anim -gpu off -memory 4096 -cores 4
           script: |
             test "$(adb shell getprop ro.build.version.sdk | tr -d '\r')" = '37'
             adb shell df -h /data
-            timeout 120 sh -c 'until adb shell cmd user is-user-unlocked 0 | grep -q true; do sleep 4; done'
             timeout 120 sh -c 'until adb install --no-incremental /tmp/iris-log-fixture.apk; do sleep 6; done'
             adb shell am start -W -n com.irisai.logfixture/com.irisai.bshack.AppLogProbe
             timeout 30 sh -c 'until adb logcat -d -s AppLogProbe:I | grep -E "PASS own log|FAIL"; do sleep 1; done'
