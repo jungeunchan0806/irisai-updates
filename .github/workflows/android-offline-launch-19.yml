@@ -1,0 +1,36 @@
+name: Compare offline launch screens of the two released APKs
+on:
+  push:
+    branches: [android-offline-launch-19]
+    paths: [tools/android-compat/observe_launch.py, .github/workflows/android-offline-launch-19.yml]
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  observe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix: {variant: [solo, combined]}
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo chmod 666 /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: '37.0'
+          target: google_apis
+          emulator-build: '15261927'
+          arch: x86_64
+          profile: pixel_2
+          disk-size: 12288M
+          disable-animations: true
+          emulator-boot-timeout: 900
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu software -memory 3072 -cores 2 -feature GLDirectMem,HasSharedSlotsHostMemoryAllocator
+          script: python3 tools/android-compat/observe_launch.py ${{ matrix.variant }}
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: startup-${{ matrix.variant }}
+          path: startup-evidence/
+          retention-days: 7
+          if-no-files-found: warn
