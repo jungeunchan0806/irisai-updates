@@ -54,6 +54,7 @@ jobs:
         env:
           RECOVERY_PATCH: '${{ inputs.recovery_patch }}'
           UPGRADE_PATCH: '${{ inputs.upgrade_patch }}'
+          RELEASE_MANIFEST: '${{ inputs.release_manifest }}'
         with:
           api-level: '${{ matrix.api }}'
           target: google_apis

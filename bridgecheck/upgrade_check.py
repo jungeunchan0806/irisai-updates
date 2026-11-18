@@ -9,7 +9,7 @@ out=Path('upgrade-checks');out.mkdir(exist_ok=True)
 package='com.irisai.bshack.check';messages=[];checks=[]
 candidate=json.loads(Path('bridgecheck/generated/upgrade/candidate/manifest.json').read_text())
 version=candidate['version']
-release=json.loads(Path('distribution/connection/release.json').read_text());base_version=release['baseline_version']
+release=json.loads(Path('bridgecheck/generated/upgrade/release.json').read_text());base_version=release['baseline_version']
 bridge=Path('bridgecheck/java-bridge.js').read_text();bootstrap=Path('bshack/bootstrap.js').read_text()
 api=Path('bridgecheck/bootstrap-api.js').read_text()+r'''
 function legacyStore(){

@@ -104,7 +104,7 @@ function _panelPoll() {
         _featuresPoll();
         _panelHost.autoGoalPriority(_ag.enabled && !!(_ag.carriedKey || _ag.ball));
         _panelError='';_panelLastTick=_panelTime();
-        if(_panelHost.recordState) _panelHost.recordState(JSON.stringify({game:_st.started,foreground:_panelForeground,enabled:_ag.enabled,phase:_ag.phase,auth:status,connection:_connection.status(),lastEngineError:_ag.lastError || _st.error || null}));
+        if(_panelHost.recordState) _panelHost.recordState(JSON.stringify({game:_st.started,foreground:_panelForeground,enabled:_ag.enabled,phase:_ag.phase,auth:status,connection:_connection.status(),features:{ready:_features.ready,moduleProgress:_features.progress,moduleInitialized:_features.initialized,error:_features.error},lastEngineError:_ag.lastError || _st.error || null}));
         _panelHost.update(_ag.enabled, _panelPhase());
       } catch (e) { _panelRecordError('poll',e); _panelStop();try{if(_panelHost)_panelHost.update(false,'UI 연결 오류');}catch(_){} }
       finally { _panelPending = false; }

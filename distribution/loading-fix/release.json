@@ -1,0 +1,11 @@
+{
+  "version": 23002,
+  "base": "bshack-70648-panel7-v1",
+  "tag": "android-bshack-loading-fix-2.3.2",
+  "title": "BSHACK 통합 2.3.2 · 네이티브 초기화 순서 수정",
+  "filename": "Iris-loading-patch-2.3.2.zip",
+  "channel": "android-bshack-integrated-updates",
+  "baseline_version": 23000,
+  "baseline_folder": "distribution/bshack-panel7",
+  "baseline_zip": "BSHACK-patch-2.3.0.zip"
+}

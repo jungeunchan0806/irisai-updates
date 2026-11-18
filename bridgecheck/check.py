@@ -29,6 +29,7 @@ try:
  native=session.create_script(Path('bridgecheck/generated/features-native-test.js').read_text());native.load()
  report=native.exports_sync.run();(out/'native-features.json').write_text(json.dumps(report,indent=2));native.unload()
  check(report['excluded_farm_off'] and report['duplicate_brf_goal_off'],'Android Frida CModule applies native settings and disables duplicate BRF bots')
+ check(report['loading_guard'] and report['queued_settings_preserved'],'loading frames cannot apply settings or report readiness before native initialization completes')
  s={}
  deadline=time.monotonic()+15
  while time.monotonic()<deadline:

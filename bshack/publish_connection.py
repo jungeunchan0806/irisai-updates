@@ -1,8 +1,8 @@
 """Publish only after the calling workflow's Android checks pass."""
 from pathlib import Path
-import base64, hashlib, json, os, re, subprocess, tempfile, urllib.request, zipfile
+import base64, hashlib, json, os, re, subprocess, tempfile, urllib.request, zipfile, sys
 
-root = Path('distribution/connection')
+root = Path(sys.argv[1] if len(sys.argv) > 1 else 'distribution/connection')
 release = json.loads((root / 'release.json').read_text())
 manifest = json.loads((root / 'manifest.json').read_text())
 repository = os.environ['GITHUB_REPOSITORY']

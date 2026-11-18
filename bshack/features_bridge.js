@@ -1,6 +1,7 @@
 // Reuse the existing native feature implementation; never load a second engine.
 const _features = { module:null, bridge:null, snapshot:null, submit:null,
-  buffer:Memory.alloc(104), error:'', frame:-1, seenAt:0, ready:false, config:{} };
+  buffer:Memory.alloc(112), error:'', frame:-1, seenAt:0, ready:false,
+  progress:0, initialized:false, config:{} };
 const _featureSlots = [1,2,4,5,9,14,16,17,18,19,25,26,48,49,50,51,52,53,54,55];
 function _featuresBind() {
   if (_features.module || _features.error) return;
@@ -41,10 +42,13 @@ function _featuresPoll() {
     const p=_features.buffer, frame=p.add(4).readS32(), now=_panelTime();
     if(frame!==_features.frame){_features.frame=frame;_features.seenAt=now;}
     _features.ready=p.readS32()!==0 && now-_features.seenAt<3000;
+    _features.progress=p.add(104).readS32();
+    _features.initialized=p.add(108).readS32()!==0;
     for(const slot of _featureSlots) _features.config[String(slot)]=p.add(16+slot).readU8();
     for(const slot of [56,60,64]) _features.config[String(slot)]=p.add(16+slot).readS32();
     _panelHost.updateFeatures(JSON.stringify({ready:_features.ready,values:_features.config,
-      fps:p.add(8).readS32(),error:p.add(12).readS32()?'설정을 적용하지 못했습니다':_features.error}));
+      fps:p.add(8).readS32(),moduleProgress:_features.progress,moduleInitialized:_features.initialized,
+      error:p.add(12).readS32()?'설정을 적용하지 못했습니다':_features.error}));
     for(let i=0;i<16;i++) {
       const text=_panelHost.pollFeature();if(!text)break;
       const command=JSON.parse(String(text));
