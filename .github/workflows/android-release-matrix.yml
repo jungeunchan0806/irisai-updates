@@ -13,6 +13,10 @@ on:
         description: 'Use an ARM64 emulator on Apple silicon'
         type: boolean
         default: false
+      fixture_only:
+        description: 'Run only offline signed panel and update checks'
+        type: boolean
+        default: false
       api37_page_size:
         description: 'Page size of the Android 17 image'
         type: choice
@@ -24,6 +28,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       platforms: ${{ steps.platforms.outputs.platforms }}
+      fixture_only: ${{ steps.platforms.outputs.fixture_only }}
     steps:
       - uses: actions/checkout@v4
       - name: Select Android versions
@@ -32,17 +37,20 @@ jobs:
           REQUESTED_APIS: ${{ inputs.apis }}
           NATIVE_ARM: ${{ inputs.native_arm }}
           API37_PAGE_SIZE: ${{ inputs.api37_page_size }}
+          FIXTURE_ONLY: ${{ inputs.fixture_only }}
         run: |
           python - <<'PY'
           import json, os, re, subprocess
           request = os.environ.get('REQUESTED_APIS', '').strip()
           native_arm = os.environ.get('NATIVE_ARM', '').lower() == 'true'
+          fixture_only = os.environ.get('FIXTURE_ONLY', '').lower() == 'true'
           page_size = os.environ.get('API37_PAGE_SIZE') or '16k'
           if os.environ['GITHUB_EVENT_NAME'] == 'push':
               message = subprocess.check_output(['git', 'log', '-1', '--format=%B'], text=True)
               selection = re.search(r'^Compat-APIs: ([0-9, ]+)$', message, re.MULTILINE)
               request = selection[1] if selection else ''
               native_arm = 'Compat-ARM64: true' in message.splitlines()
+              fixture_only = 'Compat-UI-only: true' in message.splitlines()
               page = re.search(r'^Compat-17-page: (4k|16k)$', message, re.MULTILINE)
               if page:
                   page_size = page[1]
@@ -67,6 +75,7 @@ jobs:
           ]
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
               print('platforms=' + json.dumps(platforms), file=output)
+              print('fixture_only=' + str(fixture_only).lower(), file=output)
           PY
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '17'}
@@ -123,7 +132,10 @@ jobs:
           disable-animations: true
           emulator-boot-timeout: 900
           emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu ${{ matrix.gpu }} -memory 3072 -cores 2 ${{ matrix.api == 37 && runner.os == 'Linux' && '-feature GLDirectMem,HasSharedSlotsHostMemoryAllocator' || '' }}
-          script: python3 tools/android-compat/check.py --display-cycles ${{ matrix.api == 36 && 12 || matrix.api == 37 && 5 || 1 }}
+          script: >-
+            python3 tools/android-compat/check.py
+            --display-cycles ${{ matrix.api == 35 && needs.build.outputs.fixture_only == 'true' && 15 || matrix.api == 36 && 12 || matrix.api == 37 && 5 || 1 }}
+            ${{ needs.build.outputs.fixture_only == 'true' && '--skip-apks' || '' }}
       - name: Capture host status after a failed emulator run
         if: failure() && runner.os == 'Linux'
         run: |
