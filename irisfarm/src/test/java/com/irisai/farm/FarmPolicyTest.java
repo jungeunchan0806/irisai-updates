@@ -38,4 +38,9 @@ public class FarmPolicyTest {
         FarmPolicy.Frame f=frame(150);f.enemies=List.of();f.walls=List.of(new Box(360,200,440,235));
         FarmPolicy.Decision d=new FarmPolicy().decide(f,brawler());assertTrue(d.dx<0);assertFalse(d.attack||d.superAttack||d.gadget||d.hyper);
     }
+    @Test public void overlappingDetectionCanEscapeButFullyBlockedMapCannot(){
+        FarmPolicy.Frame f=frame(150);f.enemies=List.of();f.walls=List.of(new Box(390,260,410,280));
+        FarmPolicy.Decision d=new FarmPolicy().decide(f,brawler());assertTrue(Math.hypot(d.dx,d.dy)>1);
+        f.walls=List.of(new Box(0,0,960,540));d=new FarmPolicy().decide(f,brawler());assertEquals(0,Math.hypot(d.dx,d.dy),0);
+    }
 }

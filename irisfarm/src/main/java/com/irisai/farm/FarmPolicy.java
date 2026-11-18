@@ -36,6 +36,12 @@ public final class FarmPolicy {
             P target=new P(f.player.x+move.x/length*38,f.player.y+move.y/length*38);
             if(Geometry.clear(f.player,target,f.walls,17))return move;
         }
+        // A detector box can overlap a stationary player's inflated footprint.
+        // Let A* project that start onto nearby free space instead of returning
+        // zero forever before its overlap-recovery branch can run.
+        for(Box wall:f.walls)if(wall.contains(f.player,17)) {
+            for(P move:choices)if(Math.hypot(move.x,move.y)>=1)return move;
+        }
         return new P(0,0);
     }
     public Decision decide(Frame f,Brawler b) {
