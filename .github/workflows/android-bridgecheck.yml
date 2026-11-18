@@ -3,9 +3,11 @@ on:
   workflow_dispatch:
     inputs:
       endurance_minutes: {type: number, default: 0}
+      release_manifest: {type: string, default: 'distribution/bshack-panel6/manifest.json'}
   workflow_call:
     inputs:
       endurance_minutes: {type: number, default: 0}
+      release_manifest: {type: string, default: 'distribution/bshack-panel6/manifest.json'}
 permissions: {contents: read}
 jobs:
   bridge:
@@ -28,14 +30,16 @@ jobs:
           cp /tmp/frida bshackcheck/src/main/jniLibs/x86_64/libirisgadget.so
           echo '{"interaction":{"type":"listen","address":"127.0.0.1","port":27042,"on_load":"resume"}}' > bshackcheck/src/main/jniLibs/x86_64/libirisgadget.config.so
           sudo chmod 666 /dev/kvm
-      - run: |
+      - env:
+          RELEASE_MANIFEST: '${{ inputs.release_manifest }}'
+        run: |
           python bridgecheck/prepare.py
           node --test bshack/runtime.test.mjs
           ./gradlew :controlui:testDebugUnitTest :bshackcheck:assembleDebug :bshackcheck:assembleDebugAndroidTest --console=plain --max-workers=2
           python - <<'PY'
-          import zipfile,hashlib,json
+          import zipfile,hashlib,json,os
           from pathlib import Path
-          p=Path('distribution/bshack-panel6/manifest.json')
+          p=Path(os.environ.get('RELEASE_MANIFEST') or 'distribution/bshack-panel6/manifest.json')
           if p.exists():
             with zipfile.ZipFile('bshackui/build/outputs/apk/release/bshackui-release-unsigned.apk') as z: digest=hashlib.sha256(z.read('classes.dex')).hexdigest()
             assert digest==json.loads(p.read_text())['ui_sha256'], 'Release UI DEX differs from source-built UI DEX'

@@ -64,7 +64,7 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         corner = button(""); corner.setBackgroundColor(Color.TRANSPARENT);
         corner.setElevation(0); corner.setStateListAnimator(null);
         corner.setOnClickListener(v -> { state.toggleMenu(); refresh(); });
-        FrameLayout.LayoutParams cp = new FrameLayout.LayoutParams(dp(TOGGLE_WIDTH_DP * 2), dp(TOGGLE_HEIGHT_DP * 2), Gravity.TOP | Gravity.RIGHT);
+        FrameLayout.LayoutParams cp = new FrameLayout.LayoutParams(dp(TOGGLE_WIDTH_DP * 2), dp(TOGGLE_HEIGHT_DP * 2), Gravity.TOP | Gravity.CENTER_HORIZONTAL);
         addView(corner, cp);
 
         hud = new LinearLayout(activity); hud.setOrientation(LinearLayout.VERTICAL);
@@ -188,7 +188,7 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         corner.setContentDescription(text("Iris 설정 열기", "Open Iris settings"));
         paintHud();
         title.setText("IRIS  /  " + text("컨트롤 센터", "CONTROL CENTER"));
-        subtitle.setText(notice.isEmpty() ? text("오른쪽 위 투명 영역으로 열기 · ", "Open from the invisible top-right area · ") + (enabled ? "ON" : "OFF") : notice);
+        subtitle.setText(notice.isEmpty() ? text("위쪽 가운데 투명 영역으로 열기 · ", "Open from the invisible top-center area · ") + (enabled ? "ON" : "OFF") : notice);
         close.setContentDescription(text("설정 닫기", "Close settings"));
         String[] labels = state.english ? new String[]{"● All", "⚽ Auto Goal", "▣ Display", "↗ Community"} : new String[]{"● 전체", "⚽ 오토골", "▣ 화면", "↗ 커뮤니티"};
         int[] colors = {0xff80ce3d, 0xff58bbd1, 0xff598ce1, 0xffb65ed1};
