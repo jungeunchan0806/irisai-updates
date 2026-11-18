@@ -1,0 +1,57 @@
+name: Android 9 to 17 installer and patch compatibility
+on:
+  push:
+    branches: [android-compat-nov19]
+    paths: ['tools/android-compat/**', '.github/workflows/android-release-matrix.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+        with: {packages: 'platforms;android-35 build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
+      - run: bash tools/android-compat/build.sh
+      - uses: actions/upload-artifact@v4
+        with: {name: offline-panel-fixture, path: /tmp/iris-platform-qa.apk, retention-days: 2}
+  platform:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        include:
+          - {api: 28, image: '28', target: google_apis}
+          - {api: 29, image: '29', target: google_apis}
+          - {api: 30, image: '30', target: google_apis}
+          - {api: 31, image: '31', target: google_apis}
+          - {api: 32, image: '32', target: google_apis}
+          - {api: 33, image: '33', target: google_apis}
+          - {api: 34, image: '34', target: google_apis}
+          - {api: 35, image: '35', target: google_apis}
+          - {api: 36, image: '36', target: google_apis}
+          - {api: 37, image: '37.0', target: default}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: {name: offline-panel-fixture, path: /tmp}
+      - run: sudo chmod 666 /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        env: {EXPECTED_API: '${{ matrix.api }}'}
+        with:
+          api-level: ${{ matrix.image }}
+          target: ${{ matrix.target }}
+          arch: x86_64
+          profile: pixel_2
+          disk-size: 8192M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 4096 -cores 4
+          script: python tools/android-compat/check.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: 'results-api-${{ matrix.api }}', path: compat-evidence/, retention-days: 14, if-no-files-found: warn}

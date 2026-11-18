@@ -1,0 +1,50 @@
+{
+  "solo": {
+    "baseArchive": "distribution/bshack-panel6/BSHACK-patch-2.2.0.zip",
+    "bootstrapSha256": "7d59ed0853bafa9545b834399b56b3d68967dbd350c1fe142ff434788e6c6eeb",
+    "apkUrl": "https://github.com/jungeunchan0806/irisai-updates/releases/download/android-bshack-panel6/BSHACK-Autogoal-2.2.0.apk",
+    "apkSha256": "99b33527f79ab2b277c90ae428df06d7450269aadeee7b77918e960106e1eb54",
+    "previous": {
+      "source": "https://github.com/jungeunchan0806/irisai-updates/releases/download/android-autogoal-connection-2.2.3",
+      "archive": "Iris-connection-patch-2.2.3.zip",
+      "hashes": {
+        "manifest.json": "f03184bcc5d49ddc649e9d46d58bb78adf714be583925e455d4811d258c0273d",
+        "manifest.sig": "121badbbbaae7e7855b277e89abc16b042cc120f75744c8c4a59d092323b5d01",
+        "Iris-connection-patch-2.2.3.zip": "43bf1137a5a098427114de310243acf4c2a435ee5b0a5d11fdeca454f16ecbda"
+      }
+    },
+    "current": {
+      "source": "https://github.com/jungeunchan0806/irisai-updates/releases/download/android-autogoal-recovery-2.2.4",
+      "archive": "Iris-standalone-2.2.4.zip",
+      "hashes": {
+        "manifest.json": "1e71cc3b20d808f900982e33ff154eb2fd2e44220da586915c8fb84c9c8ef017",
+        "manifest.sig": "0be74ba69d5bff482b82f543dbb0b12dcd1acb7408441fefca4cfcad71fb300c",
+        "Iris-standalone-2.2.4.zip": "9971acdcccfd14d77d8b9fea7570afb8143bc29a394991d7b520d22c33d8bb7d"
+      }
+    }
+  },
+  "combined": {
+    "baseArchive": "distribution/bshack-panel7/BSHACK-patch-2.3.0.zip",
+    "bootstrapSha256": "ae0ba0bbf58991ff28491dd27af3a382f6025a091c5f9d40a85ff6083f92e437",
+    "apkUrl": "https://github.com/jungeunchan0806/irisai-updates/releases/download/android-bshack-panel7/BSHACK-Autogoal-2.3.0.apk",
+    "apkSha256": "a46dbe03ac8ae9770fb6032242f7c54154620fbfe6e4c23e1222aa7d96421b97",
+    "previous": {
+      "source": "distribution/app-diagnostics",
+      "archive": "Iris-app-diagnostics-2.3.3.zip",
+      "hashes": {
+        "manifest.json": "10030579482f35fde4efdb2cf04e3799b89440c064b317967621266cadd350af",
+        "manifest.sig": "82f768f9ef5277b2d858c18292437029585786a3f433fd8b66abf3c7f6622c8a",
+        "Iris-app-diagnostics-2.3.3.zip": "ca764f081d75bee3ec39c3647696497aa981334d185e59e437fa670ff0f12ee9"
+      }
+    },
+    "current": {
+      "source": "distribution/integrated-startup",
+      "archive": "Iris-integrated-2.3.4.zip",
+      "hashes": {
+        "manifest.json": "be71858bc65e000e58b9dac1baaff6ed9d68f4a0023a47ff191963c2a712edfb",
+        "manifest.sig": "564d3c4be70d23eb9385aaf86a080cbbb3420e15452c86a6999b3db79b2f85f0",
+        "Iris-integrated-2.3.4.zip": "4b4b09e84651c62a4e74882a69afd305bd4b1e417a9f05af228962fc8145c350"
+      }
+    }
+  }
+}
