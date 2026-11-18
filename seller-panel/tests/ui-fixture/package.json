@@ -1,0 +1,1 @@
+{"private":true,"type":"module","scripts":{"test":"node --test client-ui.test.mjs"},"devDependencies":{"jsdom":"26.1.0"}}
