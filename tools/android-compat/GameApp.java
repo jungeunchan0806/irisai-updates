@@ -17,7 +17,9 @@ import java.io.File;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.util.concurrent.CompletableFuture;
 import org.json.JSONObject;
 
@@ -99,8 +101,13 @@ public final class GameApp extends Activity {
                 .invoke(store,metadata(which,false),bytes,(long)running);
     }
     private String marker(String name) throws Exception {
-        File f=new File(directory,name);
-        return f.exists() ? new String(Files.readAllBytes(f.toPath()),"UTF-8").trim() : "";
+        // Acknowledgement legitimately removes "pending" on a worker thread.
+        try {
+            return new String(Files.readAllBytes(new File(directory,name).toPath()),
+                    StandardCharsets.UTF_8).trim();
+        } catch (NoSuchFileException absent) {
+            return "";
+        }
     }
     private void rejected(ThrowingCall test) throws Exception {
         try {test.run();}
