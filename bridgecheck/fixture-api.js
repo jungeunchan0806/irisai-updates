@@ -1,6 +1,8 @@
 function onUi(fn){return new Promise((resolve,reject)=>_Java.perform(()=>_Java.scheduleOnMainThread(()=>{try{resolve(fn());}catch(e){reject(String(e));}})));}
 rpc.exports={...rpc.exports,
  state(){return {enabled:_ag.enabled,error:_panelError,phase:_panelPhase(),foreground:_panelForeground,auth:_license.status()};},
+ connection(){return {..._connection.status(),enabled:_ag.enabled,inputs:_fixtureInputs};},
+ link(mode){return _fixtureLink(mode);},
  grant(){return onUi(()=>{
   // Fixture-only server outcome injection. This code is never included in the game APK.
   const hf=_panelHost.class.getDeclaredField('host');hf.setAccessible(true);const host=hf.get(null);

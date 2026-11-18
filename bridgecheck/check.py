@@ -42,6 +42,30 @@ try:
   check(script.exports_sync.click(),'real Android toggle dispatches')
   time.sleep(.45);s=state(script)
   check(s['enabled']==(i%2==0) and not s['error'],'typed authorization commits engine ON/OFF')
+
+ # Exercise the production guard through actual Frida, Java UI and mapped native memory.
+ def connection_wait(predicate,label):
+  end=time.monotonic()+7;current={}
+  while time.monotonic()<end:
+   current=script.exports_sync.connection()
+   if predicate(current):return current
+   time.sleep(.1)
+  raise AssertionError(label+': '+str(current))
+ script.exports_sync.link('online');script.exports_sync.grant();script.exports_sync.click()
+ connection_wait(lambda s:s['ready'] and s['enabled'] and s['inputs']>0,'initial connection')
+ for fault,reason in [('offline','offline'),('stalled','stalled'),('screen','screen')]:
+  script.exports_sync.link(fault)
+  held=connection_wait(lambda s:s['reason']==reason,'connection hold '+fault)
+  time.sleep(.4);after=script.exports_sync.connection()
+  check(after['inputs']==held['inputs'] and after['enabled'],'connection hold stops input without losing intent: '+fault)
+  script.exports_sync.link('online')
+  connection_wait(lambda s:s['ready'] and s['inputs']>held['inputs'],'recovery '+fault)
+  check(state(script)['enabled'],'stable fresh state resumes enabled Auto Goal: '+fault)
+ script.exports_sync.link('offline');connection_wait(lambda s:s['reason']=='offline','offline before stop')
+ script.exports_sync.click();time.sleep(.35);script.exports_sync.link('online')
+ connection_wait(lambda s:s['ready'],'recovery after user stop')
+ check(not state(script)['enabled'],'recovery never re-enables a user-stopped Auto Goal')
+
  script.exports_sync.failonce();time.sleep(1)
  check(not state(script)['error'],'UI bridge recovers after transient exception')
  check(script.exports_sync.installfixture(),'verified small patch installs without replacing APK')

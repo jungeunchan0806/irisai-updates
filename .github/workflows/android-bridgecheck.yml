@@ -5,11 +5,13 @@ on:
       endurance_minutes: {type: number, default: 0}
       release_manifest: {type: string, default: 'distribution/bshack-panel6/manifest.json'}
       recovery_patch: {type: string, default: ''}
+      upgrade_patch: {type: boolean, default: false}
   workflow_call:
     inputs:
       endurance_minutes: {type: number, default: 0}
       release_manifest: {type: string, default: 'distribution/bshack-panel6/manifest.json'}
       recovery_patch: {type: string, default: ''}
+      upgrade_patch: {type: boolean, default: false}
 permissions: {contents: read}
 jobs:
   bridge:
@@ -21,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with: {distribution: temurin, java-version: '17'}
+        with: {distribution: temurin, java-version: '17', cache: gradle}
       - uses: android-actions/setup-android@v3
         with: {packages: 'platform-tools platforms;android-35 build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
       - run: |
@@ -36,7 +38,7 @@ jobs:
           RELEASE_MANIFEST: '${{ inputs.release_manifest }}'
         run: |
           python bridgecheck/prepare.py
-          node --test bshack/runtime.test.mjs
+          node --test bshack/runtime.test.mjs bshack/connection.test.mjs
           ./gradlew :controlui:testDebugUnitTest :bshackcheck:assembleDebug :bshackcheck:assembleDebugAndroidTest --console=plain --max-workers=2
           python - <<'PY'
           import zipfile,hashlib,json,os
@@ -50,17 +52,19 @@ jobs:
       - uses: reactivecircus/android-emulator-runner@v2
         env:
           RECOVERY_PATCH: '${{ inputs.recovery_patch }}'
+          UPGRADE_PATCH: '${{ inputs.upgrade_patch }}'
         with:
           api-level: '${{ matrix.api }}'
           target: google_apis
           arch: x86_64
           profile: pixel_2
           disable-animations: true
-          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 2048 -cores 2
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 4096 -cores 4
           script: |
             python bshack/ci_payload.py
             ENDURANCE_MINUTES=${{ inputs.endurance_minutes || 0 }} python bridgecheck/check.py
             if [ -n "$RECOVERY_PATCH" ]; then python bridgecheck/prepare_recovery.py "$RECOVERY_PATCH" && ./gradlew :bshackcheck:assembleDebug -PirisBaselinePayload=bridgecheck/generated/recovery/baseline/classes.dex --console=plain --max-workers=2 && python bridgecheck/recovery_check.py; fi
+            if [ "$UPGRADE_PATCH" = "true" ]; then python bridgecheck/prepare_upgrade.py && ./gradlew :bshackcheck:assembleDebug -PirisBaselinePayload=bridgecheck/generated/upgrade/baseline/classes.dex --console=plain --max-workers=2 && python bridgecheck/upgrade_check.py; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -69,3 +73,4 @@ jobs:
             bridgecheck-results/
             bshack-checks/
             recovery-checks/
+            upgrade-checks/

@@ -48,6 +48,29 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
     private TextView autoDetail;
     private LinearLayout autoCard;
 
+    private TextView connectionDetail;
+    private String connectionState="waiting";
+    public void setConnectionState(String state){
+        connectionState=state;
+        if(connectionDetail!=null)connectionDetail.setText(connectionText());
+    }
+    private String connectionText(){
+        switch(connectionState){
+            case "ready":return text("게임 상태 갱신 중","Game state updating");
+            case "offline":return text("네트워크 연결 대기","Waiting for network");
+            case "screen":return text("게임 화면 복귀 대기","Waiting for game focus");
+            case "stalled":return text("게임 상태 갱신 대기","Waiting for game state updates");
+            case "recovering":return text("정상 상태 확인 중","Checking recovery");
+            default:return text("전투 대기 · 보호 켜짐","Waiting for battle · protection on");
+        }
+    }
+    private void connectionHelp(){
+        new android.app.AlertDialog.Builder(activity).setTitle(text("연결 복구 보호","Connection recovery protection"))
+            .setMessage(text("일시적으로 연결이나 전투 상태가 멈추면 입력을 기다립니다. 정상 상태가 확인되면 켜져 있던 오토골을 계속합니다.\n\n직접 끄거나 게임을 벗어나거나 인증이 만료되면 다시 켜야 합니다. 서버 중단이나 게임 자체의 재접속 요구를 없애는 기능은 아닙니다.",
+                "Input waits during a connection loss or stalled game state. Auto Goal continues after stable updates return if you left it on.\n\nTurning it off, leaving the game or license expiry requires enabling it again. This cannot prevent a server outage or override the game's reconnect requirement."))
+            .setPositiveButton(text("확인","OK"),null).show();
+    }
+
     /** streamerAllowed is enabled only for the explicitly selected auto-hide fallback. */
     public IrisControlPanel(Activity activity, Actions actions, boolean streamerAllowed) {
         super(activity); this.activity = activity; this.actions = actions; this.streamerAllowed = streamerAllowed;
@@ -209,7 +232,7 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
     }
     private void refreshCards() {
         if (grid == null) return;
-        grid.removeAllViews(); autoDetail = null; autoCard = null;
+        grid.removeAllViews(); autoDetail = null; autoCard = null;connectionDetail=null;
         int available = lastWidth - getPaddingLeft() - getPaddingRight();
         int columns = available >= dp(720) ? 3 : available >= dp(430) ? 2 : 1;
         grid.setColumnCount(columns);
@@ -220,6 +243,8 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
             if (actions.nativeEngine()) {
                 card(text("HWID 복사", "Copy HWID"), text("기존 인증용 기기 ID 복사", "Copy the device ID used for registration"), false, actions::copyHwid);
                 card(text("오류 확인", "Diagnostics"), text("오토골 상태와 오류 내용 복사", "View and copy Auto Goal diagnostics"), false, actions::showDiagnostics);
+                LinearLayout guard=card(text("연결 복구 보호","Connection recovery protection"),connectionText(),false,this::connectionHelp);
+                connectionDetail=(TextView)guard.getChildAt(1);
             } else {
             card(text("조작 위치", "Control positions"), text("이동 · 공격 · 가젯 위치 지정", "Set movement, attack and gadget positions"), false,
                 () -> { state.menuOpen = false; state.hidden = false; save(); refresh(); actions.calibrate(); });
@@ -256,6 +281,10 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
             case "게임 입력 연결 대기": return "Waiting for game input connection";
             case "게임 로딩 중": return "Game is loading";
             case "게임 연결 실패": return "Game connection failed";
+            case "네트워크 연결 대기": return "Waiting for network";
+            case "게임 화면 복귀 대기": return "Waiting for game focus";
+            case "게임 상태 갱신 대기": return "Waiting for game state updates";
+            case "연결 안정화 중": return "Checking recovery";
             case "오토골 실행 중": return "Auto Goal running";
             case "모델 준비 중": return "Loading models";
             case "브롤볼 대기": return "Waiting for Brawl Ball";

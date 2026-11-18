@@ -26,6 +26,8 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     private boolean engineEnabled;
     private UpdateManager updates;
     private LicenseClient license;
+    private ConnectionMonitor connection;
+    private String connectionReport="";
     private long lastHeartbeat, nextHealthAttempt;
     private boolean markedHealthy, healthPending, freshBridgeState;
     private int healthyResponses;
@@ -33,7 +35,7 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     private final Handler handler = new Handler(Looper.getMainLooper());
     public static void initialize(Application app) {
         if (host != null) return;
-        host = new PanelHost(); host.updates = new UpdateManager(app);host.license=new LicenseClient(app);app.registerActivityLifecycleCallbacks(host);
+        host = new PanelHost(); host.updates = new UpdateManager(app);host.license=new LicenseClient(app);host.connection=new ConnectionMonitor(app,()->host.license.networkRestored());app.registerActivityLifecycleCallbacks(host);
         host.handler.postDelayed(host::watchdog, 1500);
     }
     public static void configure(long version,String name,String recovery) {
@@ -90,6 +92,18 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     }
     public static int poll() { return host == null || host.commands.isEmpty() ? 0 : host.commands.remove(); }
     public static boolean isResumed() { return host != null && host.resumed; }
+    public static String connectionStatus(){
+        return host==null?"{\"network\":\"unknown\",\"focused\":false,\"generation\":0}":
+            host.connection.snapshot(host.resumed&&host.activity!=null&&host.activity.hasWindowFocus());
+    }
+    public static void updateConnection(String report){
+        if(host==null)return;
+        try{
+            org.json.JSONObject data=new org.json.JSONObject(report);host.connectionReport=report;
+
+            if(host.panel!=null)host.panel.setConnectionState(data.optString("reason","waiting"));
+        }catch(Exception e){}
+    }
     public static void update(boolean enabled, String phase) {
         if (host != null && host.panel != null) {
             host.lastHeartbeat=SystemClock.uptimeMillis();host.engineEnabled = enabled; host.panel.setEngineState(enabled, phase);
@@ -120,7 +134,7 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     }
     private void diagnostics() {
         if(activity==null)return;
-        String report="IRIS "+bootName+"\nAndroid "+android.os.Build.VERSION.RELEASE+" / API "+android.os.Build.VERSION.SDK_INT+"\n"+android.os.Build.MANUFACTURER+" "+android.os.Build.MODEL+"\n"+diagnosticState+"\n"+latestError+"\n"+recovery;
+        String report="IRIS "+bootName+"\nAndroid "+android.os.Build.VERSION.RELEASE+" / API "+android.os.Build.VERSION.SDK_INT+"\n"+android.os.Build.MANUFACTURER+" "+android.os.Build.MODEL+"\n"+diagnosticState+"\nConnection: "+connectionReport+"\n"+latestError+"\n"+recovery;
         new AlertDialog.Builder(activity).setTitle(panel.english()?"Diagnostics":"오류 확인").setMessage(report)
             .setPositiveButton(panel.english()?"Copy":"내용 복사",(d,w)->{
                 ((ClipboardManager)activity.getSystemService(Context.CLIPBOARD_SERVICE)).setPrimaryClip(ClipData.newPlainText("IRIS diagnostic",report));

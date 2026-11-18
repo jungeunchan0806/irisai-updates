@@ -1,0 +1,11 @@
+{
+  "version": 22003,
+  "base": "bshack-70648-panel6-v1",
+  "tag": "android-autogoal-connection-2.2.3",
+  "title": "오토골 단독 2.2.3 · 연결 복구 보호",
+  "filename": "Iris-connection-patch-2.2.3.zip",
+  "channel": "android-bshack-updates",
+  "baseline_version": 22000,
+  "baseline_folder": "distribution/bshack-panel6",
+  "baseline_zip": "BSHACK-patch-2.2.0.zip"
+}

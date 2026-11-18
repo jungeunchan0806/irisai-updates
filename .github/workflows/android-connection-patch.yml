@@ -1,0 +1,26 @@
+name: Verify and publish client connection recovery patch
+on:
+  push:
+    branches: [android-connection-guard, android-connection-standalone]
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency:
+  group: connection-patch-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    uses: ./.github/workflows/android-bridgecheck.yml
+    with:
+      endurance_minutes: 2
+      release_manifest: distribution/connection/manifest.json
+      upgrade_patch: true
+  publish:
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify and publish the signed update
+        env: {GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}'}
+        run: python bshack/publish_connection.py

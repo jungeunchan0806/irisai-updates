@@ -41,6 +41,7 @@ public final class Checks extends Instrumentation {
     opener.performClick();require(find(root(),"UI 다시 표시").isShown(),"invisible opener recovers hidden UI");
     ((View)find(root(),"언어").getParent()).performClick();require(find(root(),"IRIS  /  CONTROL CENTER")!=null,"language switching works");
    });
+   ui(()->ConnectionChecks.run(activity,host,checks));
    ui(()->DialogChecks.run(activity,host.getClassLoader(),checks));
    HealthChecks.run(this,activity,host,checks);
    UpdateChecks.run(getTargetContext(),host.getClassLoader(),checks);
