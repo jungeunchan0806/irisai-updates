@@ -2,7 +2,7 @@ name: November 19 offline UI and update endurance checks
 on:
   push:
     branches: [android-compat-nov19]
-    paths: ['.github/workflows/android-overnight-nov19.yml']
+    paths: ['.github/workflows/android-overnight-nov19.yml', '.github/workflows/android-overnight-stage.yml', 'tools/android-compat/GameApp.java', 'tools/android-compat/soak.py']
   workflow_dispatch:
 permissions: {contents: read}
 concurrency:

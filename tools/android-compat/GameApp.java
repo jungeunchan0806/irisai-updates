@@ -18,11 +18,23 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.util.concurrent.CompletableFuture;
 import org.json.JSONObject;
 
 /** An ordinary, offline test activity with the class name the released panel accepts.
  * The signed game engine is a patch store input only. It is never executed. */
 public final class GameApp extends Activity {
+    private static CompletableFuture<Boot> processBoot;
+    private static String processToken;
+    private static boolean configured;
+    private static boolean requestedRecreation;
+    private static final class Boot {
+        final Class<?> panel;
+        final String name, log, terminal;
+        Boot(Class<?> panel, String name, String log, String terminal) {
+            this.panel=panel; this.name=name; this.log=log; this.terminal=terminal;
+        }
+    }
     private final Handler main = new Handler(Looper.getMainLooper());
     private String variant, action, token;
     private int base, current;
@@ -30,7 +42,6 @@ public final class GameApp extends Activity {
     private Object store;
     private Class<?> verifier, manifest, panelHost;
     private long started;
-    private JSONObject selected;
     private String logResult = "not-applicable";
 
     @Override public void onCreate(Bundle saved) {
@@ -43,9 +54,22 @@ public final class GameApp extends Activity {
         base = variant.equals("solo") ? 22000 : 23000;
         current = base + 4;
         directory = new File(getFilesDir(), "iris-updates");
-        new Thread(() -> {
-            try { prepare(); } catch (Throwable e) {fail(e);}
-        }).start();
+        if (processBoot==null) {
+            processToken=token;
+            processBoot=new CompletableFuture<>();
+            new Thread(()->{
+                try { processBoot.complete(prepare()); }
+                catch (Throwable error) { processBoot.completeExceptionally(error); }
+            }).start();
+        } else if (!processToken.equals(token)) {
+            fail(new AssertionError("scenario started in an existing process")); return;
+        }
+        Log.i("IrisReleaseQA", token+" ACTIVITY "+action+" saved="+(saved!=null));
+        processBoot.whenComplete((boot,error)->main.post(()->{
+            if (isDestroyed() || isFinishing()) return;
+            if (error!=null) {fail(error);return;}
+            attachBoot(boot);
+        }));
     }
 
     private byte[] asset(String name) throws Exception {
@@ -87,7 +111,7 @@ public final class GameApp extends Activity {
         throw new AssertionError("invalid input accepted");
     }
     private interface ThrowingCall {void run() throws Exception;}
-    private void prepare() throws Exception {
+    private Boot prepare() throws Exception {
         ClassLoader original=loader(asset("baseline.dex"));
         verifier=original.loadClass("com.irisai.bshack.update.PatchStore");
         manifest=original.loadClass(verifier.getName()+"$Manifest");
@@ -102,13 +126,15 @@ public final class GameApp extends Activity {
             require(marker("active").isEmpty(),"bad download changed active slot");
             install("current",base,false);
         }
-        selected=select();
+        JSONObject selected=select();
         if ("rollback".equals(action)) {
             require(selected.getInt("version")==base && marker("failed").equals(""+current),"restore embedded version");
-            pass("restored embedded version"); return;
+            return new Boot(null,null,null,"restored embedded version");
         }
-        require(selected.getInt("version")==current && marker("pending").equals(""+current),"candidate selected");
-        if ("interrupt".equals(action)) {pass("selected before panel start");return;}
+        require(selected.getInt("version")==current && marker("pending").equals(""+current),
+                "candidate selection: version="+selected.getInt("version")+" pending="+marker("pending")
+                +" active="+marker("active")+" failed="+marker("failed")+" highest="+marker("highest"));
+        if ("interrupt".equals(action)) return new Boot(null,null,null,"selected before panel start");
         if ("bad-download".equals(action)) {
             rejected(()->metadata("current",true));
             rejected(()->install("current",base,true));
@@ -116,7 +142,7 @@ public final class GameApp extends Activity {
         }
         byte[] panel=Files.readAllBytes(new File(selected.getString("ui")).toPath());
         ClassLoader currentLoader=loader(panel);
-        panelHost=currentLoader.loadClass("com.irisai.bshack.PanelHost");
+        Class<?> panelClass=currentLoader.loadClass("com.irisai.bshack.PanelHost");
         if ("initial".equals(action) && variant.equals("combined")) {
             Log.w("IrisCompatibilityFixture","UnknownHostException private-fixture-name");
             java.lang.reflect.Method read=currentLoader.loadClass("com.irisai.bshack.ProcessLogReport").getDeclaredMethod("read",boolean.class);
@@ -125,15 +151,27 @@ public final class GameApp extends Activity {
             require(!summary.contains("private-fixture-name"),"raw log leaked");
             logResult=summary.contains("DNS lookup failed") ? "classified" : "no-matching-readable-log";
         }
-        main.post(()->{
-            try {
+        return new Boot(panelClass,selected.getString("name"),logResult,null);
+    }
+    private void attachBoot(Boot boot) {
+        if (boot.terminal!=null) {pass(boot.terminal);return;}
+        if ("recreate".equals(action) && !requestedRecreation) {
+            requestedRecreation=true;
+            recreate();
+            return;
+        }
+        try {
+            panelHost=boot.panel;
+            logResult=boot.log;
+            if (!configured) {
                 panelHost.getMethod("initialize",Application.class).invoke(null,getApplication());
-                panelHost.getMethod("configure",long.class,String.class,String.class).invoke(null,(long)current,selected.getString("name"),"");
-                panelHost.getMethod("attach",Activity.class).invoke(null,this);
-                started=SystemClock.uptimeMillis();
-                main.post(this::inspect);
-            } catch(Throwable e){fail(e);}
-        });
+                panelHost.getMethod("configure",long.class,String.class,String.class).invoke(null,(long)current,boot.name,"");
+                configured=true;
+            }
+            panelHost.getMethod("attach",Activity.class).invoke(null,this);
+            started=SystemClock.uptimeMillis();
+            main.post(this::inspect);
+        } catch(Throwable e){fail(e);}
     }
 
     private View find(View root, String text) {
@@ -147,6 +185,7 @@ public final class GameApp extends Activity {
     }
     private void inspect() {
         try {
+            if (isDestroyed() || isFinishing()) return;
             if (SystemClock.uptimeMillis()-started > 12000) throw new AssertionError("panel layout or health timeout");
             View root=findViewById(android.R.id.content),opener=find(root,"Iris 설정 열기");
             if(opener==null||!opener.isLaidOut()||!opener.isShown()){main.postDelayed(this::inspect,100);return;}

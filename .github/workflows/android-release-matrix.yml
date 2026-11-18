@@ -97,7 +97,7 @@ jobs:
           disable-animations: true
           emulator-boot-timeout: 900
           emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu ${{ matrix.gpu }} -memory 3072 -cores 2 ${{ steps.accel.outputs.options }}
-          script: python3 tools/android-compat/check.py
+          script: python3 tools/android-compat/check.py --display-cycles ${{ matrix.api == 36 && 12 || 1 }}
       - name: Capture host status after a failed emulator run
         if: failure() && runner.os == 'Linux'
         run: |

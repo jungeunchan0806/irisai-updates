@@ -90,11 +90,11 @@ def launch(user,variant,action):
     raise RuntimeError('no result before deadline: '+variant+' '+action+' '+start[-150:])
 def series(user,variant,restarts,iteration):
     assert 'Success' in shell('pm','clear','--user',user,APP)
-    actions=['initial','bad-download'] + ['resume']*restarts+['interrupt','rollback']
+    actions=['initial','bad-download','recreate'] + ['resume']*restarts+['interrupt','rollback']
     results=[]
     for action in actions:results.append(launch(user,variant,action))
     note({'type':'panel-update-cycle','variant':variant,'cycle':iteration,'checks':results})
-def exercise_signed_ui(user,api,soak_until):
+def exercise_signed_ui(user,api,soak_until,display_cycles):
     result,detail=install(Path('/tmp/iris-platform-qa.apk'),APP,user)
     note({'type':'abi-independent-installer','api':api,'install':result,'reason':detail})
     if api<32:
@@ -103,18 +103,19 @@ def exercise_signed_ui(user,api,soak_until):
         if result!='installed':raise RuntimeError('test app: '+result+' '+detail)
         i=0
         densities=[None,'300','400','360','440']
+        vary_display=bool(soak_until or display_cycles>1)
         try:
             while True:
-                if soak_until:
+                if vary_display:
                     setting=densities[i%len(densities)] or 'reset'
                     shell('wm','density',setting)
                     shell('settings','put','system','font_scale',str([1.0,1.15,1.3][i%3]))
                     note({'type':'display-configuration','cycle':i,'density':setting,'fontScale':[1.0,1.15,1.3][i%3]})
-                for variant in PACKAGES:series(user,variant,3 if not soak_until else 2+i%4,i)
+                for variant in PACKAGES:series(user,variant,2+i%4 if vary_display else 3,i)
                 i+=1
-                if time.time()>=soak_until: break
+                if (time.time()>=soak_until if soak_until else i>=display_cycles): break
         finally:
-            if soak_until:
+            if vary_display:
                 adb('shell','wm','density','reset')
                 adb('shell','settings','put','system','font_scale','1.0')
 
@@ -122,6 +123,7 @@ def main():
     args=argparse.ArgumentParser()
     args.add_argument('--soak-until',type=float,default=0)
     args.add_argument('--skip-apks',action='store_true')
+    args.add_argument('--display-cycles',type=int,default=1)
     p=args.parse_args()
     user=wait_package_service()
     api=int(shell('getprop','ro.build.version.sdk'));abis=shell('getprop','ro.product.cpu.abilist').split(',')
@@ -135,7 +137,7 @@ def main():
         raise RuntimeError(f'Expected native {required_abi} emulator, got {abis}')
     errors=[]
     try:
-        exercise_signed_ui(user,api,p.soak_until)
+        exercise_signed_ui(user,api,p.soak_until,p.display_cycles)
     except Exception as error:
         if p.skip_apks:raise
         note({'type':'ui-test-error','error':str(error)[:560]})
@@ -153,7 +155,7 @@ if __name__=='__main__':
     except Exception as e:
         note({'type':'failure','message':str(e)[:600]})
         # The emulator has only QA data. Preserve system failure clues for diagnosis.
-        for key,args in [('space',['shell','df','-h','/data']),('users',['shell','pm','list','users']),('crash',['logcat','-d','-b','crash','-t','200'])]:
+        for key,args in [('space',['shell','df','-h','/data']),('users',['shell','pm','list','users']),('crash',['logcat','-d','-b','crash','-t','200']),('fixture',['logcat','-d','-s','IrisReleaseQA:I'])]:
             try:(OUT/(key+'.txt')).write_text(adb(*args,timeout=12)[1][-24000:])
             except Exception:pass
         raise
