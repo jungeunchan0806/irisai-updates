@@ -88,14 +88,18 @@ public final class FarmController implements AutoCloseable {
         final long ticket=epoch,at=SystemClock.uptimeMillis();final int width=surface.getWidth(),height=surface.getHeight();final float scaleX=surface.getScaleX(),scaleY=surface.getScaleY();final boolean repeatNow=repeat;
         Bitmap bitmap=Bitmap.createBitmap(960,540,Bitmap.Config.ARGB_8888);busy=true;
         try {PixelCopy.request(surface,bitmap,result->{
-            if(result!=PixelCopy.SUCCESS||!permitted(ticket)){bitmap.recycle();busy=false;return;}
+            if(result!=PixelCopy.SUCCESS||!permitted(ticket)){bitmap.recycle();busy=false;
+                if(current(ticket)&&result!=PixelCopy.SUCCESS){phase="화면 읽기 재시도 · "+result;publish();}return;}
             worker.execute(()->{
                 FarmVision.Observation observation=null;Throwable error=null;
                 try{observation=vision.observe(bitmap,at/1000.,repeatNow);}catch(Exception|LinkageError e){error=e;}finally{bitmap.recycle();}
                 final FarmVision.Observation outcome=observation;final Throwable problem=error;
                 ui.post(()->{busy=false;if(!current(ticket))return;
                     if(problem!=null){stop("화면 분석 오류: "+problem.getClass().getSimpleName());return;}
-                    if(!permitted(ticket)||surface.getWidth()!=width||surface.getHeight()!=height||surface.getScaleX()!=scaleX||surface.getScaleY()!=scaleY||SystemClock.uptimeMillis()-at>1200){cancelInputs();return;}
+                    if(!permitted(ticket)){cancelInputs();return;}
+                    if(surface.getWidth()!=width||surface.getHeight()!=height||surface.getScaleX()!=scaleX||surface.getScaleY()!=scaleY){cancelInputs();phase="화면 크기 변경 · 다시 분석 중";publish();return;}
+                    long age=SystemClock.uptimeMillis()-at;
+                    if(age>1200){cancelInputs();phase="화면 분석 지연 · "+age+"ms";publish();return;}
                     if(outcome!=null)apply(outcome,ticket);
                 });
             });

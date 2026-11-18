@@ -2,9 +2,9 @@
   "filename": "BSHACK-Autogoal-2.3.0.apk",
   "baseline_url": "https://github.com/jungeunchan0806/irisai-updates/releases/download/android-bshack-hwid-v2.0.0/BSHACK-Autogoal-Licensed.apk",
   "baseline_sha256": "8d595381fe0247dbfc06bd03879f68828d1dc1967647e830d0c51745d810f082",
-  "sha256": "9c3073cae547c12da835f5590a302c8690c8eccf635d2acd7966a8c8119fcd3c",
+  "sha256": "a46dbe03ac8ae9770fb6032242f7c54154620fbfe6e4c23e1222aa7d96421b97",
   "bytes": 2040311233,
-  "patch_sha256": "526adb70163f0a36d7ed3c96770b40e08b18fce7142cc8ad2d1f7188eba2a5cd",
-  "ui_sha256": "cbd8aa1a671b41ff0fd6ecf177eb468ecaff91b6f58422244ec6c86ef12c59ec",
+  "patch_sha256": "8fab9ba59c8483782f5f15cdf69adb9e5146cf45ec03d7f5f25aac3eafb114d5",
+  "ui_sha256": "ae0ba0bbf58991ff28491dd27af3a382f6025a091c5f9d40a85ff6083f92e437",
   "signer_certificate_sha256": "a40da80a59d170caa950cf15c18c454d47a39b26989d8b640ecd745ba71bf5dc"
 }
