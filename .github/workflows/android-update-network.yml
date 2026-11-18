@@ -1,0 +1,60 @@
+name: Verify published update through the actual Android UI
+on:
+  push:
+    branches: [android-bshack-panel6]
+    paths: ['bridgecheck/network_check.py', '.github/workflows/android-update-network.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  network-update:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+        with: {packages: 'platform-tools platforms;android-35 build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
+      - name: Compile an isolated older-version fixture
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('bshackui/src/main/java/com/irisai/bshack/update/UpdateConfig.java');s=p.read_text()
+          assert 'VERSION=22000L' in s
+          p.write_text(s.replace('VERSION=22000L','VERSION=21999L').replace('VERSION_NAME="2.2.0"','VERSION_NAME="2.1.9-test"'))
+          PY
+          pip install frida==17.5.1
+          curl --fail --location --retry 3 -o /tmp/gadget.xz https://github.com/frida/frida/releases/download/17.5.1/frida-gadget-17.5.1-android-x86_64.so.xz
+          xz -d /tmp/gadget.xz
+          mkdir -p bshackcheck/src/main/jniLibs/x86_64
+          cp /tmp/gadget bshackcheck/src/main/jniLibs/x86_64/libirisgadget.so
+          echo '{"interaction":{"type":"listen","address":"127.0.0.1","port":27042,"on_load":"resume"}}' > bshackcheck/src/main/jniLibs/x86_64/libirisgadget.config.so
+          python bridgecheck/prepare.py
+          ./gradlew :bshackcheck:assembleDebug --console=plain --max-workers=2
+          sudo chmod 666 /dev/kvm
+      - name: Wait for the real patch channel to be published
+        env: {GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}'}
+        run: |
+          python - <<'PY'
+          import subprocess,json,time
+          deadline=time.monotonic()+1500
+          while time.monotonic()<deadline:
+            result=subprocess.run(['gh','release','view','android-bshack-updates','--json','isDraft,assets'],capture_output=True,text=True)
+            if result.returncode==0:
+              r=json.loads(result.stdout)
+              if not r['isDraft'] and {'stable.json','stable.json.sig'}<={x['name'] for x in r['assets']}:break
+            time.sleep(15)
+          else:raise SystemExit('Patch channel was not published; no UI success is claimed.')
+          PY
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 2048 -cores 2
+          script: python bridgecheck/network_check.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: network-update-ui-evidence, path: network-update-checks/}
