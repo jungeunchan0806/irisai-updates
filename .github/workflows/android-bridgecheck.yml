@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with: {distribution: temurin, java-version: '17'}
+        with: {distribution: temurin, java-version: '17', cache: gradle}
       - uses: android-actions/setup-android@v3
         with: {packages: 'platform-tools platforms;android-35 build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
       - run: |
@@ -57,7 +57,10 @@ jobs:
           arch: x86_64
           profile: pixel_2
           disable-animations: true
-          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 2048 -cores 2
+          # ONNX, OpenCV and software rendering compete for guest CPU time.
+          # Give the fixture the runner's four cores; keep production's 1.2 s
+          # stale-input rejection unchanged instead of weakening the test.
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 4096 -cores 4
           script: |
             python bshack/ci_payload.py
             ENDURANCE_MINUTES=${{ inputs.endurance_minutes || 0 }} python bridgecheck/check.py
