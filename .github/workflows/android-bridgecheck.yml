@@ -3,12 +3,12 @@ on:
   workflow_dispatch:
     inputs:
       endurance_minutes: {type: number, default: 0}
-      release_manifest: {type: string, default: 'distribution/bshack-panel6/manifest.json'}
+      release_manifest: {type: string, default: 'distribution/bshack-panel7/manifest.json'}
       recovery_patch: {type: string, default: ''}
   workflow_call:
     inputs:
       endurance_minutes: {type: number, default: 0}
-      release_manifest: {type: string, default: 'distribution/bshack-panel6/manifest.json'}
+      release_manifest: {type: string, default: 'distribution/bshack-panel7/manifest.json'}
       recovery_patch: {type: string, default: ''}
 permissions: {contents: read}
 jobs:

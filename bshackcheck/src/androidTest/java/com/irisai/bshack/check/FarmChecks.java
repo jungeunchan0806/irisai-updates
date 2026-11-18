@@ -39,6 +39,9 @@ final class FarmChecks {
         Object farm=controller.get();try{
             allowed.set(true);ui(i,()->call(farm,"toggle"));awaitInput(i,phase,0);
             require(count(i)>0,"child-loaded ONNX and OpenCV read game SurfaceView and generate JNI-boundary input",checks);
+            ui(i,()->{int[] down=GameApp.inputs.stream().filter(v->v[0]==0&&v[3]==7).findFirst().orElseThrow(()->new AssertionError("Movement never began"));
+                require(down[1]==(int)(110*activity.getView().getWidth()/960.*.5)&&down[2]==(int)(435*activity.getView().getHeight()/540.*.75),"JNI input honors game's native-resolution scale",checks);
+            });
             priority.set(true);SystemClock.sleep(1600);int stopped=count(i);SystemClock.sleep(450);
             require(count(i)==stopped,"farm yields all inputs while Auto Goal handles the ball",checks);
             ui(i,()->require(GameApp.inputs.get(GameApp.inputs.size()-1)[0]==3,"goal priority releases held virtual touches",checks));

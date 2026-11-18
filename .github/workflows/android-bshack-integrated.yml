@@ -1,0 +1,89 @@
+name: Verify and publish Auto Goal 2.3.0 with native features and Iris farm
+on:
+  push:
+    branches: [android-bshack-panel7]
+    paths: ['distribution/bshack-panel7/**', '.github/workflows/android-bshack-integrated.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  validate:
+    uses: ./.github/workflows/android-bridgecheck.yml
+    with:
+      endurance_minutes: 5
+      release_manifest: distribution/bshack-panel7/manifest.json
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+        with: {packages: 'platform-tools build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xdelta3
+          pip install pyelftools unicorn capstone keystone-engine
+      - name: Restore signed APK and verify original game preservation
+        run: |
+          python - <<'PY'
+          import json,hashlib,urllib.request,subprocess,os,zipfile,shutil
+          from pathlib import Path
+          m=json.loads(Path('distribution/bshack-panel7/manifest.json').read_text());root=Path(os.environ['RUNNER_TEMP'])
+          with urllib.request.urlopen(m['baseline_url'],timeout=90) as r,(root/'baseline.apk').open('wb') as f:shutil.copyfileobj(r,f,8*1024*1024)
+          def sha(p):
+            with p.open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
+          assert sha(root/'baseline.apk')==m['baseline_sha256']
+          assert sha(Path('distribution/bshack-panel7/patch.xdelta'))==m['patch_sha256']
+          output=root/m['filename']
+          subprocess.run(['xdelta3','-d','-s',str(root/'baseline.apk'),'distribution/bshack-panel7/patch.xdelta',str(output)],check=True)
+          assert output.stat().st_size==m['bytes'] and sha(output)==m['sha256']
+          tools=Path(os.environ['ANDROID_HOME'])/'build-tools/35.0.0'
+          signature=subprocess.check_output([str(tools/'apksigner'),'verify','--min-sdk-version','24','--verbose','--print-certs',str(output)],text=True)
+          assert m['signer_certificate_sha256'] in signature
+          for scheme in ['v2','v3']:assert f'Verified using {scheme} scheme (APK Signature Scheme {scheme}): true' in signature
+          with zipfile.ZipFile(output) as z:assert hashlib.sha256(z.read('assets/iris-panel.dex')).hexdigest()==m['ui_sha256']
+          with zipfile.ZipFile(root/'baseline.apk') as z:(root/'libbrf.so').write_bytes(z.read('lib/arm64-v8a/libbrf.so'))
+          subprocess.run(['python','bshack/test_original_config.py',str(root/'libbrf.so')],check=True)
+          subprocess.run([str(tools/'zipalign'),'-c','-P','16','4',str(output)],check=True)
+          subprocess.run(['python','bshack/verify.py',str(root/'baseline.apk'),str(output)],check=True)
+          print(signature)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bshack-panel7-release
+          path: |
+            ${{ runner.temp }}/BSHACK-Autogoal-2.3.0.apk
+            ${{ runner.temp }}/BSHACK-Autogoal-2.3.0.apk.sha256
+            ${{ runner.temp }}/BSHACK-Autogoal-2.3.0.verification.json
+          compression-level: 0
+          retention-days: 7
+  publish:
+    needs: [validate, package]
+    runs-on: ubuntu-24.04
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: {name: bshack-panel7-release, path: apk}
+      - name: Publish verified APK and its compatible patch channel
+        env: {GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}'}
+        run: |
+          cp distribution/bshack-panel7/RELEASE-KO.md release-notes.md
+          python - <<'PY'
+          from pathlib import Path
+          import os
+          p=Path('release-notes.md');p.write_text(p.read_text()+'\n[Android 15·16 자동 검사 결과](https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GITHUB_RUN_ID']+')\n')
+          Path('channel-notes.md').write_text('2.3.0 통합 APK용 자동 패치 채널입니다. 직접 설치하는 파일이 아닙니다.\n\n설치 APK: https://github.com/'+os.environ['GITHUB_REPOSITORY']+'/releases/tag/android-bshack-panel7\n')
+          PY
+          if ! gh release view android-bshack-panel7 >/dev/null 2>&1; then
+            gh release create android-bshack-panel7 --target "$GITHUB_SHA" --title 'BSHACK 2.3.0 · 기존 오토골 + 기능 통합 + Iris 오토팜' --notes-file release-notes.md --draft --prerelease --latest=false
+          fi
+          gh release upload android-bshack-panel7 apk/* distribution/bshack-panel7/BSHACK-patch-2.3.0.zip --clobber
+          if ! gh release view android-bshack-integrated-updates >/dev/null 2>&1; then
+            gh release create android-bshack-integrated-updates --target "$GITHUB_SHA" --title 'BSHACK 통합판 자동 패치 채널 · 설치 파일 아님' --notes-file channel-notes.md --draft --prerelease --latest=false
+          fi
+          gh release upload android-bshack-integrated-updates distribution/bshack-panel7/stable.json.sig --clobber
+          gh release upload android-bshack-integrated-updates distribution/bshack-panel7/stable.json --clobber
+          gh release edit android-bshack-integrated-updates --notes-file channel-notes.md --draft=false --prerelease --latest=false
+          gh release edit android-bshack-panel7 --notes-file release-notes.md --draft=false --prerelease --latest=false

@@ -16,7 +16,7 @@ public final class GameApp extends com.supercell.titan.GameApp {
   try{c.drawColor(0xff163b42);if(frame!=null)c.drawBitmap(frame,null,new android.graphics.Rect(0,0,c.getWidth(),c.getHeight()),null);}
   finally{surface.getHolder().unlockCanvasAndPost(c);}
  }
- @Override public void onCreate(Bundle state) { super.onCreate(state); root = new FrameLayout(this); root.setBackgroundColor(0xff163b42);surface=new android.view.SurfaceView(this);root.addView(surface,new FrameLayout.LayoutParams(-1,-1));
+ @Override public void onCreate(Bundle state) { super.onCreate(state); root = new FrameLayout(this); root.setBackgroundColor(0xff163b42);surface=new android.view.SurfaceView(this){public float getScaleX(){return .5f;}public float getScaleY(){return .75f;}};root.addView(surface,new FrameLayout.LayoutParams(-1,-1));
   surface.getHolder().addCallback(new android.view.SurfaceHolder.Callback(){public void surfaceCreated(android.view.SurfaceHolder h){paint();}public void surfaceChanged(android.view.SurfaceHolder h,int f,int w,int height){paint();}public void surfaceDestroyed(android.view.SurfaceHolder h){}});
   setContentView(root);if(getIntent().getBooleanExtra("bridgecheck",false))System.loadLibrary("irisgadget"); }
 }

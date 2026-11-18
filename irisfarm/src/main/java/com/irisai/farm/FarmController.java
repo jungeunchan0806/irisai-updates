@@ -85,7 +85,7 @@ public final class FarmController implements AutoCloseable {
         if(enabled)ui.postDelayed(tick,150);
     }
     private void capture(){
-        final long ticket=epoch,at=SystemClock.uptimeMillis();final int width=surface.getWidth(),height=surface.getHeight();final boolean repeatNow=repeat;
+        final long ticket=epoch,at=SystemClock.uptimeMillis();final int width=surface.getWidth(),height=surface.getHeight();final float scaleX=surface.getScaleX(),scaleY=surface.getScaleY();final boolean repeatNow=repeat;
         Bitmap bitmap=Bitmap.createBitmap(960,540,Bitmap.Config.ARGB_8888);busy=true;
         try {PixelCopy.request(surface,bitmap,result->{
             if(result!=PixelCopy.SUCCESS||!permitted(ticket)){bitmap.recycle();busy=false;return;}
@@ -95,7 +95,7 @@ public final class FarmController implements AutoCloseable {
                 final FarmVision.Observation outcome=observation;final Throwable problem=error;
                 ui.post(()->{busy=false;if(!current(ticket))return;
                     if(problem!=null){stop("화면 분석 오류: "+problem.getClass().getSimpleName());return;}
-                    if(!permitted(ticket)||surface.getWidth()!=width||surface.getHeight()!=height||SystemClock.uptimeMillis()-at>1200){cancelInputs();return;}
+                    if(!permitted(ticket)||surface.getWidth()!=width||surface.getHeight()!=height||surface.getScaleX()!=scaleX||surface.getScaleY()!=scaleY||SystemClock.uptimeMillis()-at>1200){cancelInputs();return;}
                     if(outcome!=null)apply(outcome,ticket);
                 });
             });
@@ -141,7 +141,11 @@ public final class FarmController implements AutoCloseable {
     }
     private void send(int type,double x,double y,int pointer)throws Exception {
         if(Looper.myLooper()!=Looper.getMainLooper())throw new IllegalStateException("Main-thread game input required");
-        input.invoke(null,type,(int)Math.round(x*surface.getWidth()/960.),(int)Math.round(y*surface.getHeight()/540.),pointer);
+        // GL2JNISurfaceView overrides these getters with its native-resolution
+        // touch scale; match its original onTouchEvent conversion exactly.
+        float scaleX=surface.getScaleX(),scaleY=surface.getScaleY();
+        if(!Float.isFinite(scaleX)||!Float.isFinite(scaleY)||scaleX<=0||scaleY<=0)throw new IllegalStateException("Invalid game input scale");
+        input.invoke(null,type,(int)(x*surface.getWidth()/960.*scaleX),(int)(y*surface.getHeight()/540.*scaleY),pointer);
     }
     private void cancelInputs(){
         if(!moving&&!attacking&&!tapping)return;moving=attacking=tapping=false;tapSequence++;

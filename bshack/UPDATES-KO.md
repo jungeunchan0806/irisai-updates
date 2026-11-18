@@ -1,14 +1,16 @@
 # 앱 내부 패치 배포
 
-2.2.0 APK는 변경 불가능한 부트스트랩과 서명 검증기를 포함합니다. GitHub `android-bshack-updates` 릴리스의 `stable.json`과 `stable.json.sig`를 확인하고, 호환 버전의 RSA-SHA256 서명된 패치만 내려받습니다. 패치는 `engine.mjs`, `panel.dex` 두 파일만 포함하며, 다운로드 전체와 각 파일의 SHA-256을 검사합니다.
+2.3.0 APK는 변경 불가능한 부트스트랩과 서명 검증기를 포함합니다. GitHub `android-bshack-integrated-updates` 릴리스의 `stable.json`과 `stable.json.sig`를 확인하고, 호환 버전의 RSA-SHA256 서명된 패치만 내려받습니다. 패치는 `engine.mjs`, `panel.dex` 두 파일만 포함하며, 다운로드 전체와 각 파일의 SHA-256을 검사합니다.
 
 개인키는 **저장소 밖의 안전한 장소에 별도로 보관**합니다. 현재 개발 환경의 패치 키는 `/workspace/iris-update-signing/patch-signing.pem`에 있으며 GitHub에 올리지 않습니다. APK 서명키와 패치 서명키는 다릅니다. 이 개인키를 잃으면 기존 앱에 새 공개키를 배포하려고 APK를 다시 설치해야 하므로, 소유자가 별도 안전한 백업을 보관해야 합니다.
 
 1. 오토골/UI 수정 후 `:bshackui:assembleRelease`, Node 검사와 Android 브리지 검사를 수행합니다.
-2. `build.py`가 생성한 `agent.mjs`와 UI APK로 `package_patch.py`를 실행합니다. `--version`은 이전 값보다 크게 지정합니다. 현재 기본 버전은 22000입니다. `--key`는 저장소 밖의 개인키 경로입니다.
+2. `build.py`가 생성한 `agent.mjs`와 UI APK로 `package_patch.py`를 실행합니다. `--version`은 이전 값보다 크게 지정합니다. 현재 기본 버전은 23000입니다. `--key`는 저장소 밖의 개인키 경로입니다.
 3. `patch.zip`을 버전별 릴리스에 고정된 이름으로 업로드합니다. 해당 URL은 `package_patch.py --url`로 서명한 주소와 같아야 합니다.
 4. 검증 후 `manifest.json`, `manifest.sig`를 업데이트 채널에 각각 `stable.json`, `stable.json.sig`라는 이름으로 업로드합니다. 서명이 잠시 불일치해도 클라이언트는 기존 코드를 계속 사용합니다.
 
 두 패치 파일은 비공개 앱 저장 공간의 새 버전 폴더에 저장하고, 모두 검증된 뒤 활성 버전을 원자적으로 변경합니다. 실행 중인 게임 코드를 교체하지 않고 다음 시작에서 로드합니다. APK 안의 검증기가 매번 서명과 해시를 다시 확인합니다. 정상 시작을 확인하기 전에 앱이 종료된 패치는 다음 실행에서 기본 버전으로 복구합니다. 기본 게임 바이너리 변경은 패치 대상이 아닙니다.
 
-원래 게임 데이터·라이선스 설정은 삭제하지 않습니다. 테스트용 22001 패치(`bridgecheck/fixtures`)는 에뮬레이터 검사 전용이며 실제 업데이트 채널에 올리지 않습니다.
+원래 게임 데이터·라이선스 설정은 삭제하지 않습니다. 테스트용 23001 패치(`bridgecheck/fixtures`)는 에뮬레이터 검사 전용이며 실제 업데이트 채널에 올리지 않습니다.
+
+2.3.0은 별도 호환 기반 `bshack-70648-panel7-v1`입니다. 기존 2.2.x 채널은 변경하지 않습니다. 모델·네이티브 라이브러리를 추가/교체할 때는 APK 업데이트가 필요합니다.

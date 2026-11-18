@@ -1,0 +1,32 @@
+{
+  "auto_goal_brf_sha256": "d13d97ba6103262e66fd574600441006010414051ca4c1eadd25cf00718c4dc1",
+  "theseven_brf_sha256": "49f2696d19908c311722387c9c965947740a1565638590ab827928255f1acbd0",
+  "text_instruction_differences": [
+    "0x26dac",
+    "0x26db0",
+    "0x331e8",
+    "0x34464",
+    "0x34468",
+    "0x35100",
+    "0x35104",
+    "0x35364",
+    "0x35368",
+    "0x3536c",
+    "0x35470",
+    "0x35474",
+    "0x355d8",
+    "0x355e8",
+    "0x355ec",
+    "0x37770",
+    "0x37774",
+    "0x37778",
+    "0x377d8",
+    "0x37828"
+  ],
+  "original_config_function_identical": true,
+  "implementation": "Reuse the original BRF already bundled in Auto Goal; no second native engine is loaded",
+  "farm_excluded_config_slot": 3,
+  "original_auto_goal_preserved_slot": 11,
+  "render_api": "0x34e48",
+  "config_api": "0x33380"
+}
