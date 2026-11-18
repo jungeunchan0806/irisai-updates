@@ -90,13 +90,16 @@ jobs:
           REQUIRED_NATIVE_ABI: ${{ matrix.arch == 'arm64-v8a' && 'arm64-v8a' || '' }}
         with:
           api-level: ${{ matrix.image }}
+          # The API 37.2 image declares emulator 36.5.11 as its required baseline.
+          # 37.2.13 repeatedly aborts inside the emulator's graphics mapper.
+          emulator-build: ${{ matrix.api == 37 && runner.os == 'Linux' && '15261927' || '' }}
           target: ${{ matrix.target }}
           arch: ${{ matrix.arch }}
           profile: pixel_2
           disk-size: ${{ matrix.api == 37 && '12288M' || '8192M' }}
           disable-animations: true
           emulator-boot-timeout: 900
-          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu ${{ matrix.gpu }} -memory 3072 -cores 2 ${{ steps.accel.outputs.options }} ${{ matrix.api == 37 && runner.os == 'Linux' && '-feature -GLDMA,-GLDMA2' || '' }}
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu ${{ matrix.gpu }} -memory 3072 -cores 2 ${{ steps.accel.outputs.options }}
           script: python3 tools/android-compat/check.py --display-cycles ${{ matrix.api == 36 && 12 || 1 }}
       - name: Capture host status after a failed emulator run
         if: failure() && runner.os == 'Linux'
