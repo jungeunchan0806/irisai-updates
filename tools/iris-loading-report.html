@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<title>브롤스타즈 로딩 진단</title>
+<style>
+:root{color-scheme:light dark;font:1rem/1.65 system-ui,sans-serif}
+main{max-width:37rem;margin:auto;padding:1.4rem}h1{font-size:1.6rem}
+button,input{font:inherit;max-width:100%}textarea{box-sizing:border-box;width:100%;font:0.95rem/1.55 monospace}
+</style>
+<main>
+<h1>브롤스타즈 로딩 진단</h1>
+<p>통합판이 멈춘 직후 Android 개발자 옵션의 <b>버그 신고</b>로 만든 ZIP 또는 압축을 푼 bugreport TXT를 선택하세요. 이 기기에서 분석하며, 공유할 결과는 아래에 표시됩니다.</p>
+<label>보고서 선택 <input id="file" type="file" accept=".zip,.txt"></label>
+<p id="status" role="status"></p>
+<textarea id="report" rows="12" aria-label="공유할 진단 요약" readonly></textarea>
+<button id="copy" disabled>요약 복사</button>
+</main>
+<script>
+'use strict';
+const maxBytes = 512 * 1024 * 1024;
+const pkg = 'com.supercell.brawlstars';
+const logLine = /^(\d\d-\d\d \d\d:\d\d:\d\d\.\d{3})\s+(?:\S+\s+)?(\d+)\s+\d+\s+[VDIWEFA]\s+([^:]+?)\s*:\s*(.*)$/;
+const signals = [
+  ['앱 응답 없음', /\bANR in com\.supercell\.brawlstars\b|\bam_anr\s*:/i],
+  ['Java 예외로 종료', /FATAL EXCEPTION:/i],
+  ['네이티브 오류로 종료', /Fatal signal (?:4|6|7|11)\b/i],
+  ['라이브러리 로드 오류', /UnsatisfiedLinkError|dlopen failed/i],
+  ['앱 리소스 읽기 오류', /Resources\$NotFoundException|Unable to open asset|failed to load asset/i],
+  ['클라이언트 업데이트 요구 메시지', /client update (?:is )?required|client version (?:is )?(?:too old|unsupported)|mandatory client update/i],
+  ['DNS 조회 실패', /UnknownHostException|EAI_(?:AGAIN|NONAME|NODATA)|Unable to resolve host/i],
+  ['TLS 연결 실패', /SSLHandshakeException|CERTIFICATE_VERIFY_FAILED|TLS handshake failed/i],
+  ['연결 시간 초과', /SocketTimeoutException|ETIMEDOUT|connect(?:ion)? timed out/i],
+  ['연결 거부 또는 끊김', /ECONNREFUSED|ECONNRESET|Connection (?:refused|reset by peer)/i]
+];
+const view = bytes => new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+async function readPart(file, offset, length) {
+  if (offset < 0 || offset + length > file.size) throw Error('ZIP 파일이 불완전합니다.');
+  return new Uint8Array(await file.slice(offset, offset + length).arrayBuffer());
+}
+async function openText(file) {
+  if (/\.txt$/i.test(file.name)) {
+    if (file.size > maxBytes) throw Error('TXT가 분석 크기 한도를 넘습니다.');
+    return () => file.stream();
+  }
+  const tailLength = Math.min(65557, file.size);
+  const tail = view(await readPart(file, file.size - tailLength, tailLength));
+  let end = tailLength - 22;
+  while (end >= 0 && !(tail.getUint32(end,true) === 0x06054b50 &&
+         end + 22 + tail.getUint16(end+20,true) === tailLength)) end--;
+  if (end < 0) throw Error('Android 버그 신고 ZIP 또는 TXT를 선택하세요.');
+  const size = tail.getUint32(end+12,true), start = tail.getUint32(end+16,true);
+  if (size > 16*1024*1024) throw Error('ZIP에서 bugreport TXT를 추출해 선택하세요.');
+  const directory = await readPart(file,start,size), d = view(directory);
+  for (let pos = 0; pos+46 <= size;) {
+    if (d.getUint32(pos,true) !== 0x02014b50) break;
+    const nameLength = d.getUint16(pos+28,true);
+    const name = new TextDecoder().decode(directory.subarray(pos+46,pos+46+nameLength));
+    if (/^bugreport[^/]*\.txt$/i.test(name)) {
+      const method = d.getUint16(pos+10,true);
+      if (d.getUint32(pos+24,true)>maxBytes || (d.getUint16(pos+8,true)&1)) throw Error('압축을 풀어 bugreport TXT를 선택하세요.');
+      const offset = d.getUint32(pos+42,true);
+      const header = view(await readPart(file,offset,30));
+      if (header.getUint32(0,true)!==0x04034b50) throw Error('ZIP 파일 헤더를 읽을 수 없습니다.');
+      const first = offset + 30 + header.getUint16(26,true) + header.getUint16(28,true);
+      const last = first + d.getUint32(pos+20,true);
+      if (last>file.size) throw Error('ZIP 파일이 불완전합니다.');
+      const blob = file.slice(first,last);
+      if (method === 0) return () => blob.stream();
+      if (method === 8) return () => blob.stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      throw Error('압축을 풀어 bugreport TXT를 선택하세요.');
+    }
+    pos += 46 + nameLength + d.getUint16(pos+30,true) + d.getUint16(pos+32,true);
+  }
+  throw Error('ZIP 안에서 기본 bugreport TXT를 찾지 못했습니다.');
+}
+async function scan(open, handle) {
+  const reader = open().getReader(), decoder = new TextDecoder();
+  let pending = '', size = 0, discard = false;
+  try {
+    for (;;) {
+      const {value,done} = await reader.read();
+      if (!done) size += value.byteLength;
+      if (size > maxBytes) throw Error('보고서가 분석 크기 한도를 넘습니다.');
+      const parts = (pending + decoder.decode(value,{stream:!done})).split('\n');
+      pending = done ? '' : parts.pop();
+      for (const part of parts) {
+        if (!discard && part.length<65536) {
+          const row = part.match(logLine);
+          if (row) handle(row[1],row[2],row[3].trim(),row[4]);
+        }
+        discard = false;
+      }
+      if (pending.length>=65536 || discard) {pending='';discard=true;}
+      if (done) break;
+    }
+  } finally { await reader.cancel().catch(()=>{}); reader.releaseLock(); }
+}
+async function summarize(file) {
+  const open = await openText(file);
+  const events = [];
+  await scan(open,(time,pid,tag,body)=>{
+    let m;
+    if (tag==='ActivityManager' && (m=body.match(/^Start proc (\d+):([^/\s]+)/))) events.push([time,m[1],m[2]]);
+    if (tag==='am_proc_start' && (m=body.match(/^\[\d+,(\d+),\d+,([^,\]]+)/))) events.push([time,m[1],m[2]]);
+  });
+  const launches = events.filter(e=>e[2]===pkg).sort((a,b)=>a[0].localeCompare(b[0]));
+  if (!launches.length) return '게임 프로세스 시작 기록을 찾지 못했습니다. 통합판을 완전히 종료했다가 열고, 멈춤이 보이면 바로 새 버그 신고를 수집하세요.';
+  const [start,pid] = launches.at(-1);
+  const reuse = events.filter(e=>e[1]===pid && e[2]!==pkg && e[0]>=start)
+                     .map(e=>e[0]).sort()[0];
+  let rows=0;
+  const latest = new Map();
+  await scan(open,(time,source,tag,body)=>{
+    if (time<start || (reuse && time>=reuse)) return;
+    const anr = (tag==='ActivityManager' && /^ANR in com\.supercell\.brawlstars(?:\s|$)/.test(body)) ||
+                (tag==='am_anr' && body.split(',')[2]===pkg);
+    if (pid!==source && !anr) return;
+    rows++;
+    for (const [name,pattern] of signals) {
+      if (pattern.test(tag+': '+body) && (!latest.has(name)||time>latest.get(name))) latest.set(name,time);
+    }
+  });
+  const lines=['Android 게임 프로세스 진단','마지막 실행 '+start,'해당 실행의 로그 행 '+rows];
+  if (!latest.size) lines.push('정해진 오류 유형이 기록되지 않았습니다.');
+  for (const [name,time] of latest) lines.push(time+'  '+name);
+  lines.push('게임과 같은 프로세스의 라이브러리 로그가 포함될 수 있습니다. 서버의 로그인 응답은 이 요약만으로 판단할 수 없습니다.');
+  return lines.join('\n');
+}
+const picker=document.getElementById('file'), report=document.getElementById('report');
+const statusText=document.getElementById('status'), copy=document.getElementById('copy');
+picker.onchange=async()=>{
+  const file=picker.files[0]; if (!file) return;
+  picker.disabled=true;copy.disabled=true;report.value='';statusText.textContent='기기에서 보고서를 읽고 있습니다.';
+  try {report.value=await summarize(file);copy.disabled=false;statusText.textContent='분석 완료';}
+  catch(e){statusText.textContent='분석 실패 · '+e.message;}
+  finally{picker.disabled=false;}
+};
+copy.onclick=async()=>{
+  try {await navigator.clipboard.writeText(report.value);statusText.textContent='요약을 복사했습니다.';}
+  catch {report.select();statusText.textContent='선택된 요약을 길게 눌러 복사하세요.';}
+};
+</script>
+</html>
