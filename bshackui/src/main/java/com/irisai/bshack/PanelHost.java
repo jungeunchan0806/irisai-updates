@@ -38,7 +38,6 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     private String connectionReport="";
     private long lastHeartbeat, nextHealthAttempt;
     private boolean markedHealthy, healthPending, freshBridgeState;
-    private int healthyResponses;
     private String latestError = "", diagnosticState = "", bootName = "2.3.0", recovery = "";
     private final Handler handler = new Handler(Looper.getMainLooper());
     public static void initialize(Application app) {
@@ -92,11 +91,11 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
             ((ViewGroup) next.findViewById(android.R.id.content)).addView(panel, new ViewGroup.LayoutParams(-1, -1));
         }
         resumed = true; panel.resume();
-        lastHeartbeat=SystemClock.uptimeMillis();freshBridgeState=false;healthyResponses=0;
+        lastHeartbeat=SystemClock.uptimeMillis();freshBridgeState=false;
         updates.attach(next,panel.english());updates.start();
     }
     private void disconnect() {
-        resumed = false; freshBridgeState=false;healthyResponses=0;queue(2);
+        resumed = false; freshBridgeState=false;queue(2);
         if(activity!=null){updates.pause(activity);license.detach(activity);}
         if (panel != null) {
             panel.close(); if (panel.getParent() instanceof ViewGroup) ((ViewGroup) panel.getParent()).removeView(panel);
@@ -153,11 +152,13 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     public static void update(boolean enabled, String phase) {
         if (host != null && host.panel != null) {
             host.lastHeartbeat=SystemClock.uptimeMillis();host.engineEnabled = enabled; host.panel.setEngineState(enabled, phase);
-            // A loaded module and responsive Android UI complete patch startup. Native
-            // game readiness can arrive much later and is not a UI-patch health check.
-            host.healthyResponses=host.resumed&&host.freshBridgeState?Math.min(2,host.healthyResponses+1):0;
-            host.freshBridgeState=false;
-            if(!host.markedHealthy&&!host.healthPending&&host.healthyResponses>=2&&host.lastHeartbeat>=host.nextHealthAttempt){
+            // A foreground bridge response and an attached, laid-out panel attest
+            // to patch startup even while game or account initialization is pending.
+            boolean responsive = host.resumed && host.freshBridgeState
+                    && host.panel.isAttachedToWindow() && host.panel.isLaidOut()
+                    && host.panel.getWidth() > 0 && host.panel.getHeight() > 0;
+            host.freshBridgeState = false;
+            if (responsive && !host.markedHealthy && !host.healthPending && host.lastHeartbeat >= host.nextHealthAttempt) {
                 final PanelHost current=host;current.healthPending=true;
                 current.updates.healthy(success->{
                     current.healthPending=false;current.markedHealthy=success;
@@ -166,12 +167,16 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
             }
         }
     }
-    public static void recordError(String stage,String error) { if(host!=null){host.latestError=stage+": "+error;host.freshBridgeState=false;host.healthyResponses=0;} }
+    public static void recordError(String stage,String error) { if(host!=null){host.latestError=stage+": "+error;host.freshBridgeState=false;} }
     public static void recordState(String state) {
         if(host==null)return;host.diagnosticState=state;host.freshBridgeState=false;
         try{
-            org.json.JSONObject data=new org.json.JSONObject(state),auth=data.optJSONObject("auth");
-            host.freshBridgeState=data.optBoolean("foreground",false)&&auth!=null&&auth.optBoolean("ready",false);
+            org.json.JSONObject data = new org.json.JSONObject(state);
+            host.freshBridgeState = Boolean.TRUE.equals(data.opt("foreground"))
+                    && data.opt("game") instanceof Boolean
+                    && data.opt("enabled") instanceof Boolean
+                    && data.opt("phase") instanceof String
+                    && data.optJSONObject("auth") != null;
         }catch(Exception ignored){}
     }
     private void watchdog() {
@@ -205,7 +210,7 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
         reader.start();
     }
     @Override public void onActivityResumed(Activity value) { attach(value); }
-    @Override public void onActivityPaused(Activity value) { if (value == activity) { resumed = false; freshBridgeState=false;healthyResponses=0;queue(2);featureCommands.clear();if(farm!=null)farm.pause(); updates.pause(value);license.detach(value);panel.pause(); } }
+    @Override public void onActivityPaused(Activity value) { if (value == activity) { resumed = false; freshBridgeState=false;queue(2);featureCommands.clear();if(farm!=null)farm.pause(); updates.pause(value);license.detach(value);panel.pause(); } }
     @Override public void onActivityDestroyed(Activity value) { if (value == activity) disconnect(); }
     @Override public void onActivityCreated(Activity value, Bundle state) {}
     @Override public void onActivityStarted(Activity value) {}

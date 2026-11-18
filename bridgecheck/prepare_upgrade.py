@@ -22,3 +22,12 @@ for filename in ['manifest.json', 'manifest.sig']:
     shutil.copyfile(candidate / filename, out / 'candidate' / filename)
 shutil.copyfile(payload, out / 'candidate/patch.zip')
 print('Prepared the original installed verifier and the exact signed production candidate.')
+
+if release.get('previous_folder'):
+    previous = root / release['previous_folder']
+    saved = out / 'previous'
+    saved.mkdir(exist_ok=True)
+    for name in ['manifest.json', 'manifest.sig']:
+        shutil.copyfile(previous / name, saved / name)
+    metadata = json.loads((previous / 'release.json').read_text())
+    shutil.copyfile(previous / metadata['filename'], saved / 'patch.zip')

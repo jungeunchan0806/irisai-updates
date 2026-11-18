@@ -1,0 +1,13 @@
+{
+  "version": 23004,
+  "base": "bshack-70648-panel7-v1",
+  "tag": "android-integrated-startup-2.3.4",
+  "title": "통합판 2.3.4 · 패치 시작 확인 수정",
+  "filename": "Iris-integrated-2.3.4.zip",
+  "channel": "android-bshack-integrated-updates",
+  "baseline_version": 23000,
+  "baseline_folder": "distribution/bshack-panel7",
+  "baseline_zip": "BSHACK-patch-2.3.0.zip",
+  "previous_version": 23003,
+  "previous_folder": "distribution/app-diagnostics"
+}
