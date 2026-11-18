@@ -135,6 +135,9 @@ def main():
     required_abi=os.environ.get('REQUIRED_NATIVE_ABI')
     if required_abi and abis[0]!=required_abi:
         raise RuntimeError(f'Expected native {required_abi} emulator, got {abis}')
+    install_abi=os.environ.get('REQUIRED_INSTALL_ABI')
+    if install_abi and install_abi not in abis:
+        raise RuntimeError(f'Emulator must support installation of {install_abi} packages, got {abis}')
     errors=[]
     try:
         exercise_signed_ui(user,api,p.soak_until,p.display_cycles)
