@@ -1,4 +1,4 @@
-name: Publish verified top-center UI patch 2.2.1
+name: Publish verified startup recovery patch 2.2.2
 on:
   push:
     branches: [android-bshack-panel6]
@@ -15,23 +15,23 @@ jobs:
       - name: Require the exact patch source to pass Android checks
         env: {GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}'}
         run: |
-          gh run watch 44245930669 --exit-status --interval 15
-          test "$(gh run view 44245930669 --json headSha --jq .headSha)" = 445a26d3d770543d6099845dd2bf949921a33b63
-          git diff --exit-code 445a26d3d770543d6099845dd2bf949921a33b63 HEAD -- controlui bshackui bshack distribution/bshack-patch-2.2.1
+          gh run watch 44257831657 --exit-status --interval 15
+          test "$(gh run view 44257831657 --json headSha --jq .headSha)" = bbeb87e74021499a07f0c55d5da3e528e59c88f3
+          git diff --exit-code bbeb87e74021499a07f0c55d5da3e528e59c88f3 HEAD -- controlui bshackui bshack distribution/bshack-patch-2.2.2
       - name: Verify signed patch and publish the update channel
         env: {GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}'}
         run: |
           python - <<'PY'
           from pathlib import Path
           import json,hashlib,zipfile,base64,re,subprocess,urllib.request
-          root=Path('distribution/bshack-patch-2.2.1')
+          root=Path('distribution/bshack-patch-2.2.2')
           m=json.loads((root/'manifest.json').read_text())
-          assert m['version']==22001 and m['base']=='bshack-70648-panel6-v1'
-          assert m['url']=='https://github.com/jungeunchan0806/irisai-updates/releases/download/android-bshack-patch-2.2.1/BSHACK-patch-2.2.1.zip'
+          assert m['version']==22002 and m['base']=='bshack-70648-panel6-v1'
+          assert m['url']=='https://github.com/jungeunchan0806/irisai-updates/releases/download/android-bshack-patch-2.2.2/BSHACK-patch-2.2.2.zip'
           key=re.search(r'PUBLIC_KEY="([A-Za-z0-9+/=]+)"',Path('bshackui/src/main/java/com/irisai/bshack/update/UpdateConfig.java').read_text()).group(1)
           Path('/tmp/patch-public.der').write_bytes(base64.b64decode(key))
           subprocess.run(['openssl','dgst','-sha256','-verify','/tmp/patch-public.der','-keyform','DER','-signature',str(root/'manifest.sig'),str(root/'manifest.json')],check=True)
-          p=root/'BSHACK-patch-2.2.1.zip'
+          p=root/'BSHACK-patch-2.2.2.zip'
           assert p.stat().st_size==m['bytes'] and hashlib.sha256(p.read_bytes()).hexdigest()==m['sha256']
           with zipfile.ZipFile(p) as z:
             assert sorted(z.namelist())==['engine.mjs','panel.dex']
@@ -41,10 +41,10 @@ jobs:
           if current['version']==m['version']:assert current==m, 'Refusing to replace an existing version with different contents'
           Path('/tmp/stable.json').write_bytes((root/'manifest.json').read_bytes())
           Path('/tmp/stable.json.sig').write_bytes((root/'manifest.sig').read_bytes())
-          notes=(root/'RELEASE-KO.md').read_text()+'\n[Android 15·16 검사 통과](https://github.com/jungeunchan0806/irisai-updates/actions/runs/44245930669)\n'
+          notes=(root/'RELEASE-KO.md').read_text()+'\n[Android 15·16 복구 오류 재현 및 반복 재실행 검사 통과](https://github.com/jungeunchan0806/irisai-updates/actions/runs/44257831657)\n'
           Path('/tmp/patch-release-notes.md').write_text(notes)
           PY
-          gh release upload android-bshack-patch-2.2.1 distribution/bshack-patch-2.2.1/BSHACK-patch-2.2.1.zip --clobber
-          gh release edit android-bshack-patch-2.2.1 --notes-file /tmp/patch-release-notes.md --draft=false --prerelease --latest=false
+          gh release upload android-bshack-patch-2.2.2 distribution/bshack-patch-2.2.2/BSHACK-patch-2.2.2.zip --clobber
+          gh release edit android-bshack-patch-2.2.2 --notes-file /tmp/patch-release-notes.md --draft=false --prerelease --latest=false
           gh release upload android-bshack-updates /tmp/stable.json.sig --clobber
           gh release upload android-bshack-updates /tmp/stable.json --clobber
