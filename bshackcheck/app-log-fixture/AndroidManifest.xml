@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.irisai.logfixture">
+  <application android:debuggable="false" android:label="App log test">
+    <activity android:name="com.irisai.bshack.AppLogProbe" android:exported="true"/>
+  </application>
+</manifest>

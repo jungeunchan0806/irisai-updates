@@ -1,0 +1,30 @@
+name: Check unprivileged app log on Android 17
+on:
+  push:
+    branches: [android-app-log-api37]
+permissions: {contents: read}
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+        with: {packages: 'platform-tools platforms;android-35 build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
+      - run: |
+          sudo chmod 666 /dev/kvm
+          bash bshackcheck/app-log-fixture/build.sh
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: '37.0'
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          emulator-options: -no-window -no-audio -no-snapshot -no-boot-anim -gpu swiftshader_indirect -cores 4
+          script: |
+            test "$(adb shell getprop ro.build.version.sdk | tr -d '\r')" = '37'
+            adb install /tmp/iris-log-fixture.apk
+            adb shell am start -W -n com.irisai.logfixture/com.irisai.bshack.AppLogProbe
+            timeout 30 adb logcat -v brief -s AppLogProbe:I | grep -m1 'PASS own log on Android 17'
