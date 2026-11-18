@@ -9,7 +9,9 @@ permissions: {contents: read}
 jobs:
   soak:
     runs-on: ubuntu-24.04
-    timeout-minutes: 275
+    # The second stage can start early after a failure. Its wall-clock cutoff
+    # stops the fixture; keep the runner available to upload the results.
+    timeout-minutes: 350
     steps:
       - name: Check the requested time window
         id: clock
