@@ -55,8 +55,9 @@ void render(void *context, void *renderer, float width, float height,
     memcpy(changes, requested, sizeof(changes));
     memset(requested, 0, sizeof(requested));
     g_mutex_unlock(&mutex);
-    changed = config[3] != 0; /* Never run the excluded TheSeven auto-farm. */
-    config[3] = 0;
+    changed = config[3] != 0 || config[11] != 0;
+    /* Iris owns both farm and licensed goal. Do not start duplicate BRF bots. */
+    config[3] = 0; config[11] = 0;
     for (i = 0; i < 88; i++) {
         if (!changes[i]) continue;
         if (boolean_slot(i)) config[i] = (unsigned char)(changes[i] - 1);

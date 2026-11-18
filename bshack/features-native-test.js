@@ -17,12 +17,12 @@ rpc.exports.run=function(){
   render(ctx,ptr(0),1280,720,100,120,1);snapshot(out);
   check(out.readS32()===1&&out.add(8).readS32()===120,'Native readiness/FPS');
   check(ctx.add(0x68+3).readU8()===0,'Original farm not disabled');
-  check(ctx.add(0x68+11).readU8()===1,'Original goal state changed');
+  check(ctx.add(0x68+11).readU8()===0,'Duplicate BRF goal remained enabled');
   check(ctx.add(0x128).readPointer().equals(ctx.add(0x130).readPointer()),'Native menu touch controls remain');
   const slots=[1,2,4,5,9,14,16,17,18,19,25,26,48,49,50,51,52,53,54,55];
   for(const slot of slots){check(submit(slot,1),'Rejected valid feature');render(ctx,ptr(0),1280,720,100,60,1);snapshot(out);check(out.add(16+slot).readU8()===1,'Feature not applied');check(submit(slot,0),'Rejected OFF');render(ctx,ptr(0),1280,720,100,60,1);snapshot(out);check(out.add(16+slot).readU8()===0,'Feature did not stop');}
   for(const [slot,value] of [[56,100],[60,250],[64,121]]){check(submit(slot,value),'Setting rejected');render(ctx,ptr(0),1280,720,100,60,1);snapshot(out);check(out.add(16+slot).readS32()===value,'Setting not applied');}
   const before=calls;for(let i=0;i<120;i++)render(ctx,ptr(0),1280,720,100,60,1);
   check(calls===before,'Unchanged frames repeatedly write configuration');
-  return {boolean_features_and_settings:slots.length,numeric_settings:3,render_frames:164,excluded_farm_off:true,original_goal_preserved:true,engine:'real Frida CModule, fake config callback'};
+  return {boolean_features_and_settings:slots.length,numeric_settings:3,render_frames:164,excluded_farm_off:true,duplicate_brf_goal_off:true,engine:'real Frida CModule, fake config callback; Iris goal checked separately by runtime.test.mjs'};
 };

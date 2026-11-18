@@ -4,8 +4,17 @@ const _features = { module:null, bridge:null, snapshot:null, submit:null,
 const _featureSlots = [1,2,4,5,9,14,16,17,18,19,25,26,48,49,50,51,52,53,54,55];
 function _featuresBind() {
   if (_features.module || _features.error) return;
-  const mod = Process.findModuleByName('libbrf.so');
-  if (!mod) return;
+  if(globalThis.__irisBoot && globalThis.__irisBoot.featuresError){_features.error=globalThis.__irisBoot.featuresError;return;}
+  let mod = Process.findModuleByName('libbrf.so');
+  if (!mod) {
+    if (!_panelHost) return;
+    try {
+      const error=String(_panelHost.loadNativeFeatures());
+      if(error){_features.error=error;return;}
+      mod=Process.findModuleByName('libbrf.so');
+      if(!mod){_features.error='Native feature initialization did not load BRF';return;}
+    }catch(e){_features.error=String(e);return;}
+  }
   try {
     if (Process.arch !== 'arm64' || mod.size < 0x87000 ||
         mod.base.add(0x34e48).readU32() !== 0xd10343ff ||

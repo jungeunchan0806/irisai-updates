@@ -25,6 +25,7 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     private final ArrayDeque<String> featureCommands = new ArrayDeque<>();
     private FarmController farm;
     private boolean autoGoalPriority, nativeAutoFire;
+    private Application application;
     private Activity activity;
     private IrisControlPanel panel;
     private boolean resumed;
@@ -38,7 +39,7 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     private final Handler handler = new Handler(Looper.getMainLooper());
     public static void initialize(Application app) {
         if (host != null) return;
-        host = new PanelHost(); host.updates = new UpdateManager(app);host.license=new LicenseClient(app);app.registerActivityLifecycleCallbacks(host);
+        host = new PanelHost();host.application=app; host.updates = new UpdateManager(app);host.license=new LicenseClient(app);app.registerActivityLifecycleCallbacks(host);
         host.handler.postDelayed(host::watchdog, 1500);
     }
     public static void configure(long version,String name,String recovery) {
@@ -104,6 +105,10 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
         catch(org.json.JSONException ignored){}
     }
     public static String pollFeature(){return host==null||host.featureCommands.isEmpty()?"":host.featureCommands.remove();}
+    public static String loadNativeFeatures(){
+        if(host==null)return "Iris panel is not initialized";
+        return NativeFeatures.load(host.application);
+    }
     public static void updateFeatures(String state){
         if(host==null||host.panel==null)return;host.panel.setFeatures(state);
         try{host.nativeAutoFire=new org.json.JSONObject(state).getJSONObject("values").optInt("4")==1;}catch(Exception ignored){}

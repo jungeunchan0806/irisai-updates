@@ -3,6 +3,29 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import fs from 'node:fs';
 const bundle=fs.readFileSync(new URL('./licensing_bundle.js',import.meta.url),'utf8');
+test('BRF-modified instructions require both the pinned game file and native readiness',()=>{
+ const c=vm.createContext({Date,_NW:[[4,123]],_features:{ready:false},__irisBoot:{gameFileVerified:false}});
+ vm.runInContext(fs.readFileSync(new URL('./engine_start.js',import.meta.url),'utf8'),c);
+ c.mod={base:{add:()=>({readU32:()=>123})}};assert.equal(vm.runInContext('_irisCompatibleWords(mod)',c),true);
+ c.mod={base:{add:()=>({readU32:()=>456})}};assert.equal(vm.runInContext('_irisCompatibleWords(mod)',c),false);
+ c._features.ready=true;assert.equal(vm.runInContext('_irisCompatibleWords(mod)',c),false);
+ c.__irisBoot.gameFileVerified=true;assert.equal(vm.runInContext('_irisCompatibleWords(mod)',c),true);
+ c._features.ready=false;assert.equal(vm.runInContext('_irisCompatibleWords(mod)',c),false);
+});
+test('Iris game hooks wait until the native feature renderer is initialized',()=>{
+ let calls=0,timer=null,now=0;
+ const c=vm.createContext({Date:{now:()=>now},_st:{disposed:false},_features:{ready:false,error:''},_S:{libg:'game'},_d:v=>v,Process:{findModuleByName:n=>n==='game'?{}:null},_start(){calls++;},setTimeout(fn){timer=fn;}});
+ vm.runInContext(fs.readFileSync(new URL('./engine_start.js',import.meta.url),'utf8')+';_wfl();',c);
+ assert.equal(calls,0);assert.ok(timer);c._features.ready=true;timer();assert.equal(calls,1);
+});
+test('an explicit native feature load error does not disable the existing Iris engine',()=>{
+ let calls=0;const c=vm.createContext({Date,_st:{disposed:false},_features:{ready:false,error:'load failed'},_S:{libg:'game'},_d:v=>v,Process:{findModuleByName:n=>n==='game'?{}:null},_start(){calls++;},setTimeout(){}});
+ vm.runInContext(fs.readFileSync(new URL('./engine_start.js',import.meta.url),'utf8')+';_wfl();',c);assert.equal(calls,1);
+});
+test('late native initialization never races Iris hook installation after timeout',()=>{
+ let calls=0,timer,now=0;const c=vm.createContext({Date:{now:()=>now},_st:{disposed:false},_features:{ready:false,error:''},_S:{libg:'game'},_d:v=>v,Process:{findModuleByName:n=>n==='game'?{}:null},_start(){calls++;},setTimeout(fn){timer=fn;}});
+ vm.runInContext(fs.readFileSync(new URL('./engine_start.js',import.meta.url),'utf8')+';_wfl();',c);now=60001;timer();assert.equal(calls,0);assert.match(c._st.error,/initialization timed out/);
+});
 function core(){const c=vm.createContext({init_node_globals(){},__esm:f=>()=>Object.values(f)[0]()});vm.runInContext(bundle+';init_core();',c);return c;}
 test('monotonic leases expire, reject malformed server leases and accept explicit revocation',()=>{
  const c=core();let now=500; c.now=()=>now;
@@ -37,7 +60,7 @@ function panelFixture({ready=true,started=true,active=false}={}) {
  const auth={ready,error:null,pending:false,active};
  const c=vm.createContext({console,setInterval(){},Memory:{alloc(){return {}; }},Process:{findModuleByName(){return null;}},_st:{started,disposed:false,requested:null},_ag:{enabled:false,phase:'idle',ball:null,carriedKey:null},_MS:{checked:0},_license:{status:()=>auth,tap(){taps++;},isActive:()=>auth.active},frida_java_bridge_default:{perform:f=>f(),scheduleOnMainThread:f=>f()}});
  vm.runInContext(fs.readFileSync(new URL('./engine_state.js',import.meta.url),'utf8')+'\n'+fs.readFileSync(new URL('./features_bridge.js',import.meta.url),'utf8')+'\n'+fs.readFileSync(new URL('./panel_bridge.js',import.meta.url),'utf8'),c);
- c.fake={autoGoalPriority(){},isResumed:()=>foreground,poll:()=>{const n=command;command=0;return n;},update:(enabled,p)=>{phase=p;}};
+ c.fake={loadNativeFeatures:()=>'',updateFeatures(){},autoGoalPriority(){},isResumed:()=>foreground,poll:()=>{const n=command;command=0;return n;},update:(enabled,p)=>{phase=p;}};
  vm.runInContext('_panelHost=fake;',c);
  return {c,auth,poll(n=0){command=n;vm.runInContext('_panelPoll()',c);},activate(){vm.runInContext('_panelActivate()',c);},background(){foreground=false;vm.runInContext('_panelAttempts=40;',c);},get taps(){return taps;},get phase(){return phase;}};
 }

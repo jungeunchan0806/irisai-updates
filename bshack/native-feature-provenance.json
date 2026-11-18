@@ -26,7 +26,8 @@
   "original_config_function_identical": true,
   "implementation": "Reuse the original BRF already bundled in Auto Goal; no second native engine is loaded",
   "farm_excluded_config_slot": 3,
-  "original_auto_goal_preserved_slot": 11,
   "render_api": "0x34e48",
-  "config_api": "0x33380"
+  "config_api": "0x33380",
+  "duplicate_brf_auto_goal_disabled_slot": 11,
+  "initialization": "System.load calls original JNI_OnLoad before Iris hook installation; wait for BRF renderer readiness"
 }

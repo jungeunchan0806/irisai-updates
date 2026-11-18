@@ -29,6 +29,9 @@ def patch(data):
     start=text.index('      function _art() {');end=text.index('      function _ih() {',start)
     text=text[:start]+(ROOT/'engine_state.js').read_text()+'\n'+text[end:]
     text=once(text,'          _uag(args[0], Date.now());','          _art();\n          _uag(args[0], Date.now());')
+    start=text.index('      const _wsa = Date.now();');end=text.index('      globalThis.setHxptAutoGoalEnabled',start)
+    text=text[:start]+(ROOT/'engine_start.js').read_text()+'\n'+text[end:]
+    text=once(text,'return _NW.every(([off, w]) => mod.base.add(off).readU32() === w);','return _irisCompatibleWords(mod);')
     # No unused original source-map or bundle metadata following the actual module.
     text=text.split('export default require_agent();')[0]+'export default require_agent();\n'
     # Share the already initialized Java runtime with the immutable bootstrap.

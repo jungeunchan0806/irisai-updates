@@ -4,7 +4,7 @@ android {
  compileSdk 35
  defaultConfig { applicationId 'com.irisai.bshack.check'; minSdk 32; targetSdk 35; versionCode 1; versionName '1'; testInstrumentationRunner 'com.irisai.bshack.check.Checks' }
  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
- sourceSets { main { assets.srcDirs = [layout.buildDirectory.dir('payload'), layout.buildDirectory.dir('farm-assets'), '../bridgecheck/fixtures', '../bridgecheck/generated']; jniLibs.srcDirs = ['src/main/jniLibs',layout.buildDirectory.dir('native')] } }
+ sourceSets { main { assets.srcDirs = [layout.buildDirectory.dir('payload'), layout.buildDirectory.dir('farm-assets'), '../bridgecheck/fixtures', '../bridgecheck/generated']; jniLibs.srcDirs = ['src/main/jniLibs',layout.buildDirectory.dir('native'),layout.buildDirectory.dir('feature-native')] } }
  packagingOptions { jniLibs { useLegacyPackaging = true } }
 }
 tasks.register('copyDex', Copy) {

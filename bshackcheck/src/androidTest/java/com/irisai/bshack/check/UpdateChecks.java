@@ -12,6 +12,13 @@ final class UpdateChecks {
  private static void denied(Runnable action,String label,List<String> checks){try{action.run();}catch(RuntimeException e){checks.add(label);return;}throw new AssertionError(label);}
  private static Object invoke(Method m,Object target,Object...args){try{return m.invoke(target,args);}catch(Exception e){throw new RuntimeException(e);}}
  static void run(Context c,ClassLoader loader,List<String> checks)throws Exception{
+  Class<?> identity=loader.loadClass("com.irisai.bshack.update.GameFileIdentity");Method match=identity.getDeclaredMethod("matches",File.class,String.class);match.setAccessible(true);
+  File probe=new File(c.getCacheDir(),"game-identity-probe");try(FileOutputStream out=new FileOutputStream(probe)){out.write("abc".getBytes(StandardCharsets.UTF_8));}
+  String digest="ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
+  require((Boolean)match.invoke(null,probe,digest),"game file identity checks actual SHA-256 bytes",checks);
+  try(FileOutputStream out=new FileOutputStream(probe,true)){out.write(0);}
+  require(!(Boolean)match.invoke(null,probe,digest),"modified game file cannot authorize patched prologues",checks);probe.delete();
+  require(!(Boolean)match.invoke(null,probe,digest),"missing game file is not trusted",checks);
   Class<?> lease=loader.loadClass("com.irisai.bshack.AuthorizationLease");Method accept=lease.getMethod("millis",String.class);
   require((Long)accept.invoke(null,"{\"active\":true,\"permanent\":true,\"serverTime\":1000,\"leaseSeconds\":300}")==300000L,"authorization accepts bounded permanent lease",checks);
   require((Long)accept.invoke(null,"{\"active\":false,\"status\":\"revoked\"}")==0L,"revocation clears lease",checks);

@@ -26,6 +26,11 @@ public final class Checks extends Instrumentation {
    activity=(GameApp)startActivitySync(new Intent(getTargetContext(),GameApp.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));waitForIdleSync();
    ui(()->{call("initialize",new Class<?>[]{Application.class},activity.getApplication());call("attach",new Class<?>[]{Activity.class},activity);while(poll()!=0){};});waitForIdleSync();SystemClock.sleep(250);
    ui(()->{
+    require("".equals(call("loadNativeFeatures",new Class<?>[]{})),"native feature library loads through app DEX class loader");
+    require("yes".equals(System.getProperty("iris.fixture.brf.jni")),"System.load invokes JNI_OnLoad and resolves parent game class");
+    require("".equals(call("loadNativeFeatures",new Class<?>[]{})),"native feature initialization is idempotent");
+   });
+   ui(()->{
     View toggle=find(root(),"오토골 켜기 또는 끄기"),opener=find(root(),"Iris 설정 열기");
     require(toggle!=null&&toggle.isShown(),"in-memory DEX attaches UI to game-shaped Activity");
     require(Math.abs(opener.getWidth()-toggle.getWidth()*2)<=1&&Math.abs(opener.getHeight()-toggle.getHeight()*2)<=1,"opener 2x toggle dimensions within pixel rounding");

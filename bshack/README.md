@@ -26,11 +26,19 @@ The user's TheSeven APK and Auto Goal baseline have identical `libg.so` and
 matching BRF feature implementations; their BRF differences are menu text/UI.
 No original C++ source was supplied or reconstructed. `features_native.c` and
 `features_bridge.js` connect the **already included** native feature/config API
-to the Iris menu, without loading a competing second engine. Exact baseline
-and instruction checks guard the fixed offsets. Mutable CModule data lives in
+to the Iris menu. The bootstrap explicitly starts the bundled BRF library with
+`System.load`, including its `JNI_OnLoad`; the baseline's TitanApplication only
+loads Gadget. Iris waits for BRF's renderer before installing its own hooks to
+keep native initialization ordered. The exact baseline
+game SHA-256 and the original in-memory build ID remain required: BRF-modified
+function prologues are accepted only after the installed verifier matches that
+exact game file and the native feature renderer is ready. Instruction checks
+also guard the fixed BRF offsets. Mutable CModule data lives in
 host-allocated memory, and queued changes apply on the original render thread.
 The old native menu/hit regions are replaced; original gameplay code remains.
-The original TheSeven farm is forced OFF; original goal state is preserved.
+The original TheSeven farm and BRF auto-goal are forced OFF. The existing Iris
+licensed goal engine remains the only goal controller, with its ON/OFF state
+and authorization covered by the runtime regression tests.
 
 Available controls: Aim, Auto Dodge, Auto Fire, Hold to Shoot, X-Ray, Anti AFK,
 Shade center aim, Nani mode, Empty Pin, enemy ammo, camera shake, FPS display
