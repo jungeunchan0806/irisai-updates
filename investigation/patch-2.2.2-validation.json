@@ -1,0 +1,52 @@
+{
+  "verified_at_utc": "2026-11-18T07:30:31.333162+00:00",
+  "version": "2.2.2",
+  "patch_sha256": "c7b1f6c415a1a34097e8b7f49de15902bb6d84de5832cfd2ae219d45f28dd144",
+  "bytes": 51873,
+  "ui_sha256": "1a95e7e53be72be48f3e715ef61e744864e7fff05f58013238d525c57d49c2ff",
+  "release": "https://github.com/jungeunchan0806/irisai-updates/releases/tag/android-bshack-patch-2.2.2",
+  "published_channel_version": 22002,
+  "anonymous_download_and_signature_verified": true,
+  "production_engine_unchanged": true,
+  "immutable_2_2_0_bootstrap_used_in_regression": true,
+  "checks_run": "https://github.com/jungeunchan0806/irisai-updates/actions/runs/44258603248",
+  "publish_run": "https://github.com/jungeunchan0806/irisai-updates/actions/runs/44258734939",
+  "android_api_levels": [
+    35,
+    36
+  ],
+  "payload_checks_per_api": 46,
+  "bridge_checks_per_api": 20,
+  "recovery_checks_per_api": [
+    "original verifier accepts the actual 2.2.1 patch",
+    "reproduces 2.2.1 keeping a failure marker despite a responsive UI",
+    "reproduces the user-visible rollback on the next launch",
+    "higher-version repair installs from the rolled-back state",
+    "candidate completes startup without a native game-ready signal",
+    "startup success is persisted before closing the app",
+    "transparent opener keeps its original size and vertical position",
+    "transparent opener is centered horizontally",
+    "candidate completes startup without a native game-ready signal",
+    "startup success is persisted before closing the app",
+    "candidate completes startup without a native game-ready signal",
+    "startup success is persisted before closing the app",
+    "candidate completes startup without a native game-ready signal",
+    "startup success is persisted before closing the app",
+    "three subsequent starts retain the repaired patch",
+    "fixture begins an intentionally incomplete startup",
+    "genuinely incomplete patch startup still rolls back"
+  ],
+  "causes_reproduced": [
+    "2.2.1 leaves pending startup marker while its UI responds because native game readiness is delayed"
+  ],
+  "additional_health_regressions": [
+    "network worker cannot block health acknowledgement",
+    "I/O failure cannot mark the patch healthy",
+    "temporary I/O failure is retried"
+  ],
+  "successful_restarts_after_patch_per_api": 3,
+  "genuine_incomplete_startup_still_rolls_back": true,
+  "test_harness_retry": "Initial run passed payload checks but attached before the cold-start Gadget listener was ready. Bounded readiness waiting fixed the harness; production patch bytes did not change.",
+  "physical_samsung_android_17_tested": false,
+  "live_gameplay_tested": false
+}
