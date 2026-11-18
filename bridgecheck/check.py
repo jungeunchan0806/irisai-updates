@@ -1,6 +1,7 @@
 """Real bootstrap, dynamic module, Android authorization and DEX bridge round trip."""
 from pathlib import Path
 import json,subprocess,time,frida,os,re
+from connect import connect_gadget
 out=Path('bridgecheck-results');out.mkdir(exist_ok=True)
 subprocess.run(['adb','install','-r','bshackcheck/build/outputs/apk/debug/bshackcheck-debug.apk'],check=True)
 subprocess.run(['adb','shell','pm','clear','com.irisai.bshack.check'],check=True)
@@ -8,10 +9,8 @@ subprocess.run(['adb','forward','tcp:27042','tcp:27042'],check=True)
 messages=[];checks=[]
 source=Path('bridgecheck/java-bridge.js').read_text()+Path('bshack/bootstrap.js').read_text()+Path('bridgecheck/bootstrap-api.js').read_text()
 def attach():
- subprocess.run(['adb','shell','am','start','-n','com.irisai.bshack.check/com.supercell.brawlstars.GameApp','--ez','bridgecheck','true'],check=True)
- time.sleep(2)
- device=frida.get_device_manager().add_remote_device('127.0.0.1:27042')
- session=device.attach('Gadget');script=session.create_script(source,runtime='qjs')
+ subprocess.run(['adb','shell','am','start','-W','-n','com.irisai.bshack.check/com.supercell.brawlstars.GameApp','--ez','bridgecheck','true'],check=True)
+ session=connect_gadget();script=session.create_script(source,runtime='qjs')
  script.on('message',lambda message,data:messages.append(message));script.load()
  deadline=time.monotonic()+15
  while time.monotonic()<deadline:

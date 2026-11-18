@@ -3,6 +3,7 @@ The installed fixture embeds the exact 2.2.0 verifier/UI. It has no native game 
 """
 from pathlib import Path
 import subprocess,time,json,re,xml.etree.ElementTree as E,frida
+from connect import connect_gadget
 
 out=Path('recovery-checks');out.mkdir(exist_ok=True)
 package='com.irisai.bshack.check';messages=[];checks=[]
@@ -32,7 +33,7 @@ def check(value,label):
 def attach(select_only=False):
  adb('shell','am','start','-W','-n',package+'/com.supercell.brawlstars.GameApp','--ez','bridgecheck','true')
  adb('forward','tcp:27042','tcp:27042')
- device=frida.get_device_manager().add_remote_device('127.0.0.1:27042');session=device.attach('Gadget')
+ session=connect_gadget()
  code=bootstrap.replace('setImmediate(_bootStart);','') if select_only else bootstrap
  script=session.create_script(bridge+code+api,runtime='qjs');script.on('message',lambda m,d:messages.append(m));script.load()
  if select_only:return session,script
