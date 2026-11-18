@@ -1,13 +1,15 @@
 """Verify a production update using the immutable verifier from the installed APK."""
 from pathlib import Path
-import json, zipfile, hashlib, shutil
+import json, zipfile, hashlib, shutil, os
 
 root = Path(__file__).resolve().parents[1]
-candidate = root / 'distribution/connection'
+candidate = (root / os.environ.get('RELEASE_MANIFEST', 'distribution/connection/manifest.json')).resolve().parent
+candidate.relative_to(root / 'distribution')
 release = json.loads((candidate / 'release.json').read_text())
 baseline = root / release['baseline_folder']
 out = root / 'bridgecheck/generated/upgrade'
 (out / 'baseline').mkdir(parents=True, exist_ok=True)
+shutil.copyfile(candidate / 'release.json', out / 'release.json')
 with zipfile.ZipFile(baseline / release['baseline_zip']) as archive:
     dex = archive.read('panel.dex')
 assert hashlib.sha256(dex).hexdigest() == json.loads((baseline / 'manifest.json').read_text())['ui_sha256']
@@ -20,3 +22,12 @@ for filename in ['manifest.json', 'manifest.sig']:
     shutil.copyfile(candidate / filename, out / 'candidate' / filename)
 shutil.copyfile(payload, out / 'candidate/patch.zip')
 print('Prepared the original installed verifier and the exact signed production candidate.')
+
+if release.get('previous_folder'):
+    previous = root / release['previous_folder']
+    saved = out / 'previous'
+    saved.mkdir(exist_ok=True)
+    for name in ['manifest.json', 'manifest.sig']:
+        shutil.copyfile(previous / name, saved / name)
+    metadata = json.loads((previous / 'release.json').read_text())
+    shutil.copyfile(previous / metadata['filename'], saved / 'patch.zip')

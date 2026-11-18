@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Regressions for UI-only startup, blocked update networking and failed marker I/O. */
 final class HealthChecks {
- private static final String READY="{\"game\":false,\"foreground\":true,\"auth\":{\"ready\":true}}";
+ private static final String READY="{\"game\":false,\"foreground\":true,\"enabled\":false,\"phase\":\"idle\",\"auth\":{\"ready\":false}}";
  private static Field field(Class<?> c,String name)throws Exception{Field f=c.getDeclaredField(name);f.setAccessible(true);return f;}
  private static void require(boolean value,String label,List<String> checks){if(!value)throw new AssertionError(label);checks.add(label);}
  private static void write(File file,String text)throws Exception{try(FileOutputStream out=new FileOutputStream(file)){out.write(text.getBytes(StandardCharsets.UTF_8));}}
@@ -21,8 +21,8 @@ final class HealthChecks {
  private static void tick(Class<?> c){call(c,"recordState",new Class<?>[]{String.class},READY);call(c,"update",new Class<?>[]{boolean.class,String.class},false,"게임 로딩 중");}
  private static boolean value(Instrumentation i,Object host,Field field){AtomicBoolean b=new AtomicBoolean();i.runOnMainSync(()->{try{b.set(field.getBoolean(host));}catch(Exception e){throw new AssertionError(e);}});return b.get();}
  private static void reset(Instrumentation i,Class<?> type,Object host,long version)throws Exception{
-  Field healthy=field(type,"markedHealthy"),pending=field(type,"healthPending"),responses=field(type,"healthyResponses"),next=field(type,"nextHealthAttempt");
-  i.runOnMainSync(()->{try{healthy.setBoolean(host,false);pending.setBoolean(host,false);responses.setInt(host,0);next.setLong(host,0);call(type,"configure",new Class<?>[]{long.class,String.class,String.class},version,"fixture","");}catch(Exception e){throw new AssertionError(e);}});
+  Field healthy=field(type,"markedHealthy"),pending=field(type,"healthPending"),next=field(type,"nextHealthAttempt");
+  i.runOnMainSync(()->{try{healthy.setBoolean(host,false);pending.setBoolean(host,false);next.setLong(host,0);call(type,"configure",new Class<?>[]{long.class,String.class,String.class},version,"fixture","");}catch(Exception e){throw new AssertionError(e);}});
  }
  static void run(Instrumentation i,Activity activity,Class<?> type,List<String> checks)throws Exception{
   Object host=field(type,"host").get(null),manager=field(type,"updates").get(host);
@@ -41,12 +41,15 @@ final class HealthChecks {
     call(type,"update",new Class<?>[]{boolean.class,String.class},false,"UI 연결 오류");
    });
    SystemClock.sleep(100);require(pending.exists(),"errors and background UI do not acknowledge startup",checks);
-   i.runOnMainSync(()->tick(type));SystemClock.sleep(100);
-   require(pending.exists(),"one response alone does not acknowledge startup",checks);
+   i.runOnMainSync(()->{
+    call(type,"recordState",new Class<?>[]{String.class},"{\"foreground\":true,\"auth\":{\"ready\":true}}");
+    call(type,"update",new Class<?>[]{boolean.class,String.class},false,"loading");
+   });SystemClock.sleep(100);
+   require(pending.exists(),"malformed foreground reports cannot acknowledge a boot",checks);
    i.runOnMainSync(()->tick(type));
    long deadline=SystemClock.uptimeMillis()+2000;
    while(!value(i,host,healthy)&&SystemClock.uptimeMillis()<deadline)SystemClock.sleep(20);
-   require(value(i,host,healthy)&&!pending.exists(),"responsive UI commits startup without game readiness or network completion",checks);
+   require(value(i,host,healthy)&&!pending.exists(),"laid-out UI with a valid engine response commits startup even before account or game readiness",checks);
    require(release.getCount()==1,"health acknowledgement uses an independent executor",checks);
 
    reset(i,type,host,22003);write(pending,"22003");

@@ -65,7 +65,7 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         }
     }
     private void connectionHelp(){
-        new android.app.AlertDialog.Builder(activity).setTitle(text("연결 복구 보호","Connection recovery protection"))
+        new android.app.AlertDialog.Builder(activity).setTitle("Anti AFK")
             .setMessage(text("일시적으로 연결이나 전투 상태가 멈추면 입력을 기다립니다. 정상 상태가 확인되면 켜져 있던 오토골을 계속합니다.\n\n직접 끄거나 게임을 벗어나거나 인증이 만료되면 다시 켜야 합니다. 서버 중단이나 게임 자체의 재접속 요구를 없애는 기능은 아닙니다.",
                 "Input waits during a connection loss or stalled game state. Auto Goal continues after stable updates return if you left it on.\n\nTurning it off, leaving the game or license expiry requires enabling it again. This cannot prevent a server outage or override the game's reconnect requirement."))
             .setPositiveButton(text("확인","OK"),null).show();
@@ -243,7 +243,7 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
             if (actions.nativeEngine()) {
                 card(text("HWID 복사", "Copy HWID"), text("기존 인증용 기기 ID 복사", "Copy the device ID used for registration"), false, actions::copyHwid);
                 card(text("오류 확인", "Diagnostics"), text("오토골 상태와 오류 내용 복사", "View and copy Auto Goal diagnostics"), false, actions::showDiagnostics);
-                LinearLayout guard=card(text("연결 복구 보호","Connection recovery protection"),connectionText(),false,this::connectionHelp);
+                LinearLayout guard=card("Anti AFK",connectionText(),false,this::connectionHelp);
                 connectionDetail=(TextView)guard.getChildAt(1);
             } else {
             card(text("조작 위치", "Control positions"), text("이동 · 공격 · 가젯 위치 지정", "Set movement, attack and gadget positions"), false,

@@ -51,6 +51,7 @@ jobs:
           PY
       - uses: reactivecircus/android-emulator-runner@v2
         env:
+          RELEASE_MANIFEST: '${{ inputs.release_manifest }}'
           RECOVERY_PATCH: '${{ inputs.recovery_patch }}'
           UPGRADE_PATCH: '${{ inputs.upgrade_patch }}'
         with:

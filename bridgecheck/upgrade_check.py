@@ -9,7 +9,7 @@ out=Path('upgrade-checks');out.mkdir(exist_ok=True)
 package='com.irisai.bshack.check';messages=[];checks=[]
 candidate=json.loads(Path('bridgecheck/generated/upgrade/candidate/manifest.json').read_text())
 version=candidate['version']
-release=json.loads(Path('distribution/connection/release.json').read_text());base_version=release['baseline_version']
+release=json.loads(Path('bridgecheck/generated/upgrade/release.json').read_text());base_version=release['baseline_version']
 bridge=Path('bridgecheck/java-bridge.js').read_text();bootstrap=Path('bshack/bootstrap.js').read_text()
 api=Path('bridgecheck/bootstrap-api.js').read_text()+r'''
 function legacyStore(){
@@ -74,15 +74,26 @@ adb('install','-r','bshackcheck/build/outputs/apk/debug/bshackcheck-debug.apk');
 try:
  session,script=attach();_,node=find('Iris 설정 열기');initial=bounds(node)
  check(script.exports_sync.boot()['selected']['version']==base_version,'fixture embeds the original installed verifier')
+ previous_version=release.get('previous_version')
+ if previous_version:
+  check(script.exports_sync.installpatch('previous'),'original installed verifier accepts previous signed release')
+  session.detach();adb('shell','am','force-stop',package)
+  session,script=attach(select_only=True)
+  check(script.exports_sync.selectonly()['version']==previous_version,'previous release starts with a pending marker')
+  session,script=restart(session)
+  check(script.exports_sync.boot()['selected']['version']==base_version and marker('failed')==str(previous_version),'previous release rolled back to the embedded installation before the repair')
  check(script.exports_sync.installpatch('candidate'),'original installed verifier accepts the actual production candidate')
  session,script=restart(session);healthy(script)
  tree,node=find('Iris 설정 열기');position=bounds(node);screen=bounds(next(tree.iter('node')))
  check(position[1]==initial[1] and position[2]-position[0]==initial[2]-initial[0] and position[3]-position[1]==initial[3]-initial[1],'transparent opener keeps its original size and vertical position')
  check(abs((position[0]+position[2])-(screen[0]+screen[2]))<=2,'transparent opener is centered horizontally')
  adb('shell','input','tap',str((position[0]+position[2])//2),str((position[1]+position[3])//2))
- find('IRIS  /  컨트롤 센터');find('연결 복구 보호');screenshot('connection-menu-after-update')
- for _ in range(3):session,script=restart(session);healthy(script)
- check(marker('active')==str(version) and marker('failed') is None,'three subsequent starts retain the repaired patch')
+ find('IRIS  /  컨트롤 센터');find(release.get('menu_title','연결 복구 보호'));screenshot('connection-menu-after-update')
+ for _ in range(3):
+  session,script=restart(session);healthy(script)
+  tree,node=find('Iris 설정 열기');pos=bounds(node);screen=bounds(next(tree.iter('node')))
+  check(abs(pos[0]+pos[2]-screen[0]-screen[2])<=2 and pos[1]==initial[1],'opener retains top-center position after restart')
+ check(marker('active')==str(version) and marker('failed')==(str(previous_version) if previous_version else None),'three subsequent starts retain the repaired patch')
  # Mark a boot pending without loading its engine/UI, then terminate it. The
  # unchanged installed verifier must still recover from a genuinely incomplete boot.
  session.detach();adb('shell','am','force-stop',package)

@@ -1,0 +1,14 @@
+{
+  "version": 22004,
+  "base": "bshack-70648-panel6-v1",
+  "tag": "android-autogoal-recovery-2.2.4",
+  "title": "오토골 단독판 2.2.4 · Anti AFK 메뉴와 패치 시작 확인",
+  "filename": "Iris-standalone-2.2.4.zip",
+  "channel": "android-bshack-updates",
+  "baseline_version": 22000,
+  "baseline_folder": "distribution/bshack-panel6",
+  "baseline_zip": "BSHACK-patch-2.2.0.zip",
+  "previous_version": 22003,
+  "previous_folder": "distribution/connection",
+  "menu_title": "Anti AFK"
+}
