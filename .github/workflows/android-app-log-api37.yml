@@ -21,10 +21,13 @@ jobs:
           api-level: '37.0'
           target: google_apis
           arch: x86_64
+          disk-size: 8192M
           profile: pixel_2
           emulator-options: -no-window -no-audio -no-snapshot -no-boot-anim -gpu swiftshader_indirect -cores 4
           script: |
             test "$(adb shell getprop ro.build.version.sdk | tr -d '\r')" = '37'
-            adb install /tmp/iris-log-fixture.apk
+            adb shell df -h /data
+            adb install --no-streaming /tmp/iris-log-fixture.apk
             adb shell am start -W -n com.irisai.logfixture/com.irisai.bshack.AppLogProbe
-            timeout 30 adb logcat -v brief -s AppLogProbe:I | grep -m1 'PASS own log on Android 17'
+            timeout 30 sh -c 'until adb logcat -d -s AppLogProbe:I | grep -E "PASS own log|FAIL"; do sleep 1; done'
+            adb logcat -d -s AppLogProbe:I | grep 'PASS own log on Android 17'
