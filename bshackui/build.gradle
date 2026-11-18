@@ -6,4 +6,4 @@ android {
  buildTypes { release { minifyEnabled false } }
  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
 }
-dependencies { implementation project(':controlui') }
+dependencies { implementation project(':controlui'); implementation project(':irisfarm') }

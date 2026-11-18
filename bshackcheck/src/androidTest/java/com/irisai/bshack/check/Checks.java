@@ -22,7 +22,7 @@ public final class Checks extends Instrumentation {
   Bundle result=new Bundle();try{
    getTargetContext().getSharedPreferences("iris_control_panel_v1",0).edit().clear().commit();
    byte[] bytes;try(InputStream in=getTargetContext().getAssets().open("iris-panel.dex");ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] b=new byte[8192];int n;while((n=in.read(b))>0)out.write(b,0,n);bytes=out.toByteArray();}
-   host=new InMemoryDexClassLoader(ByteBuffer.wrap(bytes),getTargetContext().getClassLoader()).loadClass("com.irisai.bshack.PanelHost");
+   host=new InMemoryDexClassLoader(new ByteBuffer[]{ByteBuffer.wrap(bytes)},getTargetContext().getApplicationInfo().nativeLibraryDir,getTargetContext().getClassLoader()).loadClass("com.irisai.bshack.PanelHost");
    activity=(GameApp)startActivitySync(new Intent(getTargetContext(),GameApp.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));waitForIdleSync();
    ui(()->{call("initialize",new Class<?>[]{Application.class},activity.getApplication());call("attach",new Class<?>[]{Activity.class},activity);while(poll()!=0){};});waitForIdleSync();SystemClock.sleep(250);
    ui(()->{
@@ -40,10 +40,16 @@ public final class Checks extends Instrumentation {
     ((View)find(root(),"UI 전부 숨기기").getParent()).performClick();require(!toggle.isShown(),"hide all hides toggle");require(poll()==0,"hiding HUD does not toggle engine");
     opener.performClick();require(find(root(),"UI 다시 표시").isShown(),"invisible opener recovers hidden UI");
     ((View)find(root(),"언어").getParent()).performClick();require(find(root(),"IRIS  /  CONTROL CENTER")!=null,"language switching works");
+    call("updateFeatures",new Class<?>[]{String.class},"{\"ready\":true,\"values\":{\"1\":0,\"4\":0},\"fps\":60}");
+    require(find(root(),"IrisAI Auto Farm")!=null&&find(root(),"Aim")!=null,"Iris farm and imported native controls share original menu");
+    ((View)find(root(),"Aim").getParent()).performClick();
+    String command=(String)call("pollFeature",new Class<?>[]{});require(command.contains("\"slot\":1")&&command.contains("\"value\":1"),"feature card queues correct native setting");
+    require(find(root(),"TheSeven Auto Farm")==null,"excluded farm has no menu entry");
    });
    ui(()->DialogChecks.run(activity,host.getClassLoader(),checks));
    HealthChecks.run(this,activity,host,checks);
    UpdateChecks.run(getTargetContext(),host.getClassLoader(),checks);
+   FarmChecks.run(this,activity,host,checks);
    ui(()->activity.finish());
    java.util.concurrent.atomic.AtomicBoolean active=new java.util.concurrent.atomic.AtomicBoolean(true);
    long deadline=SystemClock.uptimeMillis()+5000;

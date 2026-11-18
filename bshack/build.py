@@ -14,6 +14,12 @@ with zipfile.ZipFile(a.baseline) as z,zipfile.ZipFile(a.ui) as ui:
     bootstrap=(original[:original.index('// core.mjs\n')]+(Path(__file__).parent/'bootstrap.js').read_text()).encode()
     packed=f"📦\n{len(bootstrap)} /bootstrap.js\n✄\n".encode()+bootstrap
     replacements={SCRIPT:packed,'assets/iris-panel.dex':dex,'assets/iris-bootstrap.dex':dex,'assets/iris-engine.mjs':engine}
+    for name in ui.namelist():
+        if name.startswith('assets/iris_farm/') or name in {
+            'lib/arm64-v8a/libonnxruntime.so','lib/arm64-v8a/libonnxruntime4j_jni.so','lib/arm64-v8a/libopencv_java4.so'}:
+            assert name not in z.namelist(), 'Refuse to replace an original game asset/library: '+name
+            replacements[name]=ui.read(name)
+    assert len(replacements)>8,'Farm models/native libraries missing from payload'
 a.out.parent.mkdir(parents=True,exist_ok=True);repack(a.baseline,a.out,replacements)
 (a.out.parent/'agent.mjs').write_bytes(script.split('✄\n'.encode(),1)[1])
-print(json.dumps({'unsigned_apk':str(a.out),'baseline_sha256':BASE_SHA,'modified':[SCRIPT],'added':['assets/iris-panel.dex','assets/iris-bootstrap.dex','assets/iris-engine.mjs'],'script_bytes':len(script),'ui_dex_bytes':len(dex)}))
+print(json.dumps({'unsigned_apk':str(a.out),'baseline_sha256':BASE_SHA,'modified':[SCRIPT],'added':[n for n in replacements if n!=SCRIPT],'script_bytes':len(script),'ui_dex_bytes':len(dex)}))

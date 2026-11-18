@@ -35,9 +35,9 @@ test('typed Android authorization is cached for native callbacks and completion 
 function panelFixture({ready=true,started=true,active=false}={}) {
  let command=0,foreground=true,phase='',taps=0;
  const auth={ready,error:null,pending:false,active};
- const c=vm.createContext({console,setInterval(){},_st:{started,disposed:false,requested:null},_ag:{enabled:false,phase:'idle'},_MS:{checked:0},_license:{status:()=>auth,tap(){taps++;},isActive:()=>auth.active},frida_java_bridge_default:{perform:f=>f(),scheduleOnMainThread:f=>f()}});
- vm.runInContext(fs.readFileSync(new URL('./engine_state.js',import.meta.url),'utf8')+'\n'+fs.readFileSync(new URL('./panel_bridge.js',import.meta.url),'utf8'),c);
- c.fake={isResumed:()=>foreground,poll:()=>{const n=command;command=0;return n;},update:(enabled,p)=>{phase=p;}};
+ const c=vm.createContext({console,setInterval(){},Memory:{alloc(){return {}; }},Process:{findModuleByName(){return null;}},_st:{started,disposed:false,requested:null},_ag:{enabled:false,phase:'idle',ball:null,carriedKey:null},_MS:{checked:0},_license:{status:()=>auth,tap(){taps++;},isActive:()=>auth.active},frida_java_bridge_default:{perform:f=>f(),scheduleOnMainThread:f=>f()}});
+ vm.runInContext(fs.readFileSync(new URL('./engine_state.js',import.meta.url),'utf8')+'\n'+fs.readFileSync(new URL('./features_bridge.js',import.meta.url),'utf8')+'\n'+fs.readFileSync(new URL('./panel_bridge.js',import.meta.url),'utf8'),c);
+ c.fake={autoGoalPriority(){},isResumed:()=>foreground,poll:()=>{const n=command;command=0;return n;},update:(enabled,p)=>{phase=p;}};
  vm.runInContext('_panelHost=fake;',c);
  return {c,auth,poll(n=0){command=n;vm.runInContext('_panelPoll()',c);},activate(){vm.runInContext('_panelActivate()',c);},background(){foreground=false;vm.runInContext('_panelAttempts=40;',c);},get taps(){return taps;},get phase(){return phase;}};
 }

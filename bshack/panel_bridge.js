@@ -20,7 +20,7 @@ function _panelRecordError(stage, error) {
   try { if(_panelHost) _panelHost.recordError(stage,_panelError); } catch (_) {}
 }
 function _panelInitialize(app) {
-  const boot=globalThis.__irisBoot || {version:22000,name:'2.2.0',ui:'',recovery:''};
+  const boot=globalThis.__irisBoot || {version:23000,name:'2.3.0',ui:'',recovery:''};
   const input = boot.ui ? _Java.use('java.io.FileInputStream').$new(boot.ui) : app.getAssets().open('iris-panel.dex');
   const out = _Java.use('java.io.ByteArrayOutputStream').$new();
   const buffer = _Java.array('byte', new Array(8192).fill(0));
@@ -28,7 +28,8 @@ function _panelInitialize(app) {
   finally { input.close(); }
   const bytes = out.toByteArray(); out.close();
   const loader = _Java.use('dalvik.system.InMemoryDexClassLoader').$new(
-    _Java.use('java.nio.ByteBuffer').wrap(bytes), app.getClassLoader());
+    _Java.array('java.nio.ByteBuffer',[_Java.use('java.nio.ByteBuffer').wrap(bytes)]),
+    app.getApplicationInfo().nativeLibraryDir.value, app.getClassLoader());
   _panelHost = _Java.ClassFactory.get(loader).use('com.irisai.bshack.PanelHost');
   _panelHost.initialize(_Java.cast(app, _Java.use('android.app.Application')));
   _panelHost.configure(boot.version,boot.name,boot.recovery);
@@ -94,6 +95,8 @@ function _panelPoll() {
         const status = _license.status();
         if (status.error && !_panelQueued) _panelWanted = false;
         _art();
+        _featuresPoll();
+        _panelHost.autoGoalPriority(_ag.enabled && !!(_ag.carriedKey || _ag.ball));
         _panelError='';_panelLastTick=_panelTime();
         if(_panelHost.recordState) _panelHost.recordState(JSON.stringify({game:_st.started,foreground:_panelForeground,enabled:_ag.enabled,phase:_ag.phase,auth:status,lastEngineError:_ag.lastError || _st.error || null}));
         _panelHost.update(_ag.enabled, _panelPhase());

@@ -1,0 +1,28 @@
+
+let calls=0;
+const apply=new NativeCallback((ctx,config)=>{calls++;ctx.add(0x68).writeByteArray(config.readByteArray(88));},'void',['pointer','pointer']);
+const state=Memory.alloc(1024);state.writeByteArray(new Uint8Array(1024));
+const bridge=new CModule(SOURCE,{iris_apply:apply,iris_state:state});
+const render=new NativeFunction(bridge.render,'void',['pointer','pointer','float','float','int','int','int']);
+const submit=new NativeFunction(bridge.submit,'int',['int','int']);
+const snapshot=new NativeFunction(bridge.snapshot,'void',['pointer']);
+const ctx=Memory.alloc(0x200),out=Memory.alloc(104);
+ctx.writeByteArray(new Uint8Array(0x200));ctx.add(0xe0).writePointer(ptr(1));
+ctx.add(0x68+3).writeU8(1);ctx.add(0x68+11).writeU8(1);
+ctx.add(0x128).writePointer(ptr(0x1000));ctx.add(0x130).writePointer(ptr(0x1020));
+function check(v,message){if(!v)throw Error(message);}
+rpc.exports.run=function(){
+  check(!submit(3,1),'Excluded farm accepted');check(!submit(11,1),'Duplicate goal accepted');
+  check(!submit(-1,1)&&!submit(88,1)&&!submit(1,2),'Invalid request accepted');
+  render(ctx,ptr(0),1280,720,100,120,1);snapshot(out);
+  check(out.readS32()===1&&out.add(8).readS32()===120,'Native readiness/FPS');
+  check(ctx.add(0x68+3).readU8()===0,'Original farm not disabled');
+  check(ctx.add(0x68+11).readU8()===1,'Original goal state changed');
+  check(ctx.add(0x128).readPointer().equals(ctx.add(0x130).readPointer()),'Native menu touch controls remain');
+  const slots=[1,2,4,5,9,14,16,17,18,19,25,26,48,49,50,51,52,53,54,55];
+  for(const slot of slots){check(submit(slot,1),'Rejected valid feature');render(ctx,ptr(0),1280,720,100,60,1);snapshot(out);check(out.add(16+slot).readU8()===1,'Feature not applied');check(submit(slot,0),'Rejected OFF');render(ctx,ptr(0),1280,720,100,60,1);snapshot(out);check(out.add(16+slot).readU8()===0,'Feature did not stop');}
+  for(const [slot,value] of [[56,100],[60,250],[64,121]]){check(submit(slot,value),'Setting rejected');render(ctx,ptr(0),1280,720,100,60,1);snapshot(out);check(out.add(16+slot).readS32()===value,'Setting not applied');}
+  const before=calls;for(let i=0;i<120;i++)render(ctx,ptr(0),1280,720,100,60,1);
+  check(calls===before,'Unchanged frames repeatedly write configuration');
+  return {boolean_features_and_settings:slots.length,numeric_settings:3,render_frames:164,excluded_farm_off:true,original_goal_preserved:true,engine:'real Frida CModule, fake config callback'};
+};

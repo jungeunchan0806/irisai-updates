@@ -26,6 +26,9 @@ def check(value,label):
  checks.append(label);print('PASS',label,flush=True)
 try:
  session,script=attach()
+ native=session.create_script(Path('bridgecheck/generated/features-native-test.js').read_text());native.load()
+ report=native.exports_sync.run();(out/'native-features.json').write_text(json.dumps(report,indent=2));native.unload()
+ check(report['excluded_farm_off'] and report['original_goal_preserved'],'Android Frida CModule applies native settings and preserves original goal state')
  s={}
  deadline=time.monotonic()+15
  while time.monotonic()<deadline:
@@ -51,10 +54,10 @@ try:
   b=script.exports_sync.boot()
   if b['engineAvailable']:break
   time.sleep(.25)
- check(b['selected']['version']==22001 and b['engineAvailable'],'signed full production engine loads on next start')
+ check(b['selected']['version']==23001 and b['engineAvailable'],'signed full production engine loads on next start')
  restart(session);session,script=attach();time.sleep(1)
  b=script.exports_sync.boot()
- check(b['selected']['version']==22000 and bool(b['selected']['recovery']),'unfinished patched startup rolls back to embedded engine')
+ check(b['selected']['version']==23000 and bool(b['selected']['recovery']),'unfinished patched startup rolls back to embedded engine')
  deadline=time.monotonic()+15
  while time.monotonic()<deadline:
   try:

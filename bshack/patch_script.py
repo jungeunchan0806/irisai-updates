@@ -1,6 +1,6 @@
 """Apply only auditable script changes to the user-provided BSHACK baseline."""
 from pathlib import Path
-import hashlib
+import hashlib, json
 
 ROOT=Path(__file__).resolve().parent
 
@@ -14,7 +14,8 @@ def patch(data):
         text=text.split("✄\n",1)[1]
     start=text.index('// core.mjs\n');end=text.index('// agent.js\n')
     text=text[:start]+(ROOT/'licensing_bundle.js').read_text()+'\n'+text[end:]
-    text=once(text,'      const _license = createLicense', (ROOT/'panel_bridge.js').read_text()+'\n      const _license = createLicense')
+    features=(ROOT/'features_bridge.js').read_text().replace('"__IRIS_FEATURE_NATIVE_SOURCE__"',json.dumps((ROOT/'features_native.c').read_text()))
+    text=once(text,'      const _license = createLicense', features+'\n'+(ROOT/'panel_bridge.js').read_text()+'\n      const _license = createLicense')
     text=once(text,'          _st.requested = !(_st.requested === null ? _ag.enabled : _st.requested);',
       '          _panelActivate();')
     text=once(text,'      const _license = createLicense(frida_java_bridge_default, {',

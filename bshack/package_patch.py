@@ -9,7 +9,7 @@ def package(engine:bytes,dex:bytes,dest:Path,version:int,name:str,notes:str,url:
   for filename,content in [('engine.mjs',engine),('panel.dex',dex)]:
    info=zipfile.ZipInfo(filename,date_time=(2026,1,1,0,0,0));info.compress_type=zipfile.ZIP_DEFLATED;z.writestr(info,content)
  digest=lambda b:hashlib.sha256(b).hexdigest()
- m={'schema':1,'base':'bshack-70648-panel6-v1','version':version,'name':name,'notes':notes,'url':url,
+ m={'schema':1,'base':'bshack-70648-panel7-v1','version':version,'name':name,'notes':notes,'url':url,
   'bytes':archive.stat().st_size,'sha256':digest(archive.read_bytes()),'engine_sha256':digest(engine),'ui_sha256':digest(dex)}
  manifest=dest/'manifest.json';manifest.write_text(json.dumps(m,ensure_ascii=False,separators=(',',':'))+'\n')
  subprocess.run(['openssl','dgst','-sha256','-sign',str(key),'-out',str(dest/'manifest.sig'),str(manifest)],check=True)

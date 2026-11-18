@@ -16,7 +16,7 @@ function _bootStart(){
   const app=_bootJava.use('android.app.ActivityThread').currentApplication();
   if(!app){setTimeout(_bootStart,200);return;}
   _bootStarted=true;
-  let selected={version:22000,name:'2.2.0',engine:'',ui:'',recovery:''};
+  let selected={version:23000,name:'2.3.0',engine:'',ui:'',recovery:''};
   try{
    const bytes=_bootRead(app.getAssets().open('iris-bootstrap.dex'));
    const loader=_bootJava.use('dalvik.system.InMemoryDexClassLoader').$new(_bootJava.use('java.nio.ByteBuffer').wrap(bytes),app.getClassLoader());

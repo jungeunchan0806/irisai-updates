@@ -13,6 +13,8 @@ import android.content.ClipboardManager;
 import android.app.AlertDialog;
 import android.view.ViewGroup;
 import com.irisai.autogoal.ui.IrisControlPanel;
+import com.irisai.autogoal.ui.FeatureSpec;
+import com.irisai.farm.FarmController;
 import com.irisai.bshack.update.UpdateManager;
 import java.util.ArrayDeque;
 
@@ -20,6 +22,9 @@ import java.util.ArrayDeque;
 public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     private static PanelHost host;
     private final ArrayDeque<Integer> commands = new ArrayDeque<>();
+    private final ArrayDeque<String> featureCommands = new ArrayDeque<>();
+    private FarmController farm;
+    private boolean autoGoalPriority, nativeAutoFire;
     private Activity activity;
     private IrisControlPanel panel;
     private boolean resumed;
@@ -29,7 +34,7 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     private long lastHeartbeat, nextHealthAttempt;
     private boolean markedHealthy, healthPending, freshBridgeState;
     private int healthyResponses;
-    private String latestError = "", diagnosticState = "", bootName = "2.2.0", recovery = "";
+    private String latestError = "", diagnosticState = "", bootName = "2.3.0", recovery = "";
     private final Handler handler = new Handler(Looper.getMainLooper());
     public static void initialize(Application app) {
         if (host != null) return;
@@ -73,6 +78,10 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
                 public void copyHwid() { queue(3); }
                 public void checkUpdates() { updates.attach(activity,panel.english());updates.check(true); }
                 public void showDiagnostics() { diagnostics(); }
+                public boolean extraFeatures() { return true; }
+                public void setFeature(int slot,int value) { setFeatureValue(slot,value); }
+                public void toggleFarm() { toggleFarmController(); }
+                public void configureFarm() { if(ensureFarm())farm.settings(panel.english()); }
             }, false);
             ((ViewGroup) next.findViewById(android.R.id.content)).addView(panel, new ViewGroup.LayoutParams(-1, -1));
         }
@@ -86,7 +95,35 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
         if (panel != null) {
             panel.close(); if (panel.getParent() instanceof ViewGroup) ((ViewGroup) panel.getParent()).removeView(panel);
         }
+        if(farm!=null){farm.close();farm=null;}featureCommands.clear();
         panel = null; activity = null;
+    }
+    private void setFeatureValue(int slot,int value) {
+        if(!resumed||!FeatureSpec.valid(slot,value))return;
+        try { if(featureCommands.size()<32)featureCommands.add(new org.json.JSONObject().put("slot",slot).put("value",value).toString()); }
+        catch(org.json.JSONException ignored){}
+    }
+    public static String pollFeature(){return host==null||host.featureCommands.isEmpty()?"":host.featureCommands.remove();}
+    public static void updateFeatures(String state){
+        if(host==null||host.panel==null)return;host.panel.setFeatures(state);
+        try{host.nativeAutoFire=new org.json.JSONObject(state).getJSONObject("values").optInt("4")==1;}catch(Exception ignored){}
+    }
+    public static void autoGoalPriority(boolean priority){if(host!=null)host.autoGoalPriority=priority;}
+    private boolean authorized(){try{return new org.json.JSONObject(license.state()).optLong("remainingMs")>0;}catch(Exception e){return false;}}
+    private boolean ensureFarm(){
+        if(farm!=null)return true;if(activity==null)return false;
+        try{farm=new FarmController(activity,new FarmController.Host(){
+            public boolean allowed(){return resumed&&authorized()&&SystemClock.uptimeMillis()-lastHeartbeat<3000;}
+            public boolean suspended(){return panel==null||panel.menuOpen();}
+            public boolean autoGoalPriority(){return autoGoalPriority;}
+            public boolean nativeAutoFire(){return nativeAutoFire;}
+            public void state(boolean running,String phase,String brawler){if(panel!=null)panel.setFarmState(running,phase,brawler);}
+        });return true;}catch(Exception|LinkageError e){latestError="farm: "+e;panel.setFarmState(false,"오토팜 연결 오류 · 오류 확인","");return false;}
+    }
+    private void toggleFarmController(){
+        if(!ensureFarm())return;
+        if(!farm.enabled()&&!authorized()){license.request(activity);panel.setFarmState(false,"인증 확인 후 다시 켜세요","");return;}
+        farm.toggle();
     }
     public static int poll() { return host == null || host.commands.isEmpty() ? 0 : host.commands.remove(); }
     public static boolean isResumed() { return host != null && host.resumed; }
@@ -127,7 +164,7 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
             }).setNegativeButton(panel.english()?"Close":"닫기",null).show();
     }
     @Override public void onActivityResumed(Activity value) { attach(value); }
-    @Override public void onActivityPaused(Activity value) { if (value == activity) { resumed = false; freshBridgeState=false;healthyResponses=0;queue(2); updates.pause(value);license.detach(value);panel.pause(); } }
+    @Override public void onActivityPaused(Activity value) { if (value == activity) { resumed = false; freshBridgeState=false;healthyResponses=0;queue(2);featureCommands.clear();if(farm!=null)farm.pause(); updates.pause(value);license.detach(value);panel.pause(); } }
     @Override public void onActivityDestroyed(Activity value) { if (value == activity) disconnect(); }
     @Override public void onActivityCreated(Activity value, Bundle state) {}
     @Override public void onActivityStarted(Activity value) {}

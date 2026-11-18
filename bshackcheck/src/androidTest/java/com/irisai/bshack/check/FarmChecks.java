@@ -1,0 +1,57 @@
+package com.irisai.bshack.check;
+
+import android.app.Instrumentation;
+import android.os.SystemClock;
+import com.supercell.brawlstars.GameApp;
+import java.lang.reflect.*;
+import java.util.List;
+import java.util.concurrent.atomic.*;
+
+/** Actual child-loaded ONNX/OpenCV, PixelCopy and lifecycle input tests. */
+final class FarmChecks {
+    private static void ui(Instrumentation i,Runnable task){AtomicReference<Throwable> failure=new AtomicReference<>();i.runOnMainSync(()->{try{task.run();}catch(Throwable e){failure.set(e);}});if(failure.get()!=null)throw new AssertionError(failure.get());}
+    private static Object invoke(Object target,String name,Class<?>[] args,Object...values){try{return target.getClass().getMethod(name,args).invoke(target,values);}catch(Exception e){throw new AssertionError(e);}}
+    private static void call(Object target,String name){invoke(target,name,new Class<?>[]{});}
+    private static void require(boolean yes,String message,List<String> checks){if(!yes)throw new AssertionError(message);checks.add(message);}
+    private static int count(Instrumentation i){AtomicInteger n=new AtomicInteger();ui(i,()->n.set(GameApp.inputs.size()));return n.get();}
+    private static void awaitInput(Instrumentation i,AtomicReference<String> phase,int previous)throws Exception{
+        long deadline=SystemClock.uptimeMillis()+25000;
+        while(count(i)<=previous&&SystemClock.uptimeMillis()<deadline){if(phase.get().contains("오류"))throw new AssertionError(phase.get());SystemClock.sleep(100);}
+        if(count(i)<=previous)throw new AssertionError("No game input; last farm state="+phase.get());
+    }
+    static void run(Instrumentation i,GameApp activity,Class<?> host,List<String> checks)throws Exception {
+        ClassLoader loader=host.getClassLoader();Class<?> type=loader.loadClass("com.irisai.farm.FarmController"),boundary=loader.loadClass("com.irisai.farm.FarmController$Host");
+        AtomicBoolean allowed=new AtomicBoolean(false),suspended=new AtomicBoolean(false),priority=new AtomicBoolean(false);
+        AtomicReference<String> phase=new AtomicReference<>("");AtomicReference<Object> controller=new AtomicReference<>();
+        Object callback=Proxy.newProxyInstance(loader,new Class<?>[]{boundary},(proxy,method,args)->{
+            switch(method.getName()){
+                case "allowed":return allowed.get();case "suspended":return suspended.get();case "autoGoalPriority":return priority.get();case "nativeAutoFire":return false;
+                case "state":phase.set((String)args[1]);return null;
+                case "toString":return "Isolated farm input boundary";default:return null;
+            }
+        });
+        ui(i,()->{
+            activity.getSharedPreferences("iris_farm_v1",0).edit().putString("brawler","shelly").putBoolean("repeat",false).commit();
+            activity.frame("held_turn");GameApp.inputs.clear();
+            try{controller.set(type.getConstructor(android.app.Activity.class,boundary).newInstance(activity,callback));}catch(Exception e){throw new AssertionError(e);}
+            call(controller.get(),"toggle");require(!(Boolean)invoke(controller.get(),"enabled",new Class<?>[]{}),"farm refuses to start without authorization",checks);
+        });
+        Object farm=controller.get();try{
+            allowed.set(true);ui(i,()->call(farm,"toggle"));awaitInput(i,phase,0);
+            require(count(i)>0,"child-loaded ONNX and OpenCV read game SurfaceView and generate JNI-boundary input",checks);
+            priority.set(true);SystemClock.sleep(1600);int stopped=count(i);SystemClock.sleep(450);
+            require(count(i)==stopped,"farm yields all inputs while Auto Goal handles the ball",checks);
+            ui(i,()->require(GameApp.inputs.get(GameApp.inputs.size()-1)[0]==3,"goal priority releases held virtual touches",checks));
+            priority.set(false);awaitInput(i,phase,stopped);
+            suspended.set(true);SystemClock.sleep(500);stopped=count(i);SystemClock.sleep(450);
+            require(count(i)==stopped,"opening menu suspends new farm inputs",checks);
+            suspended.set(false);awaitInput(i,phase,stopped);
+            allowed.set(false);SystemClock.sleep(500);stopped=count(i);SystemClock.sleep(800);
+            require(count(i)==stopped,"expired authorization cancels input and rejects late inference",checks);
+            ui(i,()->require(!(Boolean)invoke(farm,"enabled",new Class<?>[]{}),"farm is OFF after authorization loss",checks));
+            allowed.set(true);ui(i,()->call(farm,"toggle"));awaitInput(i,phase,stopped);
+            ui(i,()->call(farm,"pause"));stopped=count(i);SystemClock.sleep(900);
+            require(count(i)==stopped,"activity pause releases input and rejects queued frames",checks);
+        }finally{ui(i,()->call(farm,"close"));}
+    }
+}

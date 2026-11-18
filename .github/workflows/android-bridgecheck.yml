@@ -37,7 +37,7 @@ jobs:
         run: |
           python bridgecheck/prepare.py
           node --test bshack/runtime.test.mjs
-          ./gradlew :controlui:testDebugUnitTest :bshackcheck:assembleDebug :bshackcheck:assembleDebugAndroidTest --console=plain --max-workers=2
+          ./gradlew :controlui:testDebugUnitTest :irisfarm:testDebugUnitTest :bshackcheck:assembleDebug :bshackcheck:assembleDebugAndroidTest --console=plain --max-workers=2
           python - <<'PY'
           import zipfile,hashlib,json,os
           from pathlib import Path

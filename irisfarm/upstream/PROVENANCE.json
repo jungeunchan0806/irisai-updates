@@ -1,0 +1,16 @@
+{
+  "source_url": "https://github.com/jungeunchan0806/irisai-updates/releases/download/v0.0.9/IrisAI-0.0.9-full-source.zip",
+  "sha256": {
+    "LICENSE": "3711f963c05d0be80d53e5923308a6dee31b203da23435c9cfb7c7b6e4dd5e19",
+    "playstyles/aggressive_universal.iris": "9bde975adf5214333f2c1688b278f8afbd87b28b073d3837ce7c1c73b354c42e",
+    "playstyles/aggressive_balanced.iris": "ecc09d73c103fffdcc0480b7e7d928ed4c95aa7819cfa23d65a5d8d2922c303e",
+    "navigation.py": "47b9ffa0a8d19c480b40c3128913914b790ae0815802d516a8151b18beb2f773",
+    "round_start.py": "1ddbafff2ea69fedccdc4bf39d92f5420ad92ca1064b332f95b6b29638dff1f7",
+    "state_finder.py": "56c49ce8881b1c47621aaacea8dbb13c619b47b49c15cd9539334919a5825351",
+    "stage_manager.py": "c325b40cce3940340fc0fa33408433c339da1a931d93d68a8ccfc26ac1925930",
+    "play.py": "19b99b13d16e0c5889820dfc048f3e25e5b4034463a37f62309b7fe1e30d51f3",
+    "cfg/brawlers_info.json": "08e3930692d52261c27f5ff9eda6219a420067bed9769af3ac9fe0c73ab8c90c",
+    "cfg/buttons_config.toml": "10c1c51683a7c40b60e9f882b4b26f8df20821a686f56abfcc6602e30df5d88c",
+    "cfg/lobby_config.toml": "4d40b53121a9ccc31e4bc7ef950ddbecd7ad446c48f87d8d41dd476b71c9efad"
+  }
+}

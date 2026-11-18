@@ -16,6 +16,16 @@ count=0
 with zipfile.ZipFile(a.baseline) as old,zipfile.ZipFile(a.apk) as new,a.baseline.open('rb') as of,a.apk.open('rb') as nf:
  o={i.filename:i for i in old.infolist() if not excluded(i.filename)};n={i.filename:i for i in new.infolist() if not excluded(i.filename)}
  added={'assets/iris-panel.dex','assets/iris-bootstrap.dex','assets/iris-engine.mjs'}
+ assets=Path(__file__).resolve().parents[1]/'irisfarm/src/main/assets'
+ for file in assets.rglob('*'):
+  if file.is_file():
+   name='assets/'+file.relative_to(assets).as_posix();added.add(name);assert new.read(name)==file.read_bytes(),name
+ from elftools.elf.elffile import ELFFile
+ import io
+ for name,sha in json.loads((Path(__file__).parent/'farm-libraries.json').read_text()).items():
+  added.add(name);data=new.read(name);assert hashlib.sha256(data).hexdigest()==sha,name
+  for segment in ELFFile(io.BytesIO(data)).iter_segments():
+   if segment['p_type']=='PT_LOAD':assert segment['p_align']>=16384 and segment['p_offset']%16384==segment['p_vaddr']%16384,name
  assert n.keys()-o.keys()==added;assert not o.keys()-n.keys()
  for name,x in o.items():
   if name==SCRIPT:continue

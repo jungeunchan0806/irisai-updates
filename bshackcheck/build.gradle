@@ -4,7 +4,7 @@ android {
  compileSdk 35
  defaultConfig { applicationId 'com.irisai.bshack.check'; minSdk 32; targetSdk 35; versionCode 1; versionName '1'; testInstrumentationRunner 'com.irisai.bshack.check.Checks' }
  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
- sourceSets { main { assets.srcDirs = [layout.buildDirectory.dir('payload'), '../bridgecheck/fixtures', '../bridgecheck/generated'] } }
+ sourceSets { main { assets.srcDirs = [layout.buildDirectory.dir('payload'), layout.buildDirectory.dir('farm-assets'), '../bridgecheck/fixtures', '../bridgecheck/generated']; jniLibs.srcDirs = ['src/main/jniLibs',layout.buildDirectory.dir('native')] } }
  packagingOptions { jniLibs { useLegacyPackaging = true } }
 }
 tasks.register('copyDex', Copy) {
@@ -25,3 +25,23 @@ tasks.register('copyBootstrap', Copy) {
 }
 tasks.named('preBuild').configure { dependsOn 'copyDex' }
 tasks.named('preBuild').configure { dependsOn 'copyBootstrap' }
+tasks.register('copyFarmAssets', Copy) {
+ dependsOn ':bshackui:assembleRelease'
+ from(zipTree(project(':bshackui').layout.buildDirectory.file('outputs/apk/release/bshackui-release-unsigned.apk').get().asFile)) {
+  include 'assets/iris_farm/**'
+  eachFile { path = path.substring('assets/'.length()) }
+  includeEmptyDirs = false
+ }
+ from('../irisfarm/src/test/resources') { include 'frames/**' }
+ into layout.buildDirectory.dir('farm-assets')
+}
+tasks.register('copyFarmLibraries', Copy) {
+ dependsOn ':bshackui:assembleRelease'
+ from(zipTree(project(':bshackui').layout.buildDirectory.file('outputs/apk/release/bshackui-release-unsigned.apk').get().asFile)) {
+  include 'lib/x86_64/**'
+  eachFile { path = path.substring('lib/'.length()) }
+  includeEmptyDirs = false
+ }
+ into layout.buildDirectory.dir('native')
+}
+tasks.named('preBuild').configure { dependsOn 'copyFarmAssets','copyFarmLibraries' }

@@ -26,6 +26,10 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         default void copyHwid() {}
         default void checkUpdates() {}
         default void showDiagnostics() {}
+        default boolean extraFeatures() { return false; }
+        default void setFeature(int slot,int value) {}
+        default void toggleFarm() {}
+        default void configureFarm() {}
     }
     public static final String DISCORD_URL = "https://discord.gg/bshack";
     public static final int TOGGLE_WIDTH_DP = 160, TOGGLE_HEIGHT_DP = 44;
@@ -47,6 +51,10 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
     private int lastWidth, lastHeight;
     private TextView autoDetail;
     private LinearLayout autoCard;
+    private final java.util.Map<Integer,Integer> featureValues = new java.util.HashMap<>();
+    private boolean featuresReady, farmEnabled;
+    private String featureError="", farmPhase="브롤러를 선택하세요", farmBrawler="";
+    private TextView fpsLabel, farmDetail;
 
     /** streamerAllowed is enabled only for the explicitly selected auto-hide fallback. */
     public IrisControlPanel(Activity activity, Actions actions, boolean streamerAllowed) {
@@ -78,6 +86,7 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(TOGGLE_WIDTH_DP), dp(28)); lp.topMargin = dp(5); hud.addView(link, lp);
         FrameLayout.LayoutParams hp = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.LEFT);
         hp.leftMargin = dp(12); hp.topMargin = dp(12); addView(hud, hp);
+        fpsLabel=text(12,Color.WHITE,true);fpsLabel.setVisibility(GONE);hud.addView(fpsLabel);
 
         shade = new FrameLayout(activity); shade.setBackgroundColor(0xa000071a);
         shade.setOnClickListener(v -> { state.menuOpen = false; refresh(); }); addView(shade, new FrameLayout.LayoutParams(-1, -1));
@@ -94,7 +103,7 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         close.setOnClickListener(v -> { state.menuOpen = false; refresh(); }); header.addView(close, new LinearLayout.LayoutParams(dp(42), dp(40))); window.addView(header);
         HorizontalScrollView bar = new HorizontalScrollView(activity); bar.setHorizontalScrollBarEnabled(false);
         tabs = new LinearLayout(activity); tabs.setPadding(0, dp(10), 0, dp(9)); bar.addView(tabs);
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < (actions.extraFeatures()?6:4); i++) {
             final int index = i; Button b = button(""); b.setTextSize(13);
             b.setOnClickListener(v -> { tab = index; refresh(); });
             LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(dp(124), dp(42)); p.rightMargin = dp(8); tabs.addView(b, p); tabButtons.add(b);
@@ -115,6 +124,28 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
     }
     public String text(String ko, String en) { return state.english ? en : ko; }
     public boolean english() { return state.english; }
+    public boolean menuOpen() { return state.showMenu(); }
+    public void setFarmState(boolean running,String phase,String brawler) {
+        boolean changed=farmEnabled!=running||!farmBrawler.equals(brawler);
+        farmEnabled=running;farmPhase=phase;farmBrawler=brawler;
+        if(changed&&state.showMenu())refreshCards();
+        if(farmDetail!=null)farmDetail.setText((running?"ON · ":"OFF · ")+phase);
+    }
+    public void setFeatures(String json) {
+        try {
+            org.json.JSONObject data=new org.json.JSONObject(json),values=data.getJSONObject("values");
+            boolean nextReady=data.optBoolean("ready");String error=data.optString("error","");
+            boolean changed=featuresReady!=nextReady||!featureError.equals(error);
+            featuresReady=nextReady;featureError=error;
+            java.util.Iterator<String> keys=values.keys();
+            while(keys.hasNext()) {String key=keys.next();int id=Integer.parseInt(key),value=values.getInt(key);
+                Integer old=featureValues.put(id,value);if(old==null||old!=value)changed=true;}
+            fpsLabel.setVisibility(feature(25)==1?VISIBLE:GONE);
+            fpsLabel.setText("FPS "+Math.max(0,data.optInt("fps")));
+            if(changed&&state.showMenu())refreshCards();
+        }catch(org.json.JSONException|NumberFormatException ignored){}
+    }
+    private int feature(int slot){Integer value=featureValues.get(slot);return value==null?0:value;}
     private int dp(int n) { return Math.round(n * getResources().getDisplayMetrics().density); }
     private Button button(String value) {
         Button b = new Button(activity); b.setAllCaps(false); b.setText(value); b.setTextColor(Color.WHITE);
@@ -190,8 +221,8 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         title.setText("IRIS  /  " + text("컨트롤 센터", "CONTROL CENTER"));
         subtitle.setText(notice.isEmpty() ? text("위쪽 가운데 투명 영역으로 열기 · ", "Open from the invisible top-center area · ") + (enabled ? "ON" : "OFF") : notice);
         close.setContentDescription(text("설정 닫기", "Close settings"));
-        String[] labels = state.english ? new String[]{"● All", "⚽ Auto Goal", "▣ Display", "↗ Community"} : new String[]{"● 전체", "⚽ 오토골", "▣ 화면", "↗ 커뮤니티"};
-        int[] colors = {0xff80ce3d, 0xff58bbd1, 0xff598ce1, 0xffb65ed1};
+        String[] labels = state.english ? new String[]{"● All", "⚽ Auto Goal", "▣ Display", "↗ Community","⚔ Combat","▶ Iris Farm"} : new String[]{"● 전체", "⚽ 오토골", "▣ 화면", "↗ 커뮤니티","⚔ 전투","▶ Iris 오토팜"};
+        int[] colors = {0xff80ce3d, 0xff58bbd1, 0xff598ce1, 0xffb65ed1,0xffcf735a,0xff62ae8b};
         for (int i = 0; i < tabButtons.size(); i++) {
             Button b = tabButtons.get(i); b.setText(labels[i]);
             b.setBackground(tile(colors[i], i == tab ? colors[i] : 0xff25344f, i == tab ? 0xffe1f7ff : 0xff3d526c, 8));
@@ -209,7 +240,7 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
     }
     private void refreshCards() {
         if (grid == null) return;
-        grid.removeAllViews(); autoDetail = null; autoCard = null;
+        grid.removeAllViews(); autoDetail = null; autoCard = null; farmDetail=null;
         int available = lastWidth - getPaddingLeft() - getPaddingRight();
         int columns = available >= dp(720) ? 3 : available >= dp(430) ? 2 : 1;
         grid.setColumnCount(columns);
@@ -238,6 +269,48 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         if (tab == 0 || tab == 3) {
             card("Discord", "discord.gg/bshack\n" + text("서버 링크 열기", "Open the server link"), false, this::openDiscord);
         }
+        if(actions.extraFeatures()) {
+            if(tab==0||tab==5) {
+                LinearLayout farm=card(text("IrisAI 오토팜","IrisAI Auto Farm"),(farmEnabled?"ON · ":"OFF · ")+farmPhase,farmEnabled,actions::toggleFarm);
+                farmDetail=(TextView)farm.getChildAt(1);
+                card(text("오토팜 설정","Farm settings"),farmBrawler.isEmpty()?text("사용할 브롤러와 반복 플레이 설정","Select the brawler and repeat settings"):farmBrawler,false,actions::configureFarm);
+            }
+            for(FeatureSpec spec:FeatureSpec.ALL)if(tab==0||(spec.visual?tab==2:tab==4)) {
+                String description=featuresReady?(feature(spec.slot)==1?"ON · ":"OFF · ")+text(spec.detailKo,spec.detailEn)
+                    :text("게임 기능 연결 대기","Waiting for game features");
+                if(!featureError.isEmpty())description=featureError;
+                LinearLayout c=card(text(spec.ko,spec.en),description,feature(spec.slot)==1,()->{
+                    if(featuresReady)actions.setFeature(spec.slot,feature(spec.slot)==1?0:1);
+                });
+                c.setAlpha(featuresReady?1f:.6f);
+                if(spec.slot==1||spec.slot==2||spec.slot==4||spec.slot==26)
+                    c.setOnLongClickListener(v->{featureSettings(spec.slot);return true;});
+            }
+            if(tab==0||tab==4||tab==2)card(text("전투 세부 설정","Combat settings"),text("조준 · 자동 발사 · 회피 · FPS","Aim · auto fire · dodge · FPS"),false,()->{
+                String[] items={text("조준","Aim"),text("자동 발사","Auto fire"),text("회피","Dodge"),"FPS"};
+                new android.app.AlertDialog.Builder(activity).setTitle(text("세부 설정","Settings"))
+                    .setItems(items,(d,w)->featureSettings(new int[]{1,4,2,26}[w])).setNegativeButton(text("닫기","Close"),null).show();
+            });
+        }
+    }
+    private void featureSettings(int id) {
+        if(!featuresReady)return;
+        LinearLayout body=new LinearLayout(activity);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(dp(18),dp(10),dp(18),dp(10));
+        if(id==1||id==4){int first=id==1?49:52;String[] labels={text("일반 공격","Attack"),text("특수 공격","Super"),text("봇 조준","Bot aim")};
+            for(int i=0;i<3;i++){final int slot=first+i;CheckBox box=new CheckBox(activity);box.setText(labels[i]);box.setChecked(feature(slot)!=0);box.setOnCheckedChangeListener((b,on)->actions.setFeature(slot,on?1:0));body.addView(box);}}
+        if(id==2){CheckBox box=new CheckBox(activity);box.setText(text("정지 중에도 회피","Dodge while idle"));box.setChecked(feature(55)!=0);box.setOnCheckedChangeListener((b,on)->actions.setFeature(55,on?1:0));body.addView(box);
+            featureSlider(body,56,0,100,text("회피 확률 (%)","Dodge chance (%)"));featureSlider(body,60,0,1000,text("반응 시간 (ms)","Reaction time (ms)"));}
+        if(id==26)featureSlider(body,64,10,121,text("FPS 제한 (121: 원본 무제한 설정)","FPS limit (121: original unlimited setting)"));
+        new android.app.AlertDialog.Builder(activity).setTitle(text("세부 설정","Settings")).setView(body).setPositiveButton(text("닫기","Close"),null).show();
+    }
+    private void featureSlider(LinearLayout body,int slot,int min,int max,String name) {
+        TextView label=new TextView(activity);int value=Math.max(min,Math.min(max,feature(slot)));label.setText(name+": "+value);body.addView(label);
+        SeekBar slider=new SeekBar(activity);slider.setMax(max-min);slider.setProgress(value-min);body.addView(slider);
+        slider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            public void onProgressChanged(SeekBar s,int p,boolean user){label.setText(name+": "+(min+p));}
+            public void onStartTrackingTouch(SeekBar s){}
+            public void onStopTrackingTouch(SeekBar s){actions.setFeature(slot,min+s.getProgress());}
+        });
     }
     private String statusText(String value) {
         if (!state.english) return value;

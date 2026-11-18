@@ -11,3 +11,4 @@ include ':enginecheck'
 include ':bshackui'
 
 include ":bshackcheck"
+include ':irisfarm'

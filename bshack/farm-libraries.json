@@ -1,0 +1,5 @@
+{
+  "lib/arm64-v8a/libonnxruntime.so": "e40f09d07dc53726b8bfbf48a7907673b8f86718a057655a62790a39874a7302",
+  "lib/arm64-v8a/libonnxruntime4j_jni.so": "2cc3f16ab527959a81b572adebcfb71a25ea4b8547c9b92d705b423e9c822d39",
+  "lib/arm64-v8a/libopencv_java4.so": "144bbc9ad0b0bac4ba58f7d53198aead64379e5314f68200968c703d2c1c14ab"
+}
