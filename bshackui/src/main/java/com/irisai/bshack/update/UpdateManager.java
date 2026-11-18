@@ -17,6 +17,7 @@ public final class UpdateManager {
  private final PatchStore store;
  private final Handler main=new Handler(Looper.getMainLooper());
  private final ExecutorService worker=Executors.newSingleThreadExecutor(r->{Thread t=new Thread(r,"iris-patch");t.setDaemon(true);return t;});
+ private final ExecutorService healthWorker=Executors.newSingleThreadExecutor(r->{Thread t=new Thread(r,"iris-patch-health");t.setDaemon(true);return t;});
  private WeakReference<Activity> activity=new WeakReference<>(null);
  private volatile boolean busy;
  private boolean startupChecked,english;
@@ -30,7 +31,15 @@ public final class UpdateManager {
  public void attach(Activity value,boolean english){activity=new WeakReference<>(value);this.english=english;if(pendingTitle!=null)renderDialog();}
  public void pause(Activity value){if(activity.get()==value){activity.clear();if(dialog!=null){dialog.dismiss();dialog=null;}}}
  public void start(){if(startupChecked)return;startupChecked=true;main.postDelayed(()->check(false),5000);}
- public void healthy(){worker.execute(()->{try{store.healthy(version);}catch(IOException e){android.util.Log.w("IRIS","Patch health marker could not be committed",e);}});}
+ public void healthy(java.util.function.Consumer<Boolean> completion){
+  final long startedVersion=version;
+  healthWorker.execute(()->{
+   boolean committed=false;
+   try{store.healthy(startedVersion);committed=true;}
+   catch(IOException e){android.util.Log.w("IRIS","Patch health marker could not be committed",e);}
+   final boolean success=committed;main.post(()->completion.accept(success));
+  });
+ }
  private String tr(String ko,String en){return english?en:ko;}
  private Activity current(){Activity a=activity.get();return a!=null&&!a.isDestroyed()&&!a.isFinishing()?a:null;}
  private AlertDialog show(String title,String message,String button,Runnable action){

@@ -26,9 +26,9 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     private boolean engineEnabled;
     private UpdateManager updates;
     private LicenseClient license;
-    private long lastHeartbeat, connectedAt;
-    private boolean markedHealthy;
-    private boolean gameReady;
+    private long lastHeartbeat, nextHealthAttempt;
+    private boolean markedHealthy, healthPending, freshBridgeState;
+    private int healthyResponses;
     private String latestError = "", diagnosticState = "", bootName = "2.2.0", recovery = "";
     private final Handler handler = new Handler(Looper.getMainLooper());
     public static void initialize(Application app) {
@@ -77,11 +77,11 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
             ((ViewGroup) next.findViewById(android.R.id.content)).addView(panel, new ViewGroup.LayoutParams(-1, -1));
         }
         resumed = true; panel.resume();
-        connectedAt=SystemClock.uptimeMillis();lastHeartbeat=connectedAt;
+        lastHeartbeat=SystemClock.uptimeMillis();freshBridgeState=false;healthyResponses=0;
         updates.attach(next,panel.english());updates.start();
     }
     private void disconnect() {
-        resumed = false; queue(2);
+        resumed = false; freshBridgeState=false;healthyResponses=0;queue(2);
         if(activity!=null){updates.pause(activity);license.detach(activity);}
         if (panel != null) {
             panel.close(); if (panel.getParent() instanceof ViewGroup) ((ViewGroup) panel.getParent()).removeView(panel);
@@ -93,11 +93,27 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     public static void update(boolean enabled, String phase) {
         if (host != null && host.panel != null) {
             host.lastHeartbeat=SystemClock.uptimeMillis();host.engineEnabled = enabled; host.panel.setEngineState(enabled, phase);
-            if(!host.markedHealthy&&host.gameReady&&host.lastHeartbeat-host.connectedAt>8000){host.markedHealthy=true;host.updates.healthy();}
+            // A loaded module and responsive Android UI complete patch startup. Native
+            // game readiness can arrive much later and is not a UI-patch health check.
+            host.healthyResponses=host.resumed&&host.freshBridgeState?Math.min(2,host.healthyResponses+1):0;
+            host.freshBridgeState=false;
+            if(!host.markedHealthy&&!host.healthPending&&host.healthyResponses>=2&&host.lastHeartbeat>=host.nextHealthAttempt){
+                final PanelHost current=host;current.healthPending=true;
+                current.updates.healthy(success->{
+                    current.healthPending=false;current.markedHealthy=success;
+                    if(!success)current.nextHealthAttempt=SystemClock.uptimeMillis()+2000;
+                });
+            }
         }
     }
-    public static void recordError(String stage,String error) { if(host!=null)host.latestError=stage+": "+error; }
-    public static void recordState(String state) { if(host!=null){host.diagnosticState=state;try{host.gameReady=new org.json.JSONObject(state).optBoolean("game",false);}catch(Exception e){host.gameReady=false;}} }
+    public static void recordError(String stage,String error) { if(host!=null){host.latestError=stage+": "+error;host.freshBridgeState=false;host.healthyResponses=0;} }
+    public static void recordState(String state) {
+        if(host==null)return;host.diagnosticState=state;host.freshBridgeState=false;
+        try{
+            org.json.JSONObject data=new org.json.JSONObject(state),auth=data.optJSONObject("auth");
+            host.freshBridgeState=data.optBoolean("foreground",false)&&auth!=null&&auth.optBoolean("ready",false);
+        }catch(Exception ignored){}
+    }
     private void watchdog() {
         if(resumed&&panel!=null&&SystemClock.uptimeMillis()-lastHeartbeat>5000)panel.setEngineState(false,"UI 응답 없음 · 오류 확인");
         handler.postDelayed(this::watchdog,1500);
@@ -111,7 +127,7 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
             }).setNegativeButton(panel.english()?"Close":"닫기",null).show();
     }
     @Override public void onActivityResumed(Activity value) { attach(value); }
-    @Override public void onActivityPaused(Activity value) { if (value == activity) { resumed = false; queue(2); updates.pause(value);license.detach(value);panel.pause(); } }
+    @Override public void onActivityPaused(Activity value) { if (value == activity) { resumed = false; freshBridgeState=false;healthyResponses=0;queue(2); updates.pause(value);license.detach(value);panel.pause(); } }
     @Override public void onActivityDestroyed(Activity value) { if (value == activity) disconnect(); }
     @Override public void onActivityCreated(Activity value, Bundle state) {}
     @Override public void onActivityStarted(Activity value) {}

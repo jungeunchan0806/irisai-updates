@@ -100,6 +100,10 @@ public final class PatchStore {
   return j.put("version",UpdateConfig.VERSION).put("name",UpdateConfig.VERSION_NAME).put("engine","").put("ui","").put("recovery",recovery);
  }
  public synchronized void healthy(long version)throws IOException{
-  if(number("pending")==version){atomic("highest",String.valueOf(Math.max(version,highestVersion())));new File(root,"pending").delete();}
+  if(number("pending")==version){
+   atomic("highest",String.valueOf(Math.max(version,highestVersion())));
+   File pending=new File(root,"pending");
+   if(!pending.delete()&&pending.exists())throw new IOException("패치 시작 완료를 저장하지 못했습니다.");
+  }
  }
 }

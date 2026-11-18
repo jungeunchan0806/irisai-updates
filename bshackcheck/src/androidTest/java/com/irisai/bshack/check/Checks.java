@@ -42,6 +42,7 @@ public final class Checks extends Instrumentation {
     ((View)find(root(),"언어").getParent()).performClick();require(find(root(),"IRIS  /  CONTROL CENTER")!=null,"language switching works");
    });
    ui(()->DialogChecks.run(activity,host.getClassLoader(),checks));
+   HealthChecks.run(this,activity,host,checks);
    UpdateChecks.run(getTargetContext(),host.getClassLoader(),checks);
    ui(()->activity.finish());
    java.util.concurrent.atomic.AtomicBoolean active=new java.util.concurrent.atomic.AtomicBoolean(true);

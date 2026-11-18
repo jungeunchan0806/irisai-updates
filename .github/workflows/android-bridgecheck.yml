@@ -4,10 +4,12 @@ on:
     inputs:
       endurance_minutes: {type: number, default: 0}
       release_manifest: {type: string, default: 'distribution/bshack-panel6/manifest.json'}
+      recovery_patch: {type: string, default: ''}
   workflow_call:
     inputs:
       endurance_minutes: {type: number, default: 0}
       release_manifest: {type: string, default: 'distribution/bshack-panel6/manifest.json'}
+      recovery_patch: {type: string, default: ''}
 permissions: {contents: read}
 jobs:
   bridge:
@@ -46,6 +48,8 @@ jobs:
             print('Exact release UI DEX matches the source-built UI')
           PY
       - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          RECOVERY_PATCH: '${{ inputs.recovery_patch }}'
         with:
           api-level: '${{ matrix.api }}'
           target: google_apis
@@ -56,6 +60,7 @@ jobs:
           script: |
             python bshack/ci_payload.py
             ENDURANCE_MINUTES=${{ inputs.endurance_minutes || 0 }} python bridgecheck/check.py
+            if [ -n "$RECOVERY_PATCH" ]; then python bridgecheck/prepare_recovery.py "$RECOVERY_PATCH" && ./gradlew :bshackcheck:assembleDebug -PirisBaselinePayload=bridgecheck/generated/recovery/baseline/classes.dex --console=plain --max-workers=2 && python bridgecheck/recovery_check.py; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -63,3 +68,4 @@ jobs:
           path: |
             bridgecheck-results/
             bshack-checks/
+            recovery-checks/

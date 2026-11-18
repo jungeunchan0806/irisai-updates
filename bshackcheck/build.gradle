@@ -9,7 +9,10 @@ android {
 }
 tasks.register('copyDex', Copy) {
  dependsOn ':bshackui:assembleRelease'
- from { zipTree(project(':bshackui').layout.buildDirectory.file('outputs/apk/release/bshackui-release-unsigned.apk').get().asFile) }
+ from {
+  def baseline = providers.gradleProperty('irisBaselinePayload')
+  baseline.isPresent() ? rootProject.file(baseline.get()) : zipTree(project(':bshackui').layout.buildDirectory.file('outputs/apk/release/bshackui-release-unsigned.apk').get().asFile)
+ }
  include 'classes.dex'
  rename 'classes.dex', 'iris-panel.dex'
  into layout.buildDirectory.dir('payload')
