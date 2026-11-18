@@ -62,6 +62,7 @@ public final class Checks extends Instrumentation {
    // Input tests need the game's focused window. Run before updater dialog
    // lifecycle checks, whose dismissal can outlive waitForIdleSync on emulators.
    FarmChecks.run(this,activity,host,checks);
+   ProcessLogChecks.run(this,activity,host,checks);
    ui(()->DialogChecks.run(activity,host.getClassLoader(),checks));
    HealthChecks.run(this,activity,host,checks);
    UpdateChecks.run(getTargetContext(),host.getClassLoader(),checks);

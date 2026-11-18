@@ -1,0 +1,11 @@
+{
+  "version": 23003,
+  "base": "bshack-70648-panel7-v1",
+  "tag": "android-integrated-app-diagnostics-2.3.3",
+  "title": "통합판 2.3.3 · 앱 안에서 로딩 오류 확인",
+  "filename": "Iris-app-diagnostics-2.3.3.zip",
+  "channel": "android-bshack-integrated-updates",
+  "baseline_version": 23000,
+  "baseline_folder": "distribution/bshack-panel7",
+  "baseline_zip": "BSHACK-patch-2.3.0.zip"
+}

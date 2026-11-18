@@ -12,6 +12,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.app.AlertDialog;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import com.irisai.autogoal.ui.IrisControlPanel;
 import com.irisai.autogoal.ui.FeatureSpec;
 import com.irisai.farm.FarmController;
@@ -180,10 +181,28 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     private void diagnostics() {
         if(activity==null)return;
         String report="IRIS "+bootName+"\nAndroid "+android.os.Build.VERSION.RELEASE+" / API "+android.os.Build.VERSION.SDK_INT+"\n"+android.os.Build.MANUFACTURER+" "+android.os.Build.MODEL+"\n"+diagnosticState+"\nConnection: "+connectionReport+"\n"+latestError+"\n"+recovery;
-        new AlertDialog.Builder(activity).setTitle(panel.english()?"Diagnostics":"오류 확인").setMessage(report)
-            .setPositiveButton(panel.english()?"Copy":"내용 복사",(d,w)->{
-                ((ClipboardManager)activity.getSystemService(Context.CLIPBOARD_SERVICE)).setPrimaryClip(ClipData.newPlainText("IRIS diagnostic",report));
-            }).setNegativeButton(panel.english()?"Close":"닫기",null).show();
+        Activity owner = activity;
+        boolean english = panel.english();
+        AlertDialog dialog = new AlertDialog.Builder(owner)
+            .setTitle(english ? "Diagnostics" : "오류 확인")
+            .setMessage(report + (english ? "\n\nReading app log…" : "\n\n앱 실행 기록 확인 중…"))
+            .setPositiveButton(english ? "Copy" : "내용 복사", (d, w) -> {
+                TextView message = ((AlertDialog)d).findViewById(android.R.id.message);
+                if (message != null) ((ClipboardManager)owner.getSystemService(Context.CLIPBOARD_SERVICE))
+                    .setPrimaryClip(ClipData.newPlainText("IRIS diagnostic", message.getText().toString()));
+            })
+            .setNegativeButton(english ? "Close" : "닫기", null)
+            .show();
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+        Thread reader = new Thread(() -> {
+            String summary = ProcessLogReport.read(english);
+            handler.post(() -> {
+                if (!dialog.isShowing() || activity != owner || owner.isDestroyed() || owner.isFinishing()) return;
+                dialog.setMessage(report + "\n\n" + (english ? "App log" : "앱 실행 기록") + "\n" + summary);
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+            });
+        }, "iris-app-log");
+        reader.start();
     }
     @Override public void onActivityResumed(Activity value) { attach(value); }
     @Override public void onActivityPaused(Activity value) { if (value == activity) { resumed = false; freshBridgeState=false;healthyResponses=0;queue(2);featureCommands.clear();if(farm!=null)farm.pause(); updates.pause(value);license.detach(value);panel.pause(); } }

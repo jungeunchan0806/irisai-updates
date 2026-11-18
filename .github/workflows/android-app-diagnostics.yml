@@ -1,0 +1,26 @@
+name: Verify and publish in-app loading diagnostics
+on:
+  push:
+    branches: [android-integrated-app-diagnostics]
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency:
+  group: integrated-app-diagnostics
+  cancel-in-progress: false
+jobs:
+  validate:
+    uses: ./.github/workflows/android-bridgecheck.yml
+    with:
+      endurance_minutes: 2
+      release_manifest: distribution/app-diagnostics/manifest.json
+      upgrade_patch: true
+  publish:
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish verified signed patch for the integrated APK
+        env: {GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}'}
+        run: python bshack/publish_connection.py distribution/app-diagnostics
