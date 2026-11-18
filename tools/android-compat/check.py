@@ -105,6 +105,9 @@ def main():
     note({'type':'environment','api':api,'abis':abis,'user':user,
           'fingerprint':shell('getprop','ro.build.fingerprint'),
           'pageSize':adb('shell','getconf','PAGE_SIZE')[1]})
+    required_abi=os.environ.get('REQUIRED_NATIVE_ABI')
+    if required_abi and abis[0]!=required_abi:
+        raise RuntimeError(f'Expected native {required_abi} emulator, got {abis}')
     errors=[]
     if not p.skip_apks:
         for k in PACKAGES:

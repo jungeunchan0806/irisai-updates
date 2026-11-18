@@ -9,6 +9,10 @@ on:
         description: 'Comma-separated API levels (empty to check all)'
         type: string
         required: false
+      native_arm:
+        description: 'Use an ARM64 emulator on Apple silicon'
+        type: boolean
+        default: false
 permissions: {contents: read}
 jobs:
   build:
@@ -21,14 +25,17 @@ jobs:
         id: platforms
         env:
           REQUESTED_APIS: ${{ inputs.apis }}
+          NATIVE_ARM: ${{ inputs.native_arm }}
         run: |
           python - <<'PY'
           import json, os, re, subprocess
           request = os.environ.get('REQUESTED_APIS', '').strip()
+          native_arm = os.environ.get('NATIVE_ARM', '').lower() == 'true'
           if os.environ['GITHUB_EVENT_NAME'] == 'push':
               message = subprocess.check_output(['git', 'log', '-1', '--format=%B'], text=True)
               selection = re.search(r'^Compat-APIs: ([0-9, ]+)$', message, re.MULTILINE)
               request = selection[1] if selection else ''
+              native_arm = 'Compat-ARM64: true' in message.splitlines()
           apis = sorted({int(value) for value in request.split(',')}) if request else list(range(28, 38))
           if not all(api in range(28, 38) for api in apis):
               raise ValueError('Supported API levels are 28 through 37')
@@ -36,6 +43,8 @@ jobs:
           platforms = [
               dict(api=api, image='37.2' if api == 37 else str(api),
                    target=targets.get(api, 'google_apis'),
+                   runner='macos-15' if native_arm else 'ubuntu-24.04',
+                   arch='arm64-v8a' if native_arm else 'x86_64',
                    gpu='software' if api == 37 else 'swiftshader_indirect') for api in apis
           ]
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
@@ -50,7 +59,7 @@ jobs:
         with: {name: offline-panel-fixture, path: /tmp/iris-platform-qa.apk, retention-days: 2}
   platform:
     needs: build
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 55
     strategy:
       fail-fast: false
@@ -61,18 +70,34 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with: {name: offline-panel-fixture, path: /tmp}
-      - run: sudo chmod 666 /dev/kvm
+      - if: runner.os == 'macOS'
+        uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - if: runner.os == 'macOS'
+        uses: android-actions/setup-android@v3
+        with: {packages: 'platform-tools', log-accepted-android-sdk-licenses: false}
+      - if: runner.os == 'Linux'
+        run: sudo chmod 666 /dev/kvm
+      - name: Choose available emulator acceleration
+        id: accel
+        run: |
+          if [[ "$RUNNER_OS" == macOS ]] && [[ "$(sysctl -n kern.hv_support 2>/dev/null || echo 0)" != 1 ]]; then
+            echo 'options=-accel off' >> "$GITHUB_OUTPUT"
+          fi
       - uses: reactivecircus/android-emulator-runner@v2
-        env: {EXPECTED_API: '${{ matrix.api }}'}
+        env:
+          EXPECTED_API: ${{ matrix.api }}
+          REQUIRED_NATIVE_ABI: ${{ matrix.arch == 'arm64-v8a' && 'arm64-v8a' || '' }}
         with:
           api-level: ${{ matrix.image }}
           target: ${{ matrix.target }}
-          arch: x86_64
+          arch: ${{ matrix.arch }}
           profile: pixel_2
           disk-size: 8192M
           disable-animations: true
-          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu ${{ matrix.gpu }} -memory 4096 -cores 4
-          script: python tools/android-compat/check.py
+          emulator-boot-timeout: 900
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu ${{ matrix.gpu }} -memory 4096 -cores 4 ${{ steps.accel.outputs.options }}
+          script: python3 tools/android-compat/check.py
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: 'results-api-${{ matrix.api }}', path: compat-evidence/, retention-days: 14, if-no-files-found: warn}
