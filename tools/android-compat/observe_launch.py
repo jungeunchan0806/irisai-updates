@@ -49,6 +49,38 @@ def screenshot(path):
             raise RuntimeError("Invalid screenshot")
 
 
+def exit_reasons(text, seen):
+    records = []
+    for item in re.split(r"\bApplicationExitInfo\s*#\d+\s*:", text):
+        pid = re.search(r"\bpid=(\d+)\b", item)
+        reason = re.search(r"\breason=(\d+)(?:\s+\(([A-Z_ /-]+(?:\([A-Z_ /-]+\))?)\))?", item)
+        status = re.search(r"\bstatus=(-?\d+)", item)
+        if pid and pid[1] in seen and reason:
+            records.append(dict(reason=int(reason[1]), label=reason[2],
+                                status=int(status[1]) if status else None))
+    return records
+
+
+def standard_crash_signals(seen):
+    categories = set()
+    for pid in seen:
+        code, logs = adb("logcat", "-d", "-b", "main", "-b", "crash", "--pid=" + pid)
+        if code:
+            continue
+        signatures = {
+            "Java main-thread exception": r"FATAL EXCEPTION: main",
+            "native library load error": r"UnsatisfiedLinkError|dlopen failed",
+            "missing application resources": r"Resources\$NotFoundException|Unable to open asset",
+            "out of memory": r"OutOfMemoryError",
+        }
+        for label, pattern in signatures.items():
+            if re.search(pattern, logs):
+                categories.add(label)
+        for signal in re.findall(r"Fatal signal \d+ \((SIG[A-Z0-9]+)\)", logs):
+            categories.add(signal)
+    return sorted(categories)
+
+
 def observe(user, component, attempt, out):
     shell("am", "force-stop", "--user", user, GAME)
     if not disconnected():
@@ -59,15 +91,18 @@ def observe(user, component, attempt, out):
     if "Error" in response:
         raise RuntimeError(response)
     samples = []
+    seen = set()
     for seconds in (2, 10, 30, 75):
         time.sleep(max(0, started + seconds - time.monotonic()))
         if not disconnected():
             shell("am", "force-stop", "--user", user, GAME)
             raise RuntimeError("Guest acquired a route during observation")
         code, pid = adb("shell", "pidof", GAME)
+        if code == 0:
+            seen.update(p for p in pid.split() if p.isdecimal())
         windows = shell("dumpsys", "activity", "activities")
         resumed = [line.strip() for line in windows.splitlines() if
-                   "topResumedActivity=" in line or "mResumedActivity:" in line]
+                   re.search(r"\b(?:topResumedActivity|mResumedActivity)\s*[:=]", line, re.I)]
         foreground = any(GAME + "/" in line for line in resumed) if resumed else None
         image = f"launch-{attempt}-{seconds}s.png"
         screenshot(out / image)
@@ -76,8 +111,8 @@ def observe(user, component, attempt, out):
                             gameActivityResumed=foreground, screenshot=image))
     exits = shell("dumpsys", "activity", "exit-info", GAME)
     # Include only standard OS classifications, never app data or an entire crash dump.
-    reasons = re.findall(r"\breason=(\d+\s*\([^()\r\n]+\))", exits)
-    observed = dict(launch=attempt, samples=samples, recentExitReasons=reasons[:4])
+    observed = dict(launch=attempt, samples=samples, exitReasons=exit_reasons(exits, seen),
+                    androidCrashSignals=standard_crash_signals(seen))
     (out / f"launch-{attempt}.json").write_text(json.dumps(observed, indent=2))
     print(json.dumps(observed), flush=True)
 
