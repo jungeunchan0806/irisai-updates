@@ -25,25 +25,19 @@ jobs:
         with: {distribution: temurin, java-version: '17'}
       - uses: android-actions/setup-android@v3
         if: steps.clock.outputs.active == 'true'
-        with: {packages: 'platforms;android-35 build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
+        with:
+          packages: 'platforms;android-35 build-tools;35.0.0 platform-tools emulator system-images;android-${{ inputs.api }};google_apis;x86_64'
+          log-accepted-android-sdk-licenses: false
       - if: steps.clock.outputs.active == 'true'
         run: |
           sudo chmod 666 /dev/kvm
           bash tools/android-compat/build.sh
-      - uses: reactivecircus/android-emulator-runner@v2
+      - name: Run the signed updates on a supervised disposable emulator
         if: steps.clock.outputs.active == 'true'
         env:
           EXPECTED_API: '${{ inputs.api }}'
           DEADLINE: '${{ steps.clock.outputs.deadline }}'
-        with:
-          api-level: ${{ inputs.api }}
-          target: google_apis
-          arch: x86_64
-          profile: pixel_2
-          disk-size: 6144M
-          disable-animations: true
-          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 4096 -cores 4
-          script: python tools/android-compat/check.py --skip-apks --soak-until "$DEADLINE"
+        run: python3 tools/android-compat/soak.py
       - uses: actions/upload-artifact@v4
         if: always() && steps.clock.outputs.active == 'true'
         with: {name: 'soak-${{ inputs.stage }}-api-${{ inputs.api }}', path: compat-evidence/, retention-days: 14, if-no-files-found: warn}

@@ -7,7 +7,7 @@ on:
 permissions: {contents: read}
 concurrency:
   group: android-offline-soak-nov19
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   early:
     uses: ./.github/workflows/android-overnight-stage.yml

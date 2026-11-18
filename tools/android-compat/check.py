@@ -13,8 +13,8 @@ HERE=Path(__file__).resolve().parent
 PACKAGES=json.loads((HERE/'inputs.json').read_text())
 APP='com.irisai.releasechecks'
 GAME='com.supercell.brawlstars'
-OUT=Path('compat-evidence')
-OUT.mkdir(exist_ok=True)
+OUT=Path(os.environ.get('COMPAT_OUT','compat-evidence'))
+OUT.mkdir(parents=True,exist_ok=True)
 def cmd(*args,timeout=120):
     p=subprocess.run(list(args),stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=timeout)
     return p.returncode,p.stdout.strip()
@@ -49,7 +49,7 @@ def install(path,package,user):
         else:
             found=re.search(r'INSTALL_(?:FAILED|PARSE_FAILED)_[A-Z0-9_]+',out)
             if found:return found.group(0),out[-350:]
-            last=out[-350:]
+            last=out[:430]+' ... '+out[-130:] if len(out)>560 else out
         wait_package_service()
         time.sleep(3)
     return 'installer unavailable',last
@@ -94,28 +94,7 @@ def series(user,variant,restarts,iteration):
     results=[]
     for action in actions:results.append(launch(user,variant,action))
     note({'type':'panel-update-cycle','variant':variant,'cycle':iteration,'checks':results})
-def main():
-    args=argparse.ArgumentParser()
-    args.add_argument('--soak-until',type=float,default=0)
-    args.add_argument('--skip-apks',action='store_true')
-    p=args.parse_args()
-    user=wait_package_service()
-    api=int(shell('getprop','ro.build.version.sdk'));abis=shell('getprop','ro.product.cpu.abilist').split(',')
-    assert api==int(os.environ['EXPECTED_API'])
-    note({'type':'environment','api':api,'abis':abis,'user':user,
-          'fingerprint':shell('getprop','ro.build.fingerprint'),
-          'pageSize':adb('shell','getconf','PAGE_SIZE')[1]})
-    required_abi=os.environ.get('REQUIRED_NATIVE_ABI')
-    if required_abi and abis[0]!=required_abi:
-        raise RuntimeError(f'Expected native {required_abi} emulator, got {abis}')
-    errors=[]
-    if not p.skip_apks:
-        for k in PACKAGES:
-            try:real_install(k,user,api,abis)
-            except Exception as e:
-                note({'type':'apk-test-error','variant':k,'error':str(e)[:480]})
-                errors.append(k+': '+str(e))
-                adb('uninstall',GAME)
+def exercise_signed_ui(user,api,soak_until):
     result,detail=install(Path('/tmp/iris-platform-qa.apk'),APP,user)
     note({'type':'abi-independent-installer','api':api,'install':result,'reason':detail})
     if api<32:
@@ -126,18 +105,48 @@ def main():
         densities=[None,'300','400','360','440']
         try:
             while True:
-                if p.soak_until:
+                if soak_until:
                     setting=densities[i%len(densities)] or 'reset'
                     shell('wm','density',setting)
                     shell('settings','put','system','font_scale',str([1.0,1.15,1.3][i%3]))
                     note({'type':'display-configuration','cycle':i,'density':setting,'fontScale':[1.0,1.15,1.3][i%3]})
-                for variant in PACKAGES:series(user,variant,3 if not p.soak_until else 2+i%4,i)
+                for variant in PACKAGES:series(user,variant,3 if not soak_until else 2+i%4,i)
                 i+=1
-                if time.time()>=p.soak_until: break
+                if time.time()>=soak_until: break
         finally:
-            if p.soak_until:
+            if soak_until:
                 adb('shell','wm','density','reset')
                 adb('shell','settings','put','system','font_scale','1.0')
+
+def main():
+    args=argparse.ArgumentParser()
+    args.add_argument('--soak-until',type=float,default=0)
+    args.add_argument('--skip-apks',action='store_true')
+    p=args.parse_args()
+    user=wait_package_service()
+    api=int(shell('getprop','ro.build.version.sdk'));abis=shell('getprop','ro.product.cpu.abilist').split(',')
+    assert api==int(os.environ['EXPECTED_API'])
+    note({'type':'environment','api':api,'abis':abis,'user':user,
+          'fingerprint':shell('getprop','ro.build.fingerprint'),
+          'pageSize':adb('shell','getconf','PAGE_SIZE')[1],
+          'hostDisk':cmd('df','-h','/tmp')[1], 'guestDisk':adb('shell','df','-h','/data')[1]})
+    required_abi=os.environ.get('REQUIRED_NATIVE_ABI')
+    if required_abi and abis[0]!=required_abi:
+        raise RuntimeError(f'Expected native {required_abi} emulator, got {abis}')
+    errors=[]
+    try:
+        exercise_signed_ui(user,api,p.soak_until)
+    except Exception as error:
+        if p.skip_apks:raise
+        note({'type':'ui-test-error','error':str(error)[:560]})
+        errors.append('ui: '+str(error))
+    if not p.skip_apks:
+        for k in PACKAGES:
+            try:real_install(k,user,api,abis)
+            except Exception as e:
+                note({'type':'apk-test-error','variant':k,'error':str(e)[:480]})
+                errors.append(k+': '+str(e))
+                adb('uninstall',GAME)
     if errors:raise RuntimeError('; '.join(errors))
 if __name__=='__main__':
     try:main()

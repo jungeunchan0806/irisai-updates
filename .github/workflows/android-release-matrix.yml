@@ -93,11 +93,18 @@ jobs:
           target: ${{ matrix.target }}
           arch: ${{ matrix.arch }}
           profile: pixel_2
-          disk-size: 8192M
+          disk-size: ${{ matrix.api == 37 && '12288M' || '8192M' }}
           disable-animations: true
           emulator-boot-timeout: 900
-          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu ${{ matrix.gpu }} -memory 4096 -cores 4 ${{ steps.accel.outputs.options }}
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu ${{ matrix.gpu }} -memory 3072 -cores 2 ${{ steps.accel.outputs.options }}
           script: python3 tools/android-compat/check.py
+      - name: Capture host status after a failed emulator run
+        if: failure() && runner.os == 'Linux'
+        run: |
+          mkdir -p compat-evidence
+          df -h / /tmp > compat-evidence/host-disk.txt
+          free -m > compat-evidence/host-memory.txt
+          sudo dmesg | tail -n 150 > compat-evidence/host-kernel.txt || true
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: 'results-api-${{ matrix.api }}', path: compat-evidence/, retention-days: 14, if-no-files-found: warn}
