@@ -1,0 +1,77 @@
+{
+  "verified_at_utc": "2026-11-18T00:34:00Z",
+  "game_apk": {
+    "filename": "BSHACK-Autogoal-2.2.0.apk",
+    "release": "https://github.com/jungeunchan0806/irisai-updates/releases/tag/android-bshack-panel6",
+    "bytes": 2003415048,
+    "sha256": "99b33527f79ab2b277c90ae428df06d7450269aadeee7b77918e960106e1eb54",
+    "signer_certificate_sha256": "a40da80a59d170caa950cf15c18c454d47a39b26989d8b640ecd745ba71bf5dc",
+    "signer_matches_user_baseline": true,
+    "official_supercell_signer": false,
+    "original_manifest_dex_and_native_libraries_preserved": true,
+    "unchanged_original_entries": 38360,
+    "v2_v3_signature_crc_and_16k_alignment_verified": true,
+    "github_asset_uploaded_and_digest_verified": true,
+    "github_release_public": true
+  },
+  "release_workflow": {
+    "run": "https://github.com/jungeunchan0806/irisai-updates/actions/runs/44205349779",
+    "conclusion": "success",
+    "source_commit": "808412b",
+    "javascript_runtime_checks": 9,
+    "android_payload_checks_per_api": 39,
+    "real_frida_android_bridge_checks_per_api": 22,
+    "api_levels": [35, 36],
+    "fixture": "Isolated game-shaped Android activity with Frida Gadget 17.5.1; bounded synthetic license only in test fixtures",
+    "endurance": [
+      {"api": 35, "minutes": 15, "toggle_cycles": 447, "max_rpc_seconds": 0.515, "final_sample_pss_kb": 56328},
+      {"api": 36, "minutes": 15, "toggle_cycles": 448, "max_rpc_seconds": 0.481, "final_sample_pss_kb": 49351}
+    ],
+    "checked": [
+      "Typed authorization reaches queued ON/OFF commands",
+      "Transient UI errors recover and stale observer errors do not swallow input",
+      "Background, expired lease and missing UI heartbeat stop input",
+      "Signed small patch installs and loads the complete production engine module",
+      "Tampered or incompatible patches are rejected",
+      "Unfinished patch startup rolls back and restores the embedded UI",
+      "Update dialog has one confirmation button, blocks back and survives activity pause/resume"
+    ]
+  },
+  "published_network_update": {
+    "run": "https://github.com/jungeunchan0806/irisai-updates/actions/runs/44207068250",
+    "conclusion": "success",
+    "checks": 7,
+    "api": 36,
+    "fixture_version": "2.1.9-test (21999)",
+    "target_version": "2.2.0 (22000)",
+    "automatic_offer_confirm_download_restart_and_manual_check_verified": true,
+    "apk_install_timestamp_and_version_unchanged": true,
+    "screenshots_visually_reviewed": true,
+    "patch_bytes": 51238,
+    "patch_sha256": "946905810ab027861d2bd68815ee5434316787fb38e9f18c1d842ff2992b3ef7",
+    "anonymous_download_and_rsa_signature_verified_separately": true
+  },
+  "seller_admin_panels": {
+    "client_dom_checks": 3,
+    "checked": ["HWID add/replace and conflict retry", "Revoke/restore", "Confirmed permanent deletion removes row"],
+    "startup_run": "https://github.com/jungeunchan0806/irisai-updates/actions/runs/44206368335",
+    "startup_conclusion": "success",
+    "startup_api": 36,
+    "seller_activation_and_admin_login_visible": true,
+    "startup_test_signer_is_disposable_and_not_distributed": true,
+    "original_panel_signer_sha256": "11c5f03c3f98613d9e230a35382c3af592b83826f3092d2c2c306bc873dcc71f",
+    "original_panel_private_key_available": false,
+    "new_release_signed_panel_apks_available": false,
+    "source_and_unsigned_build_handoff_asset": "BSHACK-Panel-Update-Sources-2.2.0.zip",
+    "real_customer_license_records_changed": false
+  },
+  "limitations": {
+    "physical_samsung_android_17_tested": false,
+    "live_gameplay_tested": false,
+    "friendly_match_goals_tested": false,
+    "older_apk_requires_one_initial_2_2_0_install": true,
+    "future_engine_and_ui_patches_do_not_require_apk_reinstallation": true,
+    "game_native_binary_or_manifest_updates_still_require_an_apk": true,
+    "original_seller_admin_signing_key_required_to_finish_compatible_panel_installers": true
+  }
+}
