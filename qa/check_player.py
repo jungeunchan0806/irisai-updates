@@ -73,7 +73,9 @@ def wait_for(probe, timeout=60):
     raise AssertionError('Timed out waiting for '+probe.__name__)
 
 def open_gear():
-    tap(item('IrisAI 설정'))
+    gear=item('IrisAI 설정')
+    l,t,r,b=map(int,re.findall(r'-?\d+',gear['bounds']))
+    adb('shell','input','swipe',(l+r)//2,(t+b)//2,(l+r)//2,(t+b)//2,100)
     item('플레이 설정')
 
 def hud_count():
@@ -165,7 +167,7 @@ def run():
     snapshot('settings.png')
     tap(button('선택한 브롤러로 시작'))
     try:
-        wait_for(lambda: hud_count()>=3,120)
+        wait_for(lambda: hud_count()>=3,300 if signed else 120)
     except AssertionError:
         open_gear()
         print('Player status after the touch timeout:',[n['text'] for n in ui() if n['package']==APP],flush=True)
