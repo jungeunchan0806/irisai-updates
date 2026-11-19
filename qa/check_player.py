@@ -26,18 +26,22 @@ def ui():
     return nodes
 
 def find(predicate, timeout=40):
-    waited=False
+    handled=set()
     until = time.monotonic()+timeout
     while time.monotonic()<until:
         try:
             nodes=ui()
-            tutorial=next((n for n in nodes if n['package']=='android' and n['resource-id']=='android:id/ok' and n['text']=='Got it'),None)
-            if tutorial and any(n['resource-id']=='android:id/immersive_cling_title' for n in nodes):
+            tutorial=next((n for n in nodes if n['package'] in ('android','com.android.systemui') and n['text']=='Got it'),None)
+            if tutorial and any(n['package']==tutorial['package'] and n['text']=='Viewing full screen' for n in nodes):
                 tap(tutorial);continue
-            if not waited and any(n['package']=='android' and n['text']=="Process system isn't responding" for n in nodes):
-                action=next(n for n in nodes if n['package']=='android' and n['text']=='Wait')
-                print('System server boot alert displayed; selecting Wait',flush=True)
-                tap(action);waited=True;continue
+            startup_alert=next((n['text'] for n in nodes if n['package']=='android' and n['text'] in (
+                "Process system isn't responding","Pixel Launcher isn't responding","Launcher isn't responding","System UI isn't responding")),None)
+            if startup_alert and startup_alert not in handled:
+                handled.add(startup_alert)
+                dismiss="Close app" if "Launcher" in startup_alert else "Wait"
+                print("Emulator boot alert",startup_alert,dismiss,flush=True)
+                tap(next(n for n in nodes if n['package']=='android' and n['text']==dismiss))
+                continue
             for node in nodes:
                 if predicate(node): return node
         except subprocess.CalledProcessError: pass
@@ -156,7 +160,12 @@ def run():
         return item(label)
     snapshot('settings.png')
     tap(button('선택한 브롤러로 시작'))
-    wait_for(lambda: hud_count()>=3,120)
+    try:
+        wait_for(lambda: hud_count()>=3,120)
+    except AssertionError:
+        open_gear()
+        print('Player status after the touch timeout:',[n['text'] for n in ui() if n['package']==APP],flush=True)
+        raise
     time.sleep(10)
     result={'api':adb('shell','getprop','ro.build.version.sdk'),'abi':adb('shell','getprop','ro.product.cpu.abi'),
             'fixture':'offline recorded screen','model_input':'held_turn.jpg','brawler':'8bit','fps_samples':samples(),
