@@ -1,0 +1,44 @@
+name: Offline Android button choice
+on:
+  push:
+    branches: [standalone-button-choice-source]
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: 6751bc5cc8815a924946141156057523bccdc1f6
+          path: preview-source
+          sparse-checkout: |
+            gradle
+            controlui
+            uipreview
+            bshackui
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-35 platform-tools build-tools;35.0.0'
+          log-accepted-android-sdk-licenses: false
+      - name: Build the standalone UI preview and tests
+        working-directory: preview-source
+        run: |
+          git apply ../Iris-standalone-button-choice.patch
+          ./gradlew :controlui:testDebugUnitTest :uipreview:assembleDebug :uipreview:assembleDebugAndroidTest :bshackui:compileReleaseJavaWithJavac --console=plain --max-workers=2
+      - run: sudo chmod 666 /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: bash run-preview.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: button-choice-results, path: preview-results/, if-no-files-found: warn}

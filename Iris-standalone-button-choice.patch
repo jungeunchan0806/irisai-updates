@@ -1,0 +1,179 @@
+diff --git a/bshackui/src/main/java/com/irisai/bshack/PanelHost.java b/bshackui/src/main/java/com/irisai/bshack/PanelHost.java
+index 1d33faf..0f8978e 100644
+--- a/bshackui/src/main/java/com/irisai/bshack/PanelHost.java
++++ b/bshackui/src/main/java/com/irisai/bshack/PanelHost.java
+@@ -68,4 +68,8 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
+             panel = new IrisControlPanel(next, new IrisControlPanel.Actions() {
+                 public void toggleAutoGoal() { queue(1); }
++                public void requestAutoGoal(boolean selected) {
++                    if (!selected) queue(2);
++                    else if (!engineEnabled) toggleAutoGoal();
++                }
+                 public void calibrate() {}
+                 public void resetControls() {}
+@@ -135,5 +139,5 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
+     }
+     private void watchdog() {
+-        if(resumed&&panel!=null&&SystemClock.uptimeMillis()-lastHeartbeat>5000)panel.setEngineState(false,"UI 응답 없음 · 오류 확인");
++        if(resumed&&panel!=null&&SystemClock.uptimeMillis()-lastHeartbeat>5000)panel.setEngineState(engineEnabled,"UI 응답 없음 · 오류 확인");
+         handler.postDelayed(this::watchdog,1500);
+     }
+diff --git a/controlui/src/main/java/com/irisai/autogoal/ui/IrisControlPanel.java b/controlui/src/main/java/com/irisai/autogoal/ui/IrisControlPanel.java
+index e5485fb..3b705c5 100644
+--- a/controlui/src/main/java/com/irisai/autogoal/ui/IrisControlPanel.java
++++ b/controlui/src/main/java/com/irisai/autogoal/ui/IrisControlPanel.java
+@@ -20,4 +20,5 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
+     public interface Actions {
+         void toggleAutoGoal();
++        default void requestAutoGoal(boolean selected) { toggleAutoGoal(); }
+         void calibrate();
+         void resetControls();
+@@ -30,4 +31,6 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
+     public static final String DISCORD_URL = "https://discord.gg/bshack";
+     public static final int TOGGLE_WIDTH_DP = 160, TOGGLE_HEIGHT_DP = 44;
++    private static final String AUTO_GOAL_SELECTION = "auto_goal_selected";
++    private Boolean savedSelection;
+     private final Activity activity;
+     private final Actions actions;
+@@ -78,4 +81,7 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
+         state.english = "en".equals(prefs.getString("language", "ko"));
+         state.hidden = prefs.getBoolean("hidden", false);
++        if (actions.nativeEngine() && prefs.contains(AUTO_GOAL_SELECTION)) {
++            savedSelection = prefs.getBoolean(AUTO_GOAL_SELECTION, false);
++        }
+         state.streamer = streamerAllowed && prefs.getBoolean("streamer", false);
+         state.suspended = true;
+@@ -93,5 +99,5 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
+         hud = new LinearLayout(activity); hud.setOrientation(LinearLayout.VERTICAL);
+         auto = button(""); auto.setTextSize(12); auto.setMaxLines(2); auto.setEllipsize(android.text.TextUtils.TruncateAt.END);
+-        auto.setOnClickListener(v -> actions.toggleAutoGoal());
++        auto.setOnClickListener(v -> onAutoGoalClick());
+         auto.setOnLongClickListener(v -> { if (actions.nativeEngine()) { actions.copyHwid(); return true; } state.menuOpen = true; tab = 1; refresh(); return true; });
+         hud.addView(auto, new LinearLayout.LayoutParams(dp(TOGGLE_WIDTH_DP), dp(TOGGLE_HEIGHT_DP)));
+@@ -161,17 +167,43 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
+         window.setLayoutParams(p); if (state.showMenu()) refreshCards();
+     }
++    private boolean selected() {
++        return savedSelection == null ? enabled : savedSelection;
++    }
++    private String selectionText() {
++        String prefix = actions.nativeEngine() ? text("설정 ", "Setting ") : "";
++        return prefix + (selected() ? "ON" : "OFF");
++    }
++    private String currentStatus() {
++        if (actions.nativeEngine() && selected() != enabled) {
++            String stateText = selected() ? text("실행 대기", "Inactive") : text("끄는 중", "Stopping");
++            return phase.isEmpty() ? stateText : stateText + " · " + statusText(phase);
++        }
++        return statusText(phase);
++    }
++    private void onAutoGoalClick() {
++        if (actions.nativeEngine()) {
++            boolean next = !selected();
++            savedSelection = next;
++            prefs.edit().putBoolean(AUTO_GOAL_SELECTION, next).apply();
++            actions.requestAutoGoal(next);
++        } else {
++            actions.toggleAutoGoal();
++        }
++        refresh();
++    }
+     public void setEngineState(boolean enabled, String phase) {
+         if (this.enabled == enabled && this.phase.equals(phase)) return;
+         boolean changed = this.enabled != enabled;
+         this.enabled = enabled; this.phase = phase;
+-        updateHudText();
+         if (changed) {
+-            paintHud();
+-            if (autoCard != null) {
+-                autoCard.setBackground(tile(enabled ? 0xff344e42 : 0xff35435d, enabled ? 0xff192e2d : 0xff202b43, enabled ? 0xff96d95e : 0xff0a1427, 9));
+-                ((TextView) autoCard.getChildAt(0)).setTextColor(enabled ? 0xff9af252 : 0xffffdfa1);
++            refresh();
++        } else {
++            updateHudText();
++            if (autoDetail != null) {
++                String detail = selectionText() + " · " + currentStatus();
++                autoDetail.setText(detail);
++                autoCard.setContentDescription(text("오토골", "Auto Goal") + ". " + detail);
+             }
+         }
+-        if (autoDetail != null) autoDetail.setText((enabled ? "ON · " : "OFF · ") + statusText(phase));
+     }
+     public void resume() {
+@@ -212,5 +244,5 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
+         paintHud();
+         title.setText("IRIS  /  " + text("컨트롤 센터", "CONTROL CENTER"));
+-        subtitle.setText(notice.isEmpty() ? text("위쪽 가운데 투명 영역으로 열기 · ", "Open from the invisible top-center area · ") + (enabled ? "ON" : "OFF") : notice);
++        subtitle.setText(notice.isEmpty() ? text("위쪽 가운데 투명 영역으로 열기 · ", "Open from the invisible top-center area · ") + selectionText() : notice);
+         close.setContentDescription(text("설정 닫기", "Close settings"));
+         String[] labels = state.english ? new String[]{"● All", "⚽ Auto Goal", "▣ Display", "↗ Community"} : new String[]{"● 전체", "⚽ 오토골", "▣ 화면", "↗ 커뮤니티"};
+@@ -226,8 +258,9 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
+         updateHudText();
+         auto.setContentDescription(text("오토골 켜기 또는 끄기", "Toggle Auto Goal"));
+-        auto.setBackground(tile(enabled ? 0xff57aa31 : 0xff314c7a, enabled ? 0xff25632c : 0xff182744, enabled ? 0xffa9ed67 : 0xff6387b9, 10));
++        auto.setBackground(tile(selected() ? 0xff57aa31 : 0xff314c7a, selected() ? 0xff25632c : 0xff182744, selected() ? 0xffa9ed67 : 0xff6387b9, 10));
+     }
+     private void updateHudText() {
+-        auto.setText(text("오토골 ", "Auto Goal ") + (enabled ? "ON" : "OFF") + (phase.isEmpty() ? "" : "\n" + statusText(phase)));
++        String status = currentStatus();
++        auto.setText(text("오토골 ", "Auto Goal ") + selectionText() + (status.isEmpty() ? "" : "\n" + status));
+     }
+     private void refreshCards() {
+@@ -238,6 +271,5 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
+         grid.setColumnCount(columns);
+         if (tab == 0 || tab == 1) {
+-            autoCard = card(text("오토골", "Auto Goal"), (enabled ? "ON · " : "OFF · ") + statusText(phase), enabled,
+-                () -> { actions.toggleAutoGoal(); refresh(); });
++            autoCard = card(text("오토골", "Auto Goal"), selectionText() + " · " + currentStatus(), selected(), this::onAutoGoalClick);
+             autoDetail = (TextView) autoCard.getChildAt(1);
+             if (actions.nativeEngine()) {
+diff --git a/uipreview/src/androidTest/java/com/irisai/autogoal/preview/PreviewChecks.java b/uipreview/src/androidTest/java/com/irisai/autogoal/preview/PreviewChecks.java
+index 088aadc..ce181a4 100644
+--- a/uipreview/src/androidTest/java/com/irisai/autogoal/preview/PreviewChecks.java
++++ b/uipreview/src/androidTest/java/com/irisai/autogoal/preview/PreviewChecks.java
+@@ -62,4 +62,5 @@ public final class PreviewChecks extends Instrumentation {
+             });
+             waitForIdleSync(); screenshot("hud.png");
++            onUi(this::checkSavedChoice);
+             JSONObject report = new JSONObject(); report.put("passed", true); report.put("checks", new org.json.JSONArray(checks));
+             report.put("game_startup_tested", false); report.put("streamer_actual_capture_tested", false);
+@@ -70,4 +71,39 @@ public final class PreviewChecks extends Instrumentation {
+         }
+     }
++    private void checkSavedChoice() {
++        List<Boolean> requests = new ArrayList<>();
++        IrisControlPanel.Actions actions = new IrisControlPanel.Actions() {
++            public boolean nativeEngine() { return true; }
++            public void requestAutoGoal(boolean selected) { requests.add(selected); }
++            public void toggleAutoGoal() { throw new AssertionError("Expected an explicit button choice"); }
++            public void calibrate() {}
++            public void resetControls() {}
++            public void visibilitySuppressed() {}
++        };
++        IrisControlPanel panel = new IrisControlPanel(activity, actions, false);
++        panel.resume();
++        TextView button = (TextView) byDescription(panel, "Toggle Auto Goal");
++        button.performClick();
++        panel.setEngineState(true, "게임 상태 갱신 대기");
++        panel.setConnectionState("stalled");
++        require(button.getText().toString().contains("Setting ON"), "stall preserves the ON selection");
++        panel.setEngineState(false, "UI 응답 없음 · 오류 확인");
++        require(button.getText().toString().contains("Setting ON") && button.getText().toString().contains("Inactive"),
++                "selected ON and inactive runtime are distinguishable");
++        panel.pause();
++        panel.close();
++        panel = new IrisControlPanel(activity, actions, false);
++        panel.resume();
++        button = (TextView) byDescription(panel, "Toggle Auto Goal");
++        require(button.getText().toString().contains("Setting ON") && requests.size() == 1,
++                "recreating the view restores the selection without sending a command");
++        byDescription(panel, "Open Iris settings").performClick();
++        ((View) byText(panel, "Auto Goal").getParent()).performClick();
++        panel.setConnectionState("ready");
++        panel.setEngineState(false, "브롤볼 대기");
++        require(button.getText().toString().contains("Setting OFF") && requests.equals(Arrays.asList(true, false)),
++                "manual OFF from the menu survives connection recovery");
++        panel.close();
++    }
+     private void require(boolean ok, String label) { if (!ok) throw new AssertionError(label); checks.add(label); }
+     private void onUi(Runnable action) {
