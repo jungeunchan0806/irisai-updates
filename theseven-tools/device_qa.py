@@ -119,8 +119,9 @@ def main():
     crashes=adb('shell','logcat','-b','crash','-d','-s','AndroidRuntime:E')
     assert 'Process: '+P not in crashes and 'Process: '+seller not in crashes
 results=[]
-try:main()
-finally:
-    (OUT/'android-crashes.txt').write_text(adb('shell','logcat','-b','crash','-d','-s','AndroidRuntime:E'))
-    (OUT/'results.json').write_text(json.dumps(results,ensure_ascii=False,indent=2))
-    snapshot('last')
+if __name__=='__main__':
+    try:main()
+    finally:
+        (OUT/'android-crashes.txt').write_text(adb('shell','logcat','-b','crash','-d','-s','AndroidRuntime:E'))
+        (OUT/'results.json').write_text(json.dumps(results,ensure_ascii=False,indent=2))
+        snapshot('last')
