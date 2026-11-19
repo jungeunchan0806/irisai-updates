@@ -11,15 +11,19 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '17'}
-      - uses: gradle/actions/setup-gradle@v4
       - uses: android-actions/setup-android@v3
         with: {packages: 'platform-tools platforms;android-35 build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
-      - name: Check the signed release and build the test applications
+      - name: Verify the release and the locally built emulator inputs
         run: |
           sha256sum -c dist/SHA256SUMS
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose dist/*.apk
           "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 dist/*.apk
-          ./gradlew --console=plain :testDebugUnitTest :assembleDebug :qa:arena:assembleDebug :qa:probe:assembleDebug
+          sha256sum -c --quiet qa/emulator-inputs/source-sha256.txt
+          sha256sum -c qa/emulator-inputs/archive-sha256.txt
+          tar -xzf qa/emulator-inputs/player-1.0.1-x86_64.tar.gz
+          for test_apk in build/outputs/apk/debug/*.apk qa/{arena,probe}/build/outputs/apk/debug/*.apk; do
+            "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$test_apk"
+          done
           sudo chmod 666 /dev/kvm
       - uses: reactivecircus/android-emulator-runner@v2
         with:

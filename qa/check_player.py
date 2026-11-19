@@ -31,8 +31,8 @@ def find(predicate, timeout=40):
     while time.monotonic()<until:
         try:
             nodes=ui()
-            tutorial=next((n for n in nodes if n['package']=='android' and n['resource-id']=='android:id/ok' and n['text']=='Got it'),None)
-            if tutorial and any(n['resource-id']=='android:id/immersive_cling_title' for n in nodes):
+            tutorial=next((n for n in nodes if n['package'] in ('android','com.android.systemui') and n['text']=='Got it'),None)
+            if tutorial and any(n['package']==tutorial['package'] and n['text']=='Viewing full screen' for n in nodes):
                 tap(tutorial);continue
             startup_alert=next((n['text'] for n in nodes if n['package']=='android' and n['text'] in (
                 "Process system isn't responding","Pixel Launcher isn't responding","Launcher isn't responding","System UI isn't responding")),None)
@@ -140,7 +140,12 @@ def run():
         return item(label)
     snapshot('settings.png')
     tap(button('선택한 브롤러로 시작'))
-    wait_for(lambda: hud_count()>=3,120)
+    try:
+        wait_for(lambda: hud_count()>=3,120)
+    except AssertionError:
+        open_gear()
+        print('Player status after the touch timeout:',[n['text'] for n in ui() if n['package']==APP],flush=True)
+        raise
     wait_for(lambda: any(s['track']>0 and s['full']>0 for s in samples()),100)
     time.sleep(4)
     result={'api':adb('shell','getprop','ro.build.version.sdk'),'abi':adb('shell','getprop','ro.product.cpu.abi'),
