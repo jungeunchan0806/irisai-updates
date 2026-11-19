@@ -40,6 +40,8 @@ def native_update():
     assert prefs()['brawler']=='colt' and prefs()['repeat']=='true'
     assert json.loads(prefs()['theseven.jobs'])==reservation
     passed('Android system installer replaced signed 2.0.0 from within app with 2.0.1 and retained preferences')
+    # Wait for the installer's completion sheet and let it return focus before launching the updated app.
+    find('Done',True,tries=15)
     adb('shell','am','force-stop',P);launch();find('업데이트 확인',tries=18)
     confirm_update()
     find('Colt');find('일반 설정',True,scroll=True);find('연습 데이터 v4',scroll=True)
