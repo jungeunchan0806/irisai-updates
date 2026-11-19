@@ -38,10 +38,16 @@ final class FrameHistory implements AutoCloseable {
       Mat current,
       long latest) {
     tracker.clear();
-    if (scene == null || latest < captured || latest - captured > MAX_HISTORY_MS) return null;
+    if (scene == null || latest < captured) return null;
     // A prior wall map is unusable after a camera jump or stage change.
     double backgroundChange = Core.norm(original, current, Core.NORM_L1) / original.total();
-    if (backgroundChange > 32) return null;
+    // If the scene is visually almost identical, verify each character on the current image.
+    // This also works after a model cold start that lasted longer than the short history.
+    if (backgroundChange < 2.5) {
+      tracker.seed(original, scene, latest);
+      return tracker.track(current, latest);
+    }
+    if (backgroundChange > 32 || latest - captured > MAX_HISTORY_MS) return null;
     tracker.seed(original, scene, captured);
     for (Sample sample : samples) {
       if (sample.when > captured

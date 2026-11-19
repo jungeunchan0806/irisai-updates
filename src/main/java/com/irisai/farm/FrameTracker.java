@@ -13,7 +13,9 @@ final class FrameTracker implements AutoCloseable {
   private final List<Anchor> enemies = new ArrayList<>();
   private Anchor player;
   private FarmPolicy.Frame reference;
-  private long capturedAt, lastMatch;
+  private long lastMatch, nextMapCheck;
+  private final Mat mapReference = new Mat(), mapCurrent = new Mat();
+  private static final Size MAP_SIZE = new Size(80, 45);
   private final Mat scores = new Mat();
 
   static final class Anchor {
@@ -46,7 +48,9 @@ final class FrameTracker implements AutoCloseable {
     player = anchor(gray, scene.player);
     if (player == null) return;
     reference = scene;
-    capturedAt = lastMatch = when;
+    lastMatch = when;
+    nextMapCheck = when + MAX_ANCHOR_MS;
+    Imgproc.resize(gray, mapReference, MAP_SIZE, 0, 0, Imgproc.INTER_AREA);
     for (P feet : scene.enemies) {
       Anchor a = anchor(gray, feet);
       if (a != null) enemies.add(a);
@@ -72,9 +76,18 @@ final class FrameTracker implements AutoCloseable {
 
   FarmPolicy.Frame track(Mat gray, long now) {
     if (player == null) return null;
-    if (now < lastMatch || now - lastMatch > MAX_GAP_MS || now - capturedAt > MAX_ANCHOR_MS) {
+    if (now < lastMatch || now - lastMatch > MAX_GAP_MS) {
       clear();
       return null;
+    }
+    if (now >= nextMapCheck) {
+      Imgproc.resize(gray, mapCurrent, MAP_SIZE, 0, 0, Imgproc.INTER_AREA);
+      double change = Core.norm(mapReference, mapCurrent, Core.NORM_L1) / mapReference.total();
+      if (change > 6.0) {
+        clear();
+        return null;
+      }
+      nextMapCheck = now + 300;
     }
     P pos = locate(gray, player);
     if (pos == null) {
@@ -111,5 +124,7 @@ final class FrameTracker implements AutoCloseable {
   public void close() {
     clear();
     scores.release();
+    mapReference.release();
+    mapCurrent.release();
   }
 }
