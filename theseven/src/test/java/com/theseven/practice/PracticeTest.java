@@ -28,6 +28,16 @@ public class PracticeTest {
   }
 
   @Test
+  public void bundledUpgradeAndCorruptStoredPatchRecover() throws Exception {
+    JSONObject other = new JSONObject(c.root.toString());
+    other.put("version", 2);
+    assertSame(c, Catalog.effective(c, other.toString()));
+    assertSame(c, Catalog.effective(c, "{broken"));
+    other.put("version", 4);
+    assertEquals(4, Catalog.effective(c, other.toString()).root.optInt("version"));
+  }
+
+  @Test
   public void fixedIdsAndUnknownLevels() {
     assertEquals(109, ids.size());
     for (String id : List.of("thunder_frogs", "vince", "cosmo", "wendy", "nori")) {
@@ -139,7 +149,7 @@ public class PracticeTest {
         sig = Base64.getDecoder().decode(envelope.getString("signature")),
         key = Files.readAllBytes(Path.of("../theseven-common/assets/theseven_patch.der"));
     JSONObject m = Updates.verify(bytes, sig, key);
-    assertEquals(2, m.getJSONObject("catalog").getInt("version"));
+    assertEquals(4, m.getJSONObject("catalog").getInt("version"));
     bytes[0] ^= 1;
     assertThrows(
         java.security.GeneralSecurityException.class, () -> Updates.verify(bytes, sig, key));

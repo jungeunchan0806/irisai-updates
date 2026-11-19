@@ -46,6 +46,18 @@ public final class Catalog {
       if (!profiles.containsKey(id)) throw new JSONException("필수 브롤러 누락");
   }
 
+  static Catalog effective(Catalog bundled, String applied) {
+    if (applied != null)
+      try {
+        Catalog patch = new Catalog(applied);
+        if (patch.root.optInt("version") > bundled.root.optInt("version")
+            && patch.profiles.keySet().containsAll(bundled.profiles.keySet())) return patch;
+      } catch (JSONException invalidStoredPatch) {
+        /* Installed APK data is the recovery version. */
+      }
+    return bundled;
+  }
+
   static JSONObject obj(JSONObject o, String k) {
     JSONObject x = o.optJSONObject(k);
     return x == null ? new JSONObject() : x;

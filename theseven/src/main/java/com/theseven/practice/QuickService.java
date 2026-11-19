@@ -54,6 +54,7 @@ public final class QuickService extends Service {
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                 | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
             PixelFormat.TRANSLUCENT);
+    lp.setTitle("theseven.quick.gear");
     lp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
     lp.y = Ui.dp(this, 8);
     gear.setOnClickListener(

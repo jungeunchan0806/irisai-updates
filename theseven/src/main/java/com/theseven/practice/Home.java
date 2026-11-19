@@ -35,6 +35,15 @@ public class Home extends Activity {
               break;
             }
           }
+          if (!quick() && (page.equals("home") || page.equals("jobs") || page.equals("arena"))) {
+            String completed = s.prefs.getString("theseven.scheduled", "");
+            if (!completed.isEmpty()
+                && !completed.equals(s.prefs.getString("theseven.presented", ""))) {
+              JSONObject recent = s.read("theseven.last");
+              s.prefs.edit().putString("theseven.presented", completed).apply();
+              if (completed.equals(recent.optString("job"))) replay(recent, true, false);
+            }
+          }
           handler.postDelayed(this, 1000);
         }
       };
@@ -293,7 +302,7 @@ public class Home extends Activity {
     img.setImageResource(R.drawable.theseven_logo);
     img.setContentDescription("더세븐 오토팜 앱 아이콘");
     panel.addView(img, Ui.dp(this, 56), Ui.dp(this, 56));
-    Ui.text(panel, "더세븐 오토팜 2.0.0", 20);
+    Ui.text(panel, "더세븐 오토팜 2.0.1", 20);
     Ui.text(panel, "개발자: @asdf027949", 16);
     Ui.button(
         panel,
@@ -515,7 +524,7 @@ public class Home extends Activity {
       }
     }
     if (!quick() && s.read("theseven.last").has("frames"))
-      Ui.button(panel, "최근 연습 다시 보기", () -> replay(s.read("theseven.last"), true));
+      Ui.button(panel, "최근 연습 다시 보기", () -> replay(s.read("theseven.last"), true, false));
     if (ids.isEmpty()) Ui.text(panel, "저장된 예약이 없습니다", 16);
   }
 
@@ -752,10 +761,10 @@ public class Home extends Activity {
         .putInt("theseven.page", result.optInt("page"))
         .putString("theseven.last", result.toString())
         .apply();
-    replay(result, true);
+    replay(result, true, true);
   }
 
-  void replay(JSONObject result, boolean carousel) {
+  void replay(JSONObject result, boolean carousel, boolean repeatable) {
     start("arena", "독립 연습장");
     String id = result.optString("id");
     Ui.text(panel, s.catalog.name(id, lang()), 18);
@@ -796,9 +805,13 @@ public class Home extends Activity {
               handler.postDelayed(this, 160);
               return;
             }
-            if (s.prefs.getBoolean("repeat", false)) {
-              t = 0;
-              handler.postDelayed(this, 400);
+            if (repeatable && s.prefs.getBoolean("repeat", false)) {
+              handler.postDelayed(
+                  () -> {
+                    if (foreground && view.isAttachedToWindow() && page.equals("arena"))
+                      runPractice();
+                  },
+                  400);
             } else label.append(" · 연습 완료");
           }
         });

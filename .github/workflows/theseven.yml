@@ -15,6 +15,7 @@ jobs:
         run: |
           (cd theseven-release && sha256sum -c SHA256SUMS)
           for apk in theseven-release/*.apk; do "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$apk"; done
+          bash theseven-tools/probe/build.sh /tmp/theseven-probe.apk
           sudo chmod 666 /dev/kvm
       - uses: reactivecircus/android-emulator-runner@v2
         with:

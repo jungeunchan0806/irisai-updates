@@ -15,7 +15,7 @@ public final class Ui {
 
   public static LinearLayout col(Context c) {
     LinearLayout l = new LinearLayout(c);
-    l.setOrientation(1);
+    l.setOrientation(LinearLayout.VERTICAL);
     l.setPadding(dp(c, 16), dp(c, 12), dp(c, 16), dp(c, 12));
     return l;
   }

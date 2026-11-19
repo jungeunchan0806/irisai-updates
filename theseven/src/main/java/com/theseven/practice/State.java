@@ -15,12 +15,13 @@ final class State {
     context = c.getApplicationContext();
     prefs = c.getSharedPreferences("player", 0);
     try {
-      String data = prefs.getString("theseven.catalog", null);
-      if (data == null)
-        try (InputStream in = c.getAssets().open("theseven_catalog.json")) {
-          data = new String(com.theseven.common.Net.read(in, 2000000), StandardCharsets.UTF_8);
-        }
-      catalog = new Catalog(data);
+      String applied = prefs.getString("theseven.catalog", null);
+      try (InputStream in = c.getAssets().open("theseven_catalog.json")) {
+        Catalog bundled =
+            new Catalog(
+                new String(com.theseven.common.Net.read(in, 2000000), StandardCharsets.UTF_8));
+        catalog = Catalog.effective(bundled, applied);
+      }
     } catch (Exception e) {
       throw new IllegalStateException("연습 데이터 읽기 실패", e);
     }
@@ -113,6 +114,8 @@ final class State {
             inventory(id).optBoolean("locked"));
     if (result.has("error")) return result;
     Catalog.put(result, "equipment", catalog.equipment(id, config, inventory(id), choices));
+    Catalog.put(result, "config", config);
+    Catalog.put(result, "choices", choices);
     Arena a = new Arena(catalog.profiles.get(id), config);
     JSONArray frames = new JSONArray();
     for (int i = 0; i < 48; i++) {
@@ -142,6 +145,8 @@ final class State {
         if (result.has("error")) Catalog.put(job, "status", "failed");
         else {
           page = result.optInt("page");
+          Catalog.put(result, "job", id);
+          edit.putString("theseven.scheduled", id);
           edit.putString("theseven.last", result.toString()).putInt("theseven.page", page);
         }
         JSONObject summary = Catalog.json(result.toString());
