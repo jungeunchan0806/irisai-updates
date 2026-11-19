@@ -9,9 +9,12 @@
 | 서버 | 기존 검사를 포함한 Node 테스트 25개 통과. 정상 등록, 만료, 철회·복원, 잘못된 키, 다른 기기 바인딩, 승인 밖 발급 거절, 서명 재사용 방지 및 권한 분리 검사. 기존 서버에 버전 11 배포. |
 | Android 12L / API 32 | 실제 2.0.0 앱의 업데이트 대화상자에서 서명된 2.0.1 APK를 내려받아 Android 설치를 승인했습니다. 업데이트 후 브롤러·반복·직접 지정 장비가 있는 예약을 보존했고, 새 앱에서 v4 데이터 패치도 적용했습니다. |
 | Android 15 / API 35 | 실제 1.0.2 위에 일반 APK를 설치하고 기존 브롤러·반복 설정·추가 키 보존 확인. 데이터 패치 설치·재시작, 별도 톱니바퀴와 빠른 설정 수정·저장, 연습 화면, 예약 편집·취소, 먼 페이지의 노리 자동 픽, 잠금·누락·중복 방지, 슬롯별 자동·수동 장비, Discord·개발자 표시, 운영 서버의 미승인 판매자 거절까지 9개 흐름 통과. |
+| Android 17 / API 37.0 | 서명된 일반 APK 설치, 상단 중앙 오버레이 톱니바퀴로 빠른 설정 열기, 플레이스타일 변경, 앱 강제 종료 후 설정 보존과 독립 연습장 실행을 확인했습니다. |
 | 원본 인증서 | 1.0.2 및 일반 2.0.1 APK 서명 SHA-256은 75fbedd4009cc3f38872ef4b2d12646a7b0fef4eac40f2f6c42e4cfff2a66f7b. |
 | 배포 파일 | 일반 APK 148443바이트, 판매자 APK 45774바이트. 공개 GitHub Release의 파일 4개를 다시 내려받아 로컬에서 확인한 파일과 바이트 해시가 일치함을 확인했습니다. |
 
-[Android 12L 앱 내 APK 업데이트 로그](https://github.com/jungeunchan0806/irisai-updates/actions/runs/44538971215) · [Android 15 실행 로그](https://github.com/jungeunchan0806/irisai-updates/actions/runs/44538087392) · [화면 캡처와 검사 결과 ZIP](https://github.com/jungeunchan0806/irisai-updates/actions/runs/44538087392/artifacts/14537865572)
+[Android 17 실행 로그](https://github.com/jungeunchan0806/irisai-updates/actions/runs/44540246116) · [Android 12L 앱 내 APK 업데이트 로그](https://github.com/jungeunchan0806/irisai-updates/actions/runs/44538971215) · [Android 15 실행 로그](https://github.com/jungeunchan0806/irisai-updates/actions/runs/44538087392) · [화면 캡처와 검사 결과 ZIP](https://github.com/jungeunchan0806/irisai-updates/actions/runs/44538087392/artifacts/14537865572)
 
 운영 서버에서는 미가입 단말의 미등록 응답과 판매자 미승인 응답을 확인했습니다. 정상·만료·철회 키의 발급과 검증은 테스트 데이터베이스에서 수행했습니다. 사용자 삼성 실물 기기에서의 검사는 수행하지 않았습니다.
+
+세 Android 실행은 Google APIs x86_64 에뮬레이터였습니다. Android 17 첫 실행에서 시스템 런처 및 화면 서비스가 종료되어 그래픽 버퍼와 사용자 프로필을 바로잡은 다음 같은 APK로 다시 통과했습니다. 버전별 표의 흐름만 해당 버전에서 검사했습니다.
