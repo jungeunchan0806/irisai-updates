@@ -9,11 +9,11 @@ import org.opencv.imgproc.Imgproc;
 final class FrameTracker implements AutoCloseable {
   static final Size SIZE = new Size(320, 180);
   private static final int RADIUS = 5, ABOVE_FEET = 5, SEARCH = 15;
-  private static final long MAX_AGE_MS = 700;
+  private static final long MAX_GAP_MS = 700, MAX_ANCHOR_MS = 7500;
   private final List<Anchor> enemies = new ArrayList<>();
   private Anchor player;
   private FarmPolicy.Frame reference;
-  private long capturedAt;
+  private long capturedAt, lastMatch;
   private final Mat scores = new Mat();
 
   static final class Anchor {
@@ -46,7 +46,7 @@ final class FrameTracker implements AutoCloseable {
     player = anchor(gray, scene.player);
     if (player == null) return;
     reference = scene;
-    capturedAt = when;
+    capturedAt = lastMatch = when;
     for (P feet : scene.enemies) {
       Anchor a = anchor(gray, feet);
       if (a != null) enemies.add(a);
@@ -72,7 +72,7 @@ final class FrameTracker implements AutoCloseable {
 
   FarmPolicy.Frame track(Mat gray, long now) {
     if (player == null) return null;
-    if (now < capturedAt || now - capturedAt > MAX_AGE_MS) {
+    if (now < lastMatch || now - lastMatch > MAX_GAP_MS || now - capturedAt > MAX_ANCHOR_MS) {
       clear();
       return null;
     }
@@ -82,6 +82,7 @@ final class FrameTracker implements AutoCloseable {
       return null;
     }
     FarmPolicy.Frame f = new FarmPolicy.Frame();
+    lastMatch = now;
     f.player = pos;
     f.walls = reference.walls;
     ArrayList<P> seen = new ArrayList<>();
