@@ -147,9 +147,10 @@ def run():
         print('Player status after the touch timeout:',[n['text'] for n in ui() if n['package']==APP],flush=True)
         raise
     wait_for(lambda: any(s['track']>0 and s['full']>0 for s in samples()),100)
-    time.sleep(4)
+    after_warmup=len(samples())
+    time.sleep(8)
     result={'api':adb('shell','getprop','ro.build.version.sdk'),'abi':adb('shell','getprop','ro.product.cpu.abi'),
-            'fixture':'offline recorded screen','model_input':'held_turn.jpg','brawler':'8bit','fps_samples':samples(),
+            'fixture':'offline recorded screen','model_input':'held_turn.jpg','brawler':'8bit','fps_samples':samples(), 'steady_samples':samples()[after_warmup:],
             'hud_touches_before_pause':hud_count(),'android_consent':True}
     open_gear()
     count=hud_count();time.sleep(2);assert hud_count()==count,'Input continued in menu'

@@ -36,7 +36,10 @@ public class FarmVisionTest {
             for(long i=60;i<3000;i+=60)history.remember(gray,i);
             assertNotNull("three-second inference needs a current visual match",history.confirm(tracker,gray,o.scene,0,gray,3000));
             assertNull("changed scene must discard past detections",history.confirm(tracker,gray,o.scene,0,blank,3000));
-            assertNull("incomplete history must not start touches",history.confirm(tracker,gray,o.scene,0,gray,9000));
+            assertNotNull("a cold model can reacquire a matching current scene",history.confirm(tracker,gray,o.scene,0,gray,9000));
+            for(long t=9100;t<18000;t+=100)assertNotNull("continuous visual evidence",tracker.track(gray,t));
+            assertNull("a map change invalidates an old reference",tracker.track(blank,18000));
+            assertNull("a different view cannot be reacquired from expired history",history.confirm(tracker,gray,o.scene,0,blank,9000));
         }finally{image.release();small.release();gray.release();blank.release();}
     }
     @Test public void highlightsAndGameOverDoNotAttackOrRequeue()throws Exception {

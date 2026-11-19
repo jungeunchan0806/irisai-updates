@@ -20,7 +20,7 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 dist/*.apk
           sha256sum -c --quiet qa/emulator-inputs/source-sha256.txt
           sha256sum -c qa/emulator-inputs/archive-sha256.txt
-          tar -xzf qa/emulator-inputs/player-1.0.1-x86_64.tar.gz
+          tar -xzf qa/emulator-inputs/player-1.0.2-x86_64.tar.gz
           for test_apk in build/outputs/apk/debug/*.apk qa/{arena,probe}/build/outputs/apk/debug/*.apk; do
             "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$test_apk"
           done
@@ -51,4 +51,4 @@ jobs:
           cp README.md "$RUNNER_TEMP/notes.md"
           echo >> "$RUNNER_TEMP/notes.md"
           echo "[Android 실행 검사](https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)" >> "$RUNNER_TEMP/notes.md"
-          gh release create android-iris-external-1.0.1 dist/*.apk --target "$GITHUB_SHA" --title 'IrisAI 외부 플레이어 1.0.1 · Android ARM64' --prerelease --latest=false --notes-file "$RUNNER_TEMP/notes.md"
+          gh release create android-iris-external-1.0.2 dist/*.apk --target "$GITHUB_SHA" --title 'IrisAI 외부 플레이어 1.0.2 · Android ARM64' --prerelease --latest=false --notes-file "$RUNNER_TEMP/notes.md"

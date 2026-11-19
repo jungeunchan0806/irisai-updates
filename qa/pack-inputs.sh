@@ -10,7 +10,7 @@ sed -i "s/debug { ndk { abiFilters 'arm64-v8a', 'x86_64' } }/debug { ndk { abiFi
 cd "$work"
 bash gradlew :testDebugUnitTest :assembleDebug :qa:arena:assembleDebug :qa:probe:assembleDebug
 mkdir -p "$root/qa/emulator-inputs"
-tar -czf "$root/qa/emulator-inputs/player-1.0.1-x86_64.tar.gz" build/outputs/apk/debug/*.apk qa/{arena,probe}/build/outputs/apk/debug/*.apk build/test-results/testDebugUnitTest/TEST*.xml
+tar -czf "$root/qa/emulator-inputs/player-1.0.2-x86_64.tar.gz" build/outputs/apk/debug/*.apk qa/{arena,probe}/build/outputs/apk/debug/*.apk build/test-results/testDebugUnitTest/TEST*.xml
 cd "$root"
 git ls-files -- src build.gradle 'gradle*' settings.gradle qa/arena qa/probe | LC_ALL=C sort | xargs sha256sum > qa/emulator-inputs/source-sha256.txt
 sha256sum qa/emulator-inputs/*.tar.gz > qa/emulator-inputs/archive-sha256.txt
