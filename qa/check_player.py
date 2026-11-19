@@ -11,7 +11,11 @@ OUT = Path('qa-results')
 OUT.mkdir(exist_ok=True)
 
 def adb(*args):
-    return subprocess.check_output(['adb', *map(str, args)], timeout=90).decode(errors='replace').strip()
+    result=subprocess.run(['adb',*map(str,args)],capture_output=True,text=True,errors='replace',timeout=90)
+    if result.returncode:
+        print('adb',args, result.stdout[-1200:],result.stderr[-1200:],flush=True)
+        result.check_returncode()
+    return result.stdout.strip()
 
 def ui():
     raw=adb('shell','am','instrument','-w','dev.iris.inspect/.Inspect')
@@ -27,6 +31,9 @@ def find(predicate, timeout=40):
     while time.monotonic()<until:
         try:
             nodes=ui()
+            tutorial=next((n for n in nodes if n['package']=='android' and n['resource-id']=='android:id/ok' and n['text']=='Got it'),None)
+            if tutorial and any(n['resource-id']=='android:id/immersive_cling_title' for n in nodes):
+                tap(tutorial);continue
             if not waited and any(n['package']=='android' and n['text']=="Process system isn't responding" for n in nodes):
                 action=next(n for n in nodes if n['package']=='android' and n['text']=='Wait')
                 print('System server boot alert displayed; selecting Wait',flush=True)
