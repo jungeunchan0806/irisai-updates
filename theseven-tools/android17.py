@@ -3,14 +3,16 @@ from device_qa import ROOT,OUT,P,adb,find,launch,view,nodes,tap,passed,results,s
 def check():
     print('API',adb('shell','getprop','ro.build.version.sdk'),'ABI',adb('shell','getprop','ro.product.cpu.abilist'),flush=True)
     for _ in range(60):
-        if 'true' in adb('shell','cmd','user','is-user-unlocked','0',check=False) and 'package:' in adb('shell','pm','path','android',check=False):break
+        user=adb('shell','am','get-current-user',check=False)
+        if user.isdigit() and 'package:android' in adb('shell','pm','list','packages','--user',user,'android',check=False).splitlines():break
         time.sleep(2)
     print(adb('shell','df','-h','/data'),flush=True)
     def install(file):
         for attempt in range(4):
-            p=subprocess.run(['adb','install','--no-streaming','-r',file],capture_output=True,text=True)
+            p=subprocess.run(['adb','install','--no-incremental','--user',user,'-r',file],capture_output=True,text=True)
             print('install',file,p.stdout.strip(),p.stderr.strip(),flush=True)
-            if p.returncode==0:return
+            pkg=P if 'Autofarm' in file else 'dev.theseven.inspect'
+            if p.returncode==0 and adb('shell','pm','path','--user',user,pkg,check=False).startswith('package:'):return
             time.sleep(4)
         raise AssertionError('Could not install '+file)
     install(str(ROOT/'theseven-release/TheSeven-Autofarm-2.0.1.apk'))

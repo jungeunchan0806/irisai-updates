@@ -26,7 +26,10 @@ jobs:
           profile: pixel_2
           cores: 4
           ram-size: 4096M
-          disk-size: 8192M
+          disk-size: 12288M
+          emulator-build: '15261927'
+          emulator-boot-timeout: 900
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu software -memory 3072 -cores 2 -feature GLDirectMem,HasSharedSlotsHostMemoryAllocator
           disable-animations: true
           script: python3 theseven-tools/android17.py
       - uses: actions/upload-artifact@v4
