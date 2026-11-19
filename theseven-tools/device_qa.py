@@ -7,7 +7,11 @@ ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/'theseven-qa-results'
 OUT.mkdir(exist_ok=True)
 def run(*args, check=True):
-    return subprocess.run(args,text=True,capture_output=True,check=check,timeout=90).stdout.strip()
+    proc=subprocess.run(args,text=True,capture_output=True,timeout=90)
+    if check and proc.returncode:
+        print(proc.stdout[-700:],proc.stderr[-700:],flush=True)
+        proc.check_returncode()
+    return proc.stdout.strip()
 def adb(*args,**k): return run('adb',*args,**k)
 def view(all_windows=False):
     # The framework XML dumper follows the focused dialog. The instrumented inspector also sees the separate overlay.

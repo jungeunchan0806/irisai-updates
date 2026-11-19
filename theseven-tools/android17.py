@@ -1,10 +1,23 @@
-import json,time
+import json,time,subprocess
 from device_qa import ROOT,OUT,P,adb,find,launch,view,nodes,tap,passed,results,snapshot
 def check():
     print('API',adb('shell','getprop','ro.build.version.sdk'),'ABI',adb('shell','getprop','ro.product.cpu.abilist'),flush=True)
-    adb('install','/tmp/theseven-probe.apk')
+    for _ in range(60):
+        if 'true' in adb('shell','cmd','user','is-user-unlocked','0',check=False) and 'package:' in adb('shell','pm','path','android',check=False):break
+        time.sleep(2)
+    print(adb('shell','df','-h','/data'),flush=True)
+    def install(file):
+        for attempt in range(4):
+            p=subprocess.run(['adb','install','--no-streaming','-r',file],capture_output=True,text=True)
+            print('install',file,p.stdout.strip(),p.stderr.strip(),flush=True)
+            if p.returncode==0:return
+            time.sleep(4)
+        raise AssertionError('Could not install '+file)
+    install(str(ROOT/'theseven-release/TheSeven-Autofarm-2.0.1.apk'))
+    passed('Android 17 signed APK installed')
+    install('/tmp/theseven-probe.apk')
     adb('shell','wm','size','640x1100');adb('shell','wm','density','210')
-    adb('install',str(ROOT/'theseven-release/TheSeven-Autofarm-2.0.1.apk'));launch()
+    launch()
     find('나중에',True,tries=18)
     find('더세븐 오토팜');find('일반 설정',True,scroll=True)
     adb('shell','appops','set',P,'SYSTEM_ALERT_WINDOW','allow')
