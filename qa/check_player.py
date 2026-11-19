@@ -66,16 +66,27 @@ def samples():
 def snapshot(filename):
     (OUT/filename).write_bytes(subprocess.check_output(['adb','exec-out','screencap','-p']))
 
+def install(*args):
+    for attempt in range(3):
+        result=subprocess.run(['adb','install','--no-incremental','--no-streaming','-r',*args],capture_output=True,text=True,timeout=130)
+        if result.returncode==0:return
+        message=result.stdout+' '+result.stderr
+        print(message,flush=True)
+        transient=('Broken pipe',"Can't find service",'device offline','cmd: Failure','device not found','DeadObjectException')
+        if not any(m in message for m in transient) or attempt==2:raise AssertionError(message)
+        time.sleep(10)
+        wait_for(lambda: 'package:' in adb('shell','pm','path','android'),90)
+
 def run():
     abis=adb('shell','getprop','ro.product.cpu.abilist').split(',')
     signed='arm64-v8a' in abis
     if signed:
-        adb('install','--abi','arm64-v8a',str(next(Path('dist').glob('*.apk'))))
+        install('--abi','arm64-v8a',str(next(Path('dist').glob('*.apk'))))
     else:
-        adb('install',str(next(Path('build/outputs/apk/debug').glob('*.apk'))))
+        install(str(next(Path('build/outputs/apk/debug').glob('*.apk'))))
     print('release_apk='+str(signed)+' device_abis='+','.join(abis),flush=True)
-    adb('install',str(next(Path('qa/arena/build/outputs/apk/debug').glob('*.apk'))))
-    adb('install',str(next(Path('qa/probe/build/outputs/apk/debug').glob('*.apk'))))
+    install(str(next(Path('qa/arena/build/outputs/apk/debug').glob('*.apk'))))
+    install(str(next(Path('qa/probe/build/outputs/apk/debug').glob('*.apk'))))
     adb('shell','input','keyevent','KEYCODE_WAKEUP')
     adb('shell','wm','dismiss-keyguard')
     adb('shell','svc','wifi','disable')
