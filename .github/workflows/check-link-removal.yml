@@ -1,0 +1,49 @@
+name: Check offline header-link removal tool
+on:
+  push:
+    branches: [theseven-offline-link-removal]
+permissions: {contents: read}
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+        with: {packages: 'platform-tools build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
+      - name: Verify the tool and its test document
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          curl --fail --location --retry 2 --silent --show-error -o TheSeven-Transparent-UI-1.0.apk https://github.com/jungeunchan0806/irisai-updates/releases/download/android-theseven-transparent-ui-v1/TheSeven-Transparent-UI-1.0.apk
+          echo 'd14df8e8b912b75405b82a3b1a7f84e0bf404585f6b4535fc6ed180bbf3140d1  TheSeven-Transparent-UI-1.0.apk' | sha256sum --check --strict
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$GITHUB_WORKSPACE/dist/TheSeven-Link-Remover.apk"
+          sudo chmod 666 /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_2
+          disk-size: 8192M
+          disable-animations: true
+          script: python3 qa/check_document_flow.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: android-document-results, path: qa-results/, if-no-files-found: warn}
+  publish:
+    needs: verify
+    runs-on: ubuntu-24.04
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish the offline patch utility
+        env: {GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}'}
+        run: |
+          tag=android-theseven-link-remover-v1
+          cp README.md "$RUNNER_TEMP/release.md"
+          echo >> "$RUNNER_TEMP/release.md"
+          echo "[Android 파일 선택·저장 검사 결과](https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)" >> "$RUNNER_TEMP/release.md"
+          gh release create "$tag" dist/TheSeven-Link-Remover.apk --target "$GITHUB_SHA" --title 'TheSeven 상단 링크 제거 도구' --notes-file "$RUNNER_TEMP/release.md" --prerelease --latest=false

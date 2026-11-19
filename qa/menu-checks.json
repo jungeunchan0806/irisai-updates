@@ -1,0 +1,17 @@
+{
+  "menu_scenarios": 36,
+  "loading_scenarios": 2,
+  "only_discord_label_background_and_hit_target_removed": true,
+  "center_toggle_and_close_verified": true,
+  "device_play_tested": false,
+  "unchanged_apk_entries": 38355,
+  "changed_entries": [
+    "lib/arm64-v8a/libbrf.so"
+  ],
+  "remaining_link_entries": 0,
+  "signatures": [
+    "v2",
+    "v3"
+  ],
+  "zip_alignment_16k": true
+}
