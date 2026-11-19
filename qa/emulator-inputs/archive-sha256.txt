@@ -1,1 +1,1 @@
-783cc1c999a88ad1dc1b729c7a47a63bfb90123b721fb3b2334246da271416bb  qa/emulator-inputs/player-1.0.1-x86_64.tar.gz
+51abf007eab12883c5e5ce943a3aab0566a9fc9ddcd669e93cffa075018cf6d4  qa/emulator-inputs/player-1.0.2-x86_64.tar.gz
