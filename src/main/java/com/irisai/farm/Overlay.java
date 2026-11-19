@@ -41,6 +41,12 @@ final class Overlay {
     bubble.setBackground(Ui.surface(0xff193c2b, 40, c));
     bubble.setPadding(Ui.dp(c, 10), Ui.dp(c, 10), Ui.dp(c, 10), Ui.dp(c, 10));
     bubble.setOnClickListener(v -> actions.open());
+    // Stop game input on the initial press, even if Android cancels the rest of this tap.
+    bubble.setOnTouchListener(
+        (v, event) -> {
+          if (event.getActionMasked() == MotionEvent.ACTION_DOWN) v.performClick();
+          return true;
+        });
     WindowManager.LayoutParams lp = params(Ui.dp(c, 48), Ui.dp(c, 48), false);
     lp.gravity = Gravity.TOP | Gravity.START;
     lp.x = Ui.dp(c, 12);
