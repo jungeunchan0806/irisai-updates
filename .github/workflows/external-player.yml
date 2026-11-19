@@ -23,15 +23,15 @@ jobs:
           sudo chmod 666 /dev/kvm
       - uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
+          api-level: '37.2'
           system-image-api-level: '37.2'
           pre-emulator-launch-script: sed -i '/^hw.lcd.vsync/d;$a hw.lcd.vsync=120' "$HOME/.android/avd/test.avd/config.ini"
-          ram-size: 4096M
-          cores: 4
           arch: x86_64
           target: google_apis_ps16k
           profile: pixel_2
-          disk-size: 8192M
+          emulator-build: '15261927'
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu software -memory 3072 -cores 2 -feature GLDirectMem,HasSharedSlotsHostMemoryAllocator
+          disk-size: 12288M
           disable-animations: true
           script: python3 qa/check_player.py
       - uses: actions/upload-artifact@v4
