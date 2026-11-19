@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
         with:
-          ref: 6751bc5cc8815a924946141156057523bccdc1f6
+          ref: 4816c91b45c7f2a4563a28a98fda6d57f2e7fc69
           path: preview-source
           sparse-checkout: |
             gradle
