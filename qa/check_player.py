@@ -22,10 +22,16 @@ def ui():
     return nodes
 
 def find(predicate, timeout=40):
+    waited=False
     until = time.monotonic()+timeout
     while time.monotonic()<until:
         try:
-            for node in ui():
+            nodes=ui()
+            if not waited and any(n['package']=='android' and n['text']=="Process system isn't responding" for n in nodes):
+                action=next(n for n in nodes if n['package']=='android' and n['text']=='Wait')
+                print('System server boot alert displayed; selecting Wait',flush=True)
+                tap(action);waited=True;continue
+            for node in nodes:
                 if predicate(node): return node
         except subprocess.CalledProcessError: pass
         time.sleep(.35)
@@ -52,10 +58,7 @@ def wait_for(probe, timeout=60):
     raise AssertionError('Timed out waiting for '+probe.__name__)
 
 def open_gear():
-    def centers():
-        return re.findall(r'gear_center=(\d+),(\d+)',logs('IrisExternal:D'))
-    x,y=wait_for(centers)[-1]
-    adb('shell','input','tap',x,y)
+    tap(item('IrisAI 설정'))
     item('플레이 설정')
 
 def hud_count():
@@ -69,14 +72,32 @@ def samples():
 def snapshot(filename):
     (OUT/filename).write_bytes(subprocess.check_output(['adb','exec-out','screencap','-p']))
 
+def stable_boot():
+    previous=None
+    start=time.monotonic()
+    steady=start
+    while time.monotonic()-start<135:
+        try:
+            pid=adb('shell','pidof','system_server')
+            ready=all('found' in adb('shell','service','check',service) and
+                      'not found' not in adb('shell','service','check',service)
+                      for service in ('package','window','accessibility'))
+            if not ready or not pid or previous!=pid: steady=time.monotonic()
+            previous=pid
+            if time.monotonic()-steady>=18:return
+        except subprocess.CalledProcessError:steady=time.monotonic()
+        time.sleep(2)
+    raise RuntimeError('Android system services did not settle after boot')
+
 def run():
+    stable_boot()
     adb('install',str(next(Path('build/outputs/apk/debug').glob('*.apk'))))
     adb('install',str(next(Path('qa/arena/build/outputs/apk/debug').glob('*.apk'))))
     adb('install',str(next(Path('qa/probe/build/outputs/apk/debug').glob('*.apk'))))
     adb('shell','input','keyevent','KEYCODE_WAKEUP')
     adb('shell','wm','dismiss-keyguard')
-    adb('shell','svc','wifi','disable')
-    adb('shell','svc','data','disable')
+    adb('shell','wm','size','720x1280')
+    adb('shell','wm','density','260')
     adb('shell','appops','set',APP,'SYSTEM_ALERT_WINDOW','allow')
     adb('shell','settings','put','secure','enabled_accessibility_services',APP+'/com.irisai.farm.TouchService')
     adb('shell','settings','put','secure','accessibility_enabled','1')
@@ -137,6 +158,7 @@ try:
 except BaseException:
     print(logs('IrisExternal:D','IrisArena:I','AndroidRuntime:E','Toast:W','AccessibilityManagerService:W')[-5500:],flush=True)
     print(adb('shell','dumpsys','accessibility')[:2200],flush=True)
+    print([n for n in ui() if n['text'] or n['content-desc']][:22],flush=True)
     raise
 finally:
     (OUT/'app-log.txt').write_text(logs('IrisExternal:D','IrisArena:I','AndroidRuntime:E','MediaProjectionManagerService:I','WindowManager:W'))

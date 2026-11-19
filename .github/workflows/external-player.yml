@@ -24,6 +24,8 @@ jobs:
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
+          cores: 4
+          ram-size: 4096M
           arch: x86_64
           target: google_apis
           profile: pixel_2
