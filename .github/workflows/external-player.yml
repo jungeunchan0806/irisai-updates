@@ -1,0 +1,48 @@
+name: External Android player verification
+on:
+  push:
+    branches: [android-external-player-v1]
+permissions: {contents: read}
+jobs:
+  android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 38
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: android-actions/setup-android@v3
+        with: {packages: 'platform-tools platforms;android-35 build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
+      - name: Check the signed release and build the test applications
+        run: |
+          sha256sum -c dist/SHA256SUMS
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose dist/*.apk
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 dist/*.apk
+          ./gradlew --console=plain :testDebugUnitTest :assembleDebug :qa:arena:assembleDebug
+          sudo chmod 666 /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_2
+          disk-size: 8192M
+          disable-animations: true
+          script: python3 qa/check_player.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: android-player-verification, path: "qa-results/\nbuild/test-results/testDebugUnitTest/", if-no-files-found: warn}
+  publish:
+    needs: android
+    runs-on: ubuntu-24.04
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish signed standalone APK
+        env: {GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}'}
+        run: |
+          cp README.md "$RUNNER_TEMP/notes.md"
+          echo >> "$RUNNER_TEMP/notes.md"
+          echo "[Android 실행 검사](https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)" >> "$RUNNER_TEMP/notes.md"
+          gh release create android-iris-external-1.0.0 dist/*.apk --target "$GITHUB_SHA" --title 'IrisAI 외부 플레이어 1.0.0 · Android ARM64' --prerelease --latest=false --notes-file "$RUNNER_TEMP/notes.md"

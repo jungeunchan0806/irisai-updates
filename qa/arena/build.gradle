@@ -1,0 +1,7 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'dev.iris.fixture'
+    compileSdk 35
+    defaultConfig { applicationId 'com.supercell.brawlstars'; minSdk 32; targetSdk 35 }
+    sourceSets.main.assets.srcDirs = [rootProject.file('src/test/resources/frames')]
+}
