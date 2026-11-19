@@ -9,27 +9,35 @@ OUT.mkdir(exist_ok=True)
 def run(*args, check=True):
     return subprocess.run(args,text=True,capture_output=True,check=check,timeout=90).stdout.strip()
 def adb(*args,**k): return run('adb',*args,**k)
-def view():
+def view(all_windows=False):
+    # The framework XML dumper follows the focused dialog. The instrumented inspector also sees the separate overlay.
+    if not all_windows:
+        dumped=adb('shell','uiautomator','dump','/sdcard/theseven-window.xml',check=False)
+        if 'dumped' in dumped.lower():
+            raw=adb('shell','cat','/sdcard/theseven-window.xml',check=False)
+            if '<?xml' in raw:
+                try:return ET.fromstring(raw[raw.index('<?xml'):])
+                except ET.ParseError:pass
     raw=adb('shell','am','instrument','-w','dev.theseven.inspect/.Inspect')
     xml=ET.Element('hierarchy')
     for line in raw.splitlines():
         if line.startswith('INSTRUMENTATION_RESULT: snapshot='):
             for n in json.loads(line.partition('=')[2]):ET.SubElement(xml,'node',n)
     return xml
-def nodes():return list(view().iter('node'))
+def nodes(all_windows=False):return list(view(all_windows).iter('node'))
 def tap(node):
     l,t,r,b=map(int,re.findall(r'\d+',node.attrib['bounds']))
     adb('shell','input','tap',str((l+r)//2),str((t+b)//2))
 def find(label,click=False,scroll=False,tries=8):
     for attempt in range(tries):
-        tree=nodes()
+        tree=nodes(all_windows=label=='빠른 설정 열기')
         for n in tree:
             if label in n.get('text','') or label in n.get('content-desc',''):
                 if click:tap(n);time.sleep(.32)
                 return n
         if scroll and attempt%2==0:adb('shell','input','swipe','455','900','455','330','360')
         time.sleep(.35)
-    raise AssertionError('Missing '+label+' '+str([n.get('text') for n in tree]))
+    raise AssertionError('Missing '+label+' '+str([(n.get('text'),n.get('content-desc')) for n in tree]))
 def launch():adb('shell','am','start','-n',P+'/com.irisai.farm.MainActivity')
 def snapshot(name):
     (OUT/(name+'.xml')).write_bytes(ET.tostring(view(),encoding='utf-8'))
