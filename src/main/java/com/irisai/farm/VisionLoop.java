@@ -32,6 +32,8 @@ final class VisionLoop implements AutoCloseable {
   private final Context app;
   private final Output output;
   private final FrameTracker tracker = new FrameTracker();
+  private final FrameHistory history = new FrameHistory();
+  private long latestImage;
   private final FarmPolicy fastPolicy = new FarmPolicy();
   private final Mat scaled = new Mat(), thumb = new Mat(), modelRgba = new Mat();
   private int token;
@@ -63,6 +65,8 @@ final class VisionLoop implements AutoCloseable {
           repeat = again;
           running = region != null && b != null;
           tracker.clear();
+          history.close();
+          latestImage = 0;
           fastPolicy.reset();
           rateAt = lastTimestamp = nextFrame = latency = lastDecision = 0;
           captured = tracked = analyzed = 0;
@@ -101,6 +105,8 @@ final class VisionLoop implements AutoCloseable {
       try {
         Imgproc.resize(game, scaled, FrameTracker.SIZE, 0, 0, Imgproc.INTER_LINEAR);
         Imgproc.cvtColor(scaled, thumb, Imgproc.COLOR_RGBA2GRAY);
+        latestImage = now;
+        if (busy) history.remember(thumb, now);
         FarmPolicy.Frame current = tracker.track(thumb, now);
         if (current != null) {
           tracked++;
@@ -141,6 +147,7 @@ final class VisionLoop implements AutoCloseable {
   }
 
   private void submit(Mat rgb, Mat anchors, long now) {
+    history.close();
     busy = true;
     int ticket = token;
     FarmPolicy.Brawler b = profile;
@@ -182,13 +189,31 @@ final class VisionLoop implements AutoCloseable {
                   }
                   analyzed++;
                   latency = SystemClock.elapsedRealtime() - now;
-                  if (latency > 1200) {
+                  if (o.scene == null) {
+                    tracker.clear();
+                    fastPolicy.reset();
+                    if (latency <= 350) emit(ticket, o, true, now);
+                    return;
+                  }
+                  if (latency <= 250) {
+                    tracker.seed(anchors, o.scene, now);
+                    emit(ticket, o, true, now);
+                    return;
+                  }
+                  long clock = SystemClock.elapsedRealtime();
+                  if (latestImage <= now || clock - latestImage > 250) {
                     tracker.clear();
                     return;
                   }
-                  tracker.seed(anchors, o.scene, now);
-                  if (o.scene == null) fastPolicy.reset();
-                  emit(ticket, o, true, now);
+                  FarmPolicy.Frame live =
+                      history.confirm(tracker, anchors, o.scene, now, thumb, latestImage);
+                  if (live != null) {
+                    FarmVision.Observation verified = new FarmVision.Observation();
+                    verified.state = "battle";
+                    verified.decision = fastPolicy.decide(live, b);
+                    lastDecision = latestImage;
+                    emit(ticket, verified, true, latestImage);
+                  }
                 } finally {
                   anchors.release();
                 }
@@ -213,6 +238,7 @@ final class VisionLoop implements AutoCloseable {
         () -> {
           running = false;
           tracker.close();
+          history.close();
           thumb.release();
           scaled.release();
           modelRgba.release();

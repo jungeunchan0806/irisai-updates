@@ -28,6 +28,17 @@ public class FarmVisionTest {
     @Test public void originalRecordedBattleRunsRealModels()throws Exception {
         Mat image=fixture("held_turn");try{FarmVision.Observation o=vision.observeRgb(image,10,true);assertEquals("battle",o.state);assertNotNull(o.decision);assertTrue(Double.isFinite(o.decision.dx));assertFalse(o.tap);}finally{image.release();}
     }
+    @Test public void delayedBattleIsReconfirmedOnLatestLiveFrame()throws Exception {
+        Mat image=fixture("held_turn"),small=new Mat(),gray=new Mat(),blank=Mat.zeros(180,320,CvType.CV_8U);
+        try(FrameTracker tracker=new FrameTracker();FrameHistory history=new FrameHistory()){
+            FarmVision.Observation o=vision.observeRgb(image,55,false);
+            assertNotNull(o.scene);Imgproc.resize(image,small,FrameTracker.SIZE);Imgproc.cvtColor(small,gray,Imgproc.COLOR_RGB2GRAY);
+            for(long i=60;i<3000;i+=60)history.remember(gray,i);
+            assertNotNull("three-second inference needs a current visual match",history.confirm(tracker,gray,o.scene,0,gray,3000));
+            assertNull("changed scene must discard past detections",history.confirm(tracker,gray,o.scene,0,blank,3000));
+            assertNull("incomplete history must not start touches",history.confirm(tracker,gray,o.scene,0,gray,9000));
+        }finally{image.release();small.release();gray.release();blank.release();}
+    }
     @Test public void highlightsAndGameOverDoNotAttackOrRequeue()throws Exception {
         for(String name:new String[]{"highlight","clock_expiry","last_goal_win"}){
             Mat image=fixture(name);try{FarmVision.Observation o=vision.observeRgb(image,20,true);assertEquals(name,"wait",o.state);assertNull(name,o.decision);assertFalse(name,o.tap);}finally{image.release();}
