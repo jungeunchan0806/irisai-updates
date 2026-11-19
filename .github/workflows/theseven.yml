@@ -1,7 +1,7 @@
-name: TheSeven practice device QA
+name: TheSeven Android 17 practice smoke
 on:
   push:
-    branches: [theseven-practice]
+    branches: [theseven-android17-qa]
     paths-ignore: ['**.md','theseven-server/**']
   workflow_dispatch:
 permissions: {contents: read}
@@ -19,14 +19,15 @@ jobs:
           sudo chmod 666 /dev/kvm
       - uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
+          api-level: '37.0'
+          system-image-api-level: '37.0'
           target: google_apis
           arch: x86_64
           profile: pixel_2
           cores: 4
           ram-size: 4096M
           disable-animations: true
-          script: python3 theseven-tools/device_qa.py
+          script: python3 theseven-tools/android17.py
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: theseven-device-qa, path: theseven-qa-results/}
