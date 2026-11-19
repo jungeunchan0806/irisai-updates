@@ -5,3 +5,6 @@ local.properties
 *.jks
 __pycache__/
 qa-results/
+theseven-qa-results/
+*.keystore
+*.pem

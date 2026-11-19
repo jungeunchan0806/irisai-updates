@@ -1,0 +1,31 @@
+name: TheSeven practice device QA
+on:
+  push:
+    branches: [theseven-practice]
+    paths-ignore: ['**.md','theseven-server/**']
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify signed deliverables
+        run: |
+          (cd theseven-release && sha256sum -c SHA256SUMS)
+          for apk in theseven-release/*.apk; do "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$apk"; done
+          sudo chmod 666 /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          cores: 4
+          ram-size: 4096M
+          disable-animations: true
+          script: python3 theseven-tools/device_qa.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: theseven-device-qa, path: theseven-qa-results/}

@@ -1,0 +1,4 @@
+android {
+    namespace 'com.theseven.seller'
+    defaultConfig { applicationId 'com.theseven.seller' }
+}

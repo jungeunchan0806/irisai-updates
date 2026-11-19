@@ -1,0 +1,8 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+    <application android:label="더세븐 오토팜 판매자" android:icon="@drawable/theseven_logo" android:allowBackup="false" android:usesCleartextTraffic="false" android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        <activity android:name=".Seller" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity>
+        <provider android:name="com.theseven.common.UpdateFile" android:authorities="${applicationId}.theseven.update" android:exported="false" android:grantUriPermissions="true"/>
+    </application>
+</manifest>

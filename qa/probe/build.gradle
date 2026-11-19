@@ -1,6 +1,0 @@
-plugins { id 'com.android.application' }
-android {
-    namespace 'dev.iris.inspect'
-    compileSdk 35
-    defaultConfig { applicationId 'dev.iris.inspect'; minSdk 32; targetSdk 35 }
-}

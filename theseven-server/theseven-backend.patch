@@ -1,0 +1,143 @@
+diff --git a/app/api/theseven/seller/route.ts b/app/api/theseven/seller/route.ts
+new file mode 100644
+index 0000000..6f2f518
+--- /dev/null
++++ b/app/api/theseven/seller/route.ts
+@@ -0,0 +1 @@
++export {dealer as POST} from '../../../../lib/theseven';
+diff --git a/app/api/theseven/subscription/route.ts b/app/api/theseven/subscription/route.ts
+new file mode 100644
+index 0000000..7cb86b3
+--- /dev/null
++++ b/app/api/theseven/subscription/route.ts
+@@ -0,0 +1 @@
++export {buyer as POST} from '../../../../lib/theseven';
+diff --git a/lib/theseven.ts b/lib/theseven.ts
+new file mode 100644
+index 0000000..a18360c
+--- /dev/null
++++ b/lib/theseven.ts
+@@ -0,0 +1,79 @@
++import {db, json, hash, event, createLicense, type LicenseRow} from './license-server';
++import {statusOf} from './license-domain';
++import {deviceProof} from './device-proof';
++
++const plans = ['Practice', 'Plus'];
++const planOf = (note: string) => plans.find(p => note === 'theseven/' + p) || 'Practice';
++const attempts = new Map<string, {end:number,count:number}>();
++function limited(r: Request) {
++  const ip = r.headers.get('cf-connecting-ip') || 'local', now = Date.now();
++  if (attempts.size > 4096) for (const [id,v] of attempts) if (v.end <= now) attempts.delete(id);
++  let entry = attempts.get(ip);
++  if (!entry || entry.end <= now) {entry = {end:now+60000,count:0}; attempts.set(ip,entry);}
++  return ++entry.count > 90;
++}
++async function request(r: Request) {
++  if (!r.headers.get('content-type')?.startsWith('application/json')) throw Error();
++  const raw = await r.text();
++  if (raw.length > 4096) throw Error();
++  const device = await deviceProof(r, raw);
++  return {device, data:JSON.parse(raw)};
++}
++function subscription(row: LicenseRow | null) {
++  return json({status:row?statusOf(row):'unregistered',plan:row?planOf(row.note):null,
++    expiresAt:row?.expires_at??null,permanent:!!row?.permanent,serverTime:Date.now()});
++}
++export async function buyer(r: Request) {
++  if (limited(r)) return json({status:'rate_limited'},429);
++  try {
++    const {device,data} = await request(r);
++    if (device?.platform !== 'apk') return json({status:'device_error'},401);
++    const hwid = 'BS-' + device.hash.toUpperCase();
++    if (data.action === 'check') return subscription(await db().prepare('SELECT * FROM licenses WHERE hwid=?').bind(hwid).first<LicenseRow>());
++    if (data.action !== 'redeem') return json({status:'invalid'},400);
++    const raw = typeof data.key === 'string' ? data.key.trim().toUpperCase() : '';
++    if (!/^BSK-(?:[A-F0-9]{8}-){5}[A-F0-9]{8}$/.test(raw)) return json({status:'invalid'},400);
++    const row = await db().prepare('SELECT * FROM licenses WHERE key_hash=?').bind(await hash(raw)).first<LicenseRow>();
++    if (!row) return json({status:'invalid'},404);
++    if (['expired','revoked'].includes(statusOf(row))) return subscription(row);
++    if (row.hwid && row.hwid !== hwid) return json({status:'bound'},409);
++    if (!row.hwid) {
++      const now = Date.now();
++      try {await db().prepare('UPDATE licenses SET hwid=?,activated_at=COALESCE(activated_at,?),expires_at=CASE WHEN permanent=1 THEN NULL ELSE COALESCE(expires_at,?+duration_ms) END,updated_at=? WHERE id=? AND revoked=0 AND hwid IS NULL AND (expires_at IS NULL OR expires_at>?)').bind(hwid,now,now,now,row.id,now).run();}
++      catch {return json({status:'device_conflict'},409);}
++    }
++    const latest = await db().prepare('SELECT * FROM licenses WHERE id=?').bind(row.id).first<LicenseRow>();
++    if (latest && ['revoked','expired'].includes(statusOf(latest))) return subscription(latest);
++    return latest?.hwid===hwid?subscription(latest):json({status:'bound'},409);
++  } catch {return json({status:'service_error'},503);}
++}
++export async function dealer(r: Request) {
++  if (limited(r)) return json({status:'rate_limited'},429);
++  try {
++    const {device,data} = await request(r);
++    if (device?.platform !== 'apk') return json({status:'device_error'},401);
++    const now = Date.now(), note = 'theseven:'+device.hash;
++    const row = await db().prepare("SELECT id,group_id FROM seller_keys WHERE platform='apk' AND note=? AND revoked=0 AND (device_hash IS NULL OR device_hash=?) AND (expires_at IS NULL OR expires_at>?) ORDER BY created_at DESC LIMIT 1").bind(note,device.hash,now).first<{id:string,group_id:string}>();
++    if (!row) return json({status:'unapproved'},403);
++    await db().prepare('UPDATE seller_keys SET device_hash=?,activated_at=?,expires_at=CASE WHEN permanent=1 THEN NULL ELSE COALESCE(expires_at,?+duration_ms) END,updated_at=? WHERE id=? AND activated_at IS NULL AND revoked=0').bind(device.hash,now,now,now,row.id).run();
++    const grant = await db().prepare("SELECT id FROM seller_keys WHERE id=? AND note=? AND device_hash=? AND revoked=0 AND (permanent=1 OR expires_at>?)").bind(row.id,note,device.hash,now).first();
++    if (!grant) return json({status:'unapproved'},403);
++    const owner = row.group_id||row.id;
++    if (data.action==='history') {
++      const {results} = await db().prepare('SELECT id,created_at,expires_at,revoked,permanent,hwid,note FROM licenses WHERE seller_id=? ORDER BY created_at DESC LIMIT 500').bind(owner).all<LicenseRow>();
++      return json({status:'approved',history:results.map(v=>({id:v.id,created:v.created_at,expires:v.expires_at,plan:planOf(v.note),status:statusOf(v)}))});
++    }
++    if (data.action==='issue') {
++      if (!plans.includes(data.plan)||!Number.isInteger(data.days)||data.days<1||data.days>3650) return json({status:'invalid_term'},400);
++      return createLicense({note:'theseven/'+data.plan,term:{kind:'until',value:new Date(now+data.days*86400000).toISOString()}},owner);
++    }
++    if (['revoke','restore','delete'].includes(data.action) && typeof data.id==='string') {
++      const owned=await db().prepare('SELECT id FROM licenses WHERE id=? AND seller_id=?').bind(data.id,owner).first();
++      if (!owned) return json({status:'missing'},404);
++      const mutation=data.action==='delete'?db().prepare('DELETE FROM licenses WHERE id=? AND seller_id=?').bind(data.id,owner):db().prepare('UPDATE licenses SET revoked=?,updated_at=? WHERE id=? AND seller_id=?').bind(data.action==='revoke'?1:0,now,data.id,owner);
++      await db().batch([mutation,event(data.id,'theseven_'+data.action,now)]);
++      return json({status:'ok'});
++    }
++    return json({status:'invalid'},400);
++  } catch {return json({status:'service_error'},503);}
++}
+diff --git a/tests/server.test.mjs b/tests/server.test.mjs
+index 8ccbaa6..7a986f8 100644
+--- a/tests/server.test.mjs
++++ b/tests/server.test.mjs
+@@ -2,9 +2,9 @@ import test from 'node:test';import assert from 'node:assert/strict';import {Dat
+ const sql=new DatabaseSync(':memory:');for(const name of (await readdir('drizzle')).filter(n=>n.endsWith('.sql')).sort())sql.exec(await readFile('drizzle/'+name,'utf8'));
+ class Statement{constructor(query,args=[]){this.query=query;this.args=args;}bind(...args){return new Statement(this.query,args);}async first(){return sql.prepare(this.query).get(...this.args)||null;}async all(){return {results:sql.prepare(this.query).all(...this.args)};}async run(){return sql.prepare(this.query).run(...this.args);}}
+ globalThis.TEST_ENV={DB:{prepare:q=>new Statement(q),async batch(stmts){sql.exec('BEGIN');try{const result=[];for(const s of stmts)result.push(sql.prepare(s.query).run(...s.args));sql.exec('COMMIT');return result;}catch(e){sql.exec('ROLLBACK');throw e;}}}};
+-const compiled=await build({stdin:{contents:"export * from './lib/license-server';export * from './lib/seller-server';export * from './lib/admin-auth';",resolveDir:process.cwd(),loader:'ts'},bundle:true,platform:'node',format:'esm',write:false,plugins:[{name:'env',setup(b){b.onResolve({filter:/^cloudflare:workers$/},()=>({path:'test-env',namespace:'env'}));b.onLoad({filter:/.*/,namespace:'env'},()=>({contents:'export const env=globalThis.TEST_ENV;'}));}}]});
++const compiled=await build({stdin:{contents:"export * from './lib/license-server';export * from './lib/seller-server';export * from './lib/admin-auth';export * from './lib/theseven';",resolveDir:process.cwd(),loader:'ts'},bundle:true,platform:'node',format:'esm',write:false,plugins:[{name:'env',setup(b){b.onResolve({filter:/^cloudflare:workers$/},()=>({path:'test-env',namespace:'env'}));b.onLoad({filter:/.*/,namespace:'env'},()=>({contents:'export const env=globalThis.TEST_ENV;'}));}}]});
+ await writeFile('.sites-runtime/server-test.mjs',compiled.outputFiles[0].contents);
+-const {admin,client,panelKeys,sellerSession,sellerLicenses,adminAuth}=await import('../.sites-runtime/server-test.mjs');
++const {admin,client,panelKeys,sellerSession,sellerLicenses,adminAuth,buyer,dealer}=await import('../.sites-runtime/server-test.mjs');
+ globalThis.TEST_ENV.SELLER_KEY_ENCRYPTION_KEY=btoa('t'.repeat(32));
+ const ORIGIN='https://test.example';let now=Date.parse('2026-11-14T06:00:00Z');const realNow=Date.now;Date.now=()=>now;
+ const hwid='BS-'+'A'.repeat(64),hwid2='BS-'+'B'.repeat(64);
+@@ -196,4 +196,27 @@ await test('admin session expires and persistent IP rate limit rejects excessive
+  now+=12*3600000;assert.equal((await admin(withCookie({},adminCookie))).status,403);
+  let last;for(let i=0;i<21;i++){const r=req({action:'login',username:'owner',password:'x'.repeat(129)});r.headers.set('cf-connecting-ip','192.0.2.99');last=await adminAuth(r);}assert.equal(last.status,429);
+ });
++await test('TheSeven requires owner enrollment and a fresh signed proof on each issuance',async()=>{
++ const seller=await device('apk'), customer=await device('apk'), outsider=await device('apk');
++ const S=(p,d=seller)=>call(dealer,'/api/theseven/seller',p,d);
++ const B=(p,d=customer)=>call(buyer,'/api/theseven/subscription',p,d);
++ assert.equal((await S({action:'issue',plan:'Plus',days:1})).data.status,'unapproved');
++ // Owner-created seller row with the verified public-key fingerprint.
++ sql.prepare("UPDATE seller_keys SET note=?,device_hash=NULL,activated_at=NULL,revoked=0,permanent=1,expires_at=NULL WHERE id=?").run('theseven:'+await digest(seller.pub),sellerId);
++ assert.equal((await S({action:'history'})).data.status,'approved');
++ assert.equal((await S({action:'issue',plan:'Plus',days:0})).status,400);
++ const issued=(await S({action:'issue',plan:'Plus',days:1})).data;assert.ok(issued.key);
++ assert.equal((await B({action:'redeem',key:'bad'})).data.status,'invalid');
++ assert.equal((await B({action:'check'})).data.status,'unregistered');
++ const active=(await B({action:'redeem',key:issued.key})).data;assert.equal(active.status,'active');assert.equal(active.plan,'Plus');
++ assert.equal((await B({action:'redeem',key:issued.key},outsider)).data.status,'bound');
++ assert.ok(!JSON.stringify((await S({action:'history'})).data).includes(issued.key));
++ assert.equal((await S({action:'revoke',id:issued.id})).status,200);
++ assert.equal((await B({action:'check'})).data.status,'revoked');
++ assert.equal((await B({action:'redeem',key:issued.key})).data.status,'revoked');
++ assert.equal((await S({action:'restore',id:issued.id})).status,200);
++ now+=86401000;assert.equal((await B({action:'redeem',key:issued.key})).data.status,'expired');
++ sql.prepare('UPDATE seller_keys SET revoked=1 WHERE id=?').run(sellerId);
++ assert.equal((await S({action:'issue',plan:'Plus',days:1})).status,403);
++});
+ Date.now=realNow;sql.close();
