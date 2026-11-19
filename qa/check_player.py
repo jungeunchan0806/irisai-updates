@@ -89,6 +89,8 @@ def run():
             n.get('resource-id')=='android:id/button1' or n.get('text','').lower() in ('start now','start recording','start','share screen','share'))
     tap(find(consent))
     wait_for(lambda: 'dev.iris.fixture.Arena' in adb('shell','dumpsys','activity','activities') and bool(re.findall(r'gear_center=',logs('IrisExternal:D'))))
+    wait_for(lambda: 'fixture_ready' in logs('IrisArena:I'),20)
+    print('Screen sharing active and offline arena opened',flush=True)
     time.sleep(2)
     open_gear()
     tap(item('브롤러 선택'))

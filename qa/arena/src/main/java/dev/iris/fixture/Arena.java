@@ -15,7 +15,6 @@ public class Arena extends Activity {
   public void onCreate(Bundle state) {
     super.onCreate(state);
     getWindow().setDecorFitsSystemWindows(false);
-    getWindow().getInsetsController().hide(WindowInsets.Type.systemBars());
     Bitmap battle;
     try (InputStream stream = getAssets().open("held_turn.jpg")) {
       battle = BitmapFactory.decodeStream(stream);
@@ -46,6 +45,12 @@ public class Arena extends Activity {
             }
             return true;
           }
+        });
+    View decor = getWindow().getDecorView();
+    decor.post(
+        () -> {
+          decor.getWindowInsetsController().hide(WindowInsets.Type.systemBars());
+          Log.i("IrisArena", "fixture_ready");
         });
   }
 }
