@@ -6,6 +6,7 @@ Android 12L(API 32) 이상에서 실행하는 독립 연습 시뮬레이터입�
 - [판매자 앱 APK](theseven-release/TheSeven-Seller-2.0.1.apk)
 - [서명된 업데이트 목록](theseven-release/theseven-update.json)
 - [브롤러 연습 데이터](theseven/src/main/assets/theseven_catalog.json)
+- [버전별 검증 결과](theseven-verification.md)
 - [Android 기기 테스트 기록](https://github.com/jungeunchan0806/irisai-updates/actions/workflows/theseven.yml)
 
 ## 설치와 업데이트
@@ -48,3 +49,18 @@ Android 모듈은 theseven과 theseven-seller입니다. 공통 코드는 theseve
 기존 iOS·macOS·Windows 파일, 기존 서버 API 이름과 브랜드, 기존 코드의 저작권·출처는 변경 대상 밖입니다. 트로피 원본을 받을 때까지 런처와 앱 정보에는 이전 버전의 아이콘을 유지합니다.
 
 브롤러 장비 정보는 공개 BrawlAPI 목록과 이름이 일치하는 브롤러에 한해 대조했습니다. 카탈로그에는 장비별 출처 ID와 조회 응답의 SHA-256이 있습니다. 빈스·코스모·웬디·노리의 가젯 2개와 스타파워 2개에는 확인한 효과의 한국어 설명을 넣었습니다. 한국어 장비명은 설명용 번역입니다. Thunder Frogs를 비슷한 이름의 다른 브롤러와 연결하지 않았습니다. [장비 데이터 출처](https://api.brawlapi.com/v1/brawlers)
+
+### 원본 모델의 학습 절차
+
+0.0.9 원본의 training_recorder.py는 프레임을 수집합니다. webui/training_service.py는 승인한 라벨만 정규화하고 촬영 시간 블록별로 images/train과 images/val을 나눠 데이터셋 YAML을 출력합니다. tools/training/train_entity_model.py는 이 데이터셋과 시작 모델 또는 체크포인트를 받아 Ultralytics YOLO 학습을 실행합니다. 이전 Android 검출기의 텐서 순서는 NCHW이고 색상은 RGB입니다. 이번 연습 기능 테스트에는 기기 화면 촬영, 학습 데이터셋 생성 또는 모델 가중치 변경이 포함되지 않습니다.
+
+### 다음 업데이트 발행
+
+새 카탈로그에는 증가한 version과 동일한 고정 브롤러·장비 ID를 유지합니다. 새 Android 코드가 필요하면 두 APK의 versionCode를 올리고 해당 앱의 기존 인증서로 각각 서명합니다. 다음 예시의 환경변수는 운영자가 설정합니다. 개인키 파일을 Git 또는 배포 디렉터리에 넣지 마세요.
+
+    python theseven-tools/package_update.py --key "$THESEVEN_PATCH_KEY_FILE" \
+      --catalog "$THESEVEN_CATALOG_FILE" --app-code "$THESEVEN_APP_CODE" \
+      --min-app "$THESEVEN_MIN_APP_CODE" --buyer "$THESEVEN_BUYER_APK" \
+      --seller "$THESEVEN_SELLER_APK" --notes "$THESEVEN_RELEASE_NOTES"
+
+두 APK 경로의 상위 디렉터리는 theseven-release입니다. 기존 파일과 겹치지 않는 버전 파일명을 사용하세요. 생성한 데이터 파일, APK와 theseven-update.json을 theseven-practice 브랜치의 같은 커밋으로 발행합니다. 확인된 파일만 배포용 GitHub Release에도 첨부하세요. 브랜치의 매니페스트 URL은 앱에 고정되어 있습니다.
