@@ -24,12 +24,12 @@ jobs:
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
-          system-image-api-level: '37.0'
+          system-image-api-level: '37.2'
           pre-emulator-launch-script: sed -i '/^hw.lcd.vsync/d;$a hw.lcd.vsync=120' "$HOME/.android/avd/test.avd/config.ini"
           ram-size: 4096M
           cores: 4
           arch: x86_64
-          target: google_apis
+          target: google_apis_ps16k
           profile: pixel_2
           disk-size: 8192M
           disable-animations: true

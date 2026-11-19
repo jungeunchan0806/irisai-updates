@@ -11,7 +11,11 @@ OUT = Path('qa-results')
 OUT.mkdir(exist_ok=True)
 
 def adb(*args):
-    return subprocess.check_output(['adb', *map(str, args)], timeout=90).decode(errors='replace').strip()
+    result=subprocess.run(['adb',*map(str,args)],capture_output=True,text=True,errors='replace',timeout=90)
+    if result.returncode:
+        print('adb',args, result.stdout[-1200:],result.stderr[-1200:],flush=True)
+        result.check_returncode()
+    return result.stdout.strip()
 
 def ui():
     raw=adb('shell','am','instrument','-w','dev.iris.inspect/.Inspect')
@@ -27,6 +31,9 @@ def find(predicate, timeout=40):
     while time.monotonic()<until:
         try:
             nodes=ui()
+            tutorial=next((n for n in nodes if n['package']=='android' and n['resource-id']=='android:id/ok' and n['text']=='Got it'),None)
+            if tutorial and any(n['resource-id']=='android:id/immersive_cling_title' for n in nodes):
+                tap(tutorial);continue
             if not waited and any(n['package']=='android' and n['text']=="Process system isn't responding" for n in nodes):
                 action=next(n for n in nodes if n['package']=='android' and n['text']=='Wait')
                 print('System server boot alert displayed; selecting Wait',flush=True)
@@ -75,8 +82,8 @@ def snapshot(filename):
 def install(*args):
     for attempt in range(3):
         result=subprocess.run(['adb','install','--no-incremental','--no-streaming','-r',*args],capture_output=True,text=True,timeout=130)
-        if result.returncode==0:return
         message=result.stdout+' '+result.stderr
+        if result.returncode==0 and 'Success' in message:return
         print(message,flush=True)
         transient=('Broken pipe',"Can't find service",'device offline','cmd: Failure','device not found','DeadObjectException')
         if not any(m in message for m in transient) or attempt==2:raise AssertionError(message)
@@ -108,6 +115,9 @@ def run():
         install('--abi','arm64-v8a',str(next(Path('dist').glob('*.apk'))))
     else:
         install(str(next(Path('build/outputs/apk/debug').glob('*.apk'))))
+    path=adb('shell','pm','path',APP)
+    assert path.startswith('package:'),path
+    print('installed player '+path,flush=True)
     print('release_apk='+str(signed)+' device_abis='+','.join(abis),flush=True)
     install(str(next(Path('qa/arena/build/outputs/apk/debug').glob('*.apk'))))
     install(str(next(Path('qa/probe/build/outputs/apk/debug').glob('*.apk'))))
@@ -118,6 +128,7 @@ def run():
     adb('shell','appops','set',APP,'SYSTEM_ALERT_WINDOW','allow')
     adb('shell','settings','put','secure','enabled_accessibility_services',APP+'/com.irisai.farm.TouchService')
     adb('shell','settings','put','secure','accessibility_enabled','1')
+    print('Installed third-party packages:',adb('shell','pm','list','packages','-3'),flush=True)
     adb('shell','logcat','-c')
     print(adb('shell','am','start','-W','-n',APP+'/com.irisai.farm.MainActivity'),flush=True)
     tap(item('화면 공유 시작'))
