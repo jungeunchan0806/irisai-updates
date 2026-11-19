@@ -62,7 +62,7 @@ a2f396cacccf6547c06518545f33d360c06c2d5410daa1833293b9c22e164c9c  src/main/java/
 5f79883722104efaf8905c11a3791e08457ec91cb93cb9b58c7276259f362f68  src/main/java/com/irisai/farm/FrameTracker.java
 b0715fb5ada5363be9ba30e4f9a604c68c3b125b6a511e0b5f25a6a9e3b81cab  src/main/java/com/irisai/farm/MainActivity.java
 7401a3296a07eebf691ddc39d91254f636ed4268082e60dfaaba21153c7c592b  src/main/java/com/irisai/farm/MovementRecovery.java
-bf4b70361b07a930b05dc8cf5f21cdc6b165c1fe3b2ea66b2bc2655e26536c5f  src/main/java/com/irisai/farm/Overlay.java
+9cd8f168c751cc6077d58e5cdd4b29b965ef4c1067238b8e8bec6fa496b79857  src/main/java/com/irisai/farm/Overlay.java
 b70ec81b5df17b7c12449678fbd76a7a4df2e0aa3b65f9cd19661b7267aaa219  src/main/java/com/irisai/farm/Profiles.java
 ed9013bb5025366d8863e0cea38cc085686b17fc0e30dd0dcfc7294c2c7456c2  src/main/java/com/irisai/farm/TouchService.java
 814b1eff69487dbb6e5b6fba6927a1f0979c5e0a40fff9c6497c87b7b533ce9e  src/main/java/com/irisai/farm/Ui.java
