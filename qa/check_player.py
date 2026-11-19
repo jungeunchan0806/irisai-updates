@@ -22,10 +22,16 @@ def ui():
     return nodes
 
 def find(predicate, timeout=40):
+    waited=False
     until = time.monotonic()+timeout
     while time.monotonic()<until:
         try:
-            for node in ui():
+            nodes=ui()
+            if not waited and any(n['package']=='android' and n['text']=="Process system isn't responding" for n in nodes):
+                action=next(n for n in nodes if n['package']=='android' and n['text']=='Wait')
+                print('System server boot alert displayed; selecting Wait',flush=True)
+                tap(action);waited=True;continue
+            for node in nodes:
                 if predicate(node): return node
         except subprocess.CalledProcessError: pass
         time.sleep(.35)
@@ -77,7 +83,25 @@ def install(*args):
         time.sleep(10)
         wait_for(lambda: 'package:' in adb('shell','pm','path','android'),90)
 
+def stable_boot():
+    previous=None
+    start=time.monotonic()
+    steady=start
+    while time.monotonic()-start<135:
+        try:
+            pid=adb('shell','pidof','system_server')
+            ready=all('found' in adb('shell','service','check',service) and
+                      'not found' not in adb('shell','service','check',service)
+                      for service in ('package','window','accessibility'))
+            if not ready or not pid or previous!=pid: steady=time.monotonic()
+            previous=pid
+            if time.monotonic()-steady>=18:return
+        except subprocess.CalledProcessError:steady=time.monotonic()
+        time.sleep(2)
+    raise RuntimeError('Android system services did not settle after boot')
+
 def run():
+    stable_boot()
     abis=adb('shell','getprop','ro.product.cpu.abilist').split(',')
     signed='arm64-v8a' in abis
     if signed:
@@ -89,8 +113,8 @@ def run():
     install(str(next(Path('qa/probe/build/outputs/apk/debug').glob('*.apk'))))
     adb('shell','input','keyevent','KEYCODE_WAKEUP')
     adb('shell','wm','dismiss-keyguard')
-    adb('shell','svc','wifi','disable')
-    adb('shell','svc','data','disable')
+    adb('shell','wm','size','720x1280')
+    adb('shell','wm','density','260')
     adb('shell','appops','set',APP,'SYSTEM_ALERT_WINDOW','allow')
     adb('shell','settings','put','secure','enabled_accessibility_services',APP+'/com.irisai.farm.TouchService')
     adb('shell','settings','put','secure','accessibility_enabled','1')
