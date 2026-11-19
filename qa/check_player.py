@@ -18,9 +18,13 @@ def adb(*args):
     return result.stdout.strip()
 
 def ui():
-    raw=adb('shell','am','instrument','-w','dev.iris.inspect/.Inspect')
-    line=next((l for l in raw.splitlines() if l.startswith('INSTRUMENTATION_RESULT: snapshot=')),None)
-    if line is None:raise RuntimeError(raw[-1800:])
+    for attempt in range(3):
+        raw=adb('shell','am','instrument','-w','dev.iris.inspect/.Inspect')
+        line=next((l for l in raw.splitlines() if l.startswith('INSTRUMENTATION_RESULT: snapshot=')),None)
+        if line is not None:break
+        if 'shortMsg=Process crashed' not in raw or attempt==2:raise RuntimeError(raw[-1800:])
+        print('Restarting the isolated inspection process',flush=True)
+        time.sleep(1)
     nodes=json.loads(line.split('=',1)[1])
     (OUT/'last-ui.json').write_text(json.dumps(nodes,ensure_ascii=False,indent=2))
     return nodes

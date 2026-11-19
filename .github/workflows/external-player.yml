@@ -29,12 +29,12 @@ jobs:
         with:
           api-level: '37.2'
           system-image-api-level: '37.2'
-          pre-emulator-launch-script: sed -i '/^hw.lcd.vsync/d;$a hw.lcd.vsync=120' "$HOME/.android/avd/test.avd/config.ini"
+          pre-emulator-launch-script: bash qa/configure-display.sh
           arch: x86_64
           target: google_apis_ps16k
           profile: pixel_2
           emulator-build: '15261927'
-          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu software -memory 3072 -cores 2 -feature GLDirectMem,HasSharedSlotsHostMemoryAllocator
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu software -memory 4096 -cores 4 -feature GLDirectMem,HasSharedSlotsHostMemoryAllocator
           disk-size: 12288M
           disable-animations: true
           script: python3 qa/check_player.py
