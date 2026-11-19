@@ -1,0 +1,18 @@
+name: Attach verified TheSeven Android files to staging release
+on:
+  push:
+    branches: [theseven-publish]
+permissions: {contents: write}
+jobs:
+  assets:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: theseven-practice-2.0.1
+        run: |
+          cd theseven-release
+          sha256sum -c SHA256SUMS
+          test "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = true
+          gh release upload "$TAG" TheSeven-Autofarm-2.0.1.apk TheSeven-Seller-2.0.1.apk theseven-update.json theseven-catalog-v4.json --clobber
