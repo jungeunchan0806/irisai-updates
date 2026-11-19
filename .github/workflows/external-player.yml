@@ -19,7 +19,7 @@ jobs:
           sha256sum -c dist/SHA256SUMS
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose dist/*.apk
           "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 dist/*.apk
-          ./gradlew --console=plain :testDebugUnitTest :assembleDebug :qa:arena:assembleDebug
+          ./gradlew --console=plain :testDebugUnitTest :assembleDebug :qa:arena:assembleDebug :qa:probe:assembleDebug
           sudo chmod 666 /dev/kvm
       - uses: reactivecircus/android-emulator-runner@v2
         with:

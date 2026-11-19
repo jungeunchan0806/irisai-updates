@@ -3,7 +3,6 @@ import json
 import re
 import subprocess
 import time
-import xml.etree.ElementTree as ET
 from pathlib import Path
 
 APP = 'com.irisai.externalplayer'
@@ -15,10 +14,12 @@ def adb(*args):
     return subprocess.check_output(['adb', *map(str, args)], timeout=90).decode(errors='replace').strip()
 
 def ui():
-    adb('shell', 'uiautomator', 'dump', '/sdcard/iris-ui.xml')
-    raw = adb('exec-out', 'cat', '/sdcard/iris-ui.xml')
-    (OUT/'last-ui.xml').write_text(raw)
-    return [n.attrib for n in ET.fromstring(raw).iter('node')]
+    raw=adb('shell','am','instrument','-w','dev.iris.inspect/.Inspect')
+    line=next((l for l in raw.splitlines() if l.startswith('INSTRUMENTATION_RESULT: snapshot=')),None)
+    if line is None:raise RuntimeError(raw[-1800:])
+    nodes=json.loads(line.split('=',1)[1])
+    (OUT/'last-ui.json').write_text(json.dumps(nodes,ensure_ascii=False,indent=2))
+    return nodes
 
 def find(predicate, timeout=40):
     until = time.monotonic()+timeout
@@ -26,8 +27,9 @@ def find(predicate, timeout=40):
         try:
             for node in ui():
                 if predicate(node): return node
-        except (ET.ParseError, subprocess.CalledProcessError): pass
+        except subprocess.CalledProcessError: pass
         time.sleep(.35)
+    print([(n['package'],n['text'],n['content-desc'],n['enabled']) for n in ui() if n['text'] or n['content-desc']],flush=True)
     raise AssertionError('Expected Android UI element was not visible')
 
 def item(label):
@@ -70,13 +72,16 @@ def snapshot(filename):
 def run():
     adb('install',str(next(Path('build/outputs/apk/debug').glob('*.apk'))))
     adb('install',str(next(Path('qa/arena/build/outputs/apk/debug').glob('*.apk'))))
+    adb('install',str(next(Path('qa/probe/build/outputs/apk/debug').glob('*.apk'))))
+    adb('shell','input','keyevent','KEYCODE_WAKEUP')
+    adb('shell','wm','dismiss-keyguard')
     adb('shell','svc','wifi','disable')
     adb('shell','svc','data','disable')
     adb('shell','appops','set',APP,'SYSTEM_ALERT_WINDOW','allow')
     adb('shell','settings','put','secure','enabled_accessibility_services',APP+'/com.irisai.farm.TouchService')
     adb('shell','settings','put','secure','accessibility_enabled','1')
     adb('shell','logcat','-c')
-    adb('shell','am','start','-W','-n',APP+'/com.irisai.farm.MainActivity')
+    print(adb('shell','am','start','-W','-n',APP+'/com.irisai.farm.MainActivity'),flush=True)
     tap(item('화면 공유 시작'))
     # Only Android's projection dialogue can approve this session.
     def consent(n):
@@ -87,9 +92,9 @@ def run():
     time.sleep(2)
     open_gear()
     tap(item('브롤러 선택'))
-    tap(item('브롤러 검색 (영문)'))
-    adb('shell','input','text','colt')
-    tap(item('colt'))
+    tap(find(lambda n: n.get('class')=='android.widget.TextView' and n.get('text')=='8bit'))
+    selected=item('브롤러 선택')
+    assert selected['text']=='8bit',selected
     # On a short landscape display the native scroll view reveals the action on swipe.
     def button(label):
         visible=ui()
@@ -105,7 +110,7 @@ def run():
     wait_for(lambda: any(s['track']>0 and s['full']>0 for s in samples()),100)
     time.sleep(4)
     result={'api':adb('shell','getprop','ro.build.version.sdk'),'abi':adb('shell','getprop','ro.product.cpu.abi'),
-            'fixture':'offline recorded screen','model_input':'held_turn.jpg','brawler':'colt','fps_samples':samples(),
+            'fixture':'offline recorded screen','model_input':'held_turn.jpg','brawler':'8bit','fps_samples':samples(),
             'hud_touches_before_pause':hud_count(),'android_consent':True}
     open_gear()
     count=hud_count();time.sleep(2);assert hud_count()==count,'Input continued in menu'
@@ -127,6 +132,10 @@ def item_after_scroll_top():
 
 try:
     run()
+except BaseException:
+    print(logs('IrisExternal:D','IrisArena:I','AndroidRuntime:E','Toast:W','AccessibilityManagerService:W')[-5500:],flush=True)
+    print(adb('shell','dumpsys','accessibility')[:2200],flush=True)
+    raise
 finally:
     (OUT/'app-log.txt').write_text(logs('IrisExternal:D','IrisArena:I','AndroidRuntime:E','MediaProjectionManagerService:I','WindowManager:W'))
     (OUT/'windows.txt').write_text(adb('shell','dumpsys','window','windows'))

@@ -120,10 +120,18 @@ final class FarmVision implements AutoCloseable {
     private static boolean matches(Mat image,Mat template,Rect area,double threshold){Mat crop=image.submat(area),scores=new Mat();try{Imgproc.matchTemplate(crop,template,scores,Imgproc.TM_CCOEFF_NORMED);return Core.minMaxLoc(scores).maxVal>=threshold;}finally{crop.release();scores.release();}}
     static byte[] read(Context c,String name)throws IOException{try(InputStream in=c.getAssets().open("iris_farm/"+name);ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] buf=new byte[65536];int n;while((n=in.read(buf))!=-1)out.write(buf,0,n);return out.toByteArray();}}
     private static String model(Context c,String name)throws IOException {
-        File dir=new File(c.getNoBackupFilesDir(),"iris-farm-models");if(!dir.isDirectory()&&!dir.mkdirs())throw new IOException("Model directory unavailable");
-        File target=new File(dir,name);byte[] data=read(c,"models/"+name);
-        // Refresh atomically from the APK; never reuse a partly written model.
-        File temp=new File(dir,name+".tmp");try(OutputStream out=new FileOutputStream(temp)){out.write(data);}if(!temp.renameTo(target))throw new IOException("Could not install model");return target.getAbsolutePath();
+        File dir=new File(c.getNoBackupFilesDir(),"iris-farm-models");if(!dir.isDirectory()&&!dir.mkdirs()&&!dir.isDirectory())throw new IOException("Model directory unavailable");
+        File target=new File(dir,name);
+        File temp=File.createTempFile(name,".tmp",dir);
+        try {
+            try(InputStream in=c.getAssets().open("iris_farm/models/"+name);OutputStream out=new FileOutputStream(temp)){
+                byte[] buffer=new byte[65536];int count;
+                while((count=in.read(buffer))!=-1)out.write(buffer,0,count);
+            }
+            java.nio.file.Files.move(temp.toPath(),target.toPath(),java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            return target.getAbsolutePath();
+        } finally {temp.delete();}
     }
     void reset(){policy.reset();recovery.reset();seen=-1e9;lastPlayer=null;}
     public void close(){for(Template t:templates)t.image.release();templates.clear();if(resultReport!=null){resultReport.release();resultReport=null;}if(resultReplay!=null){resultReplay.release();resultReplay=null;}recovery.close();if(entities!=null){try{entities.close();}catch(Exception ignored){}entities=null;}if(tiles!=null){try{tiles.close();}catch(Exception ignored){}tiles=null;}}
