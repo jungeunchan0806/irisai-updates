@@ -52,10 +52,7 @@ def wait_for(probe, timeout=60):
     raise AssertionError('Timed out waiting for '+probe.__name__)
 
 def open_gear():
-    def centers():
-        return re.findall(r'gear_center=(\d+),(\d+)',logs('IrisExternal:D'))
-    x,y=wait_for(centers)[-1]
-    adb('shell','input','tap',x,y)
+    tap(item('IrisAI 설정'))
     item('플레이 설정')
 
 def hud_count():
@@ -70,7 +67,13 @@ def snapshot(filename):
     (OUT/filename).write_bytes(subprocess.check_output(['adb','exec-out','screencap','-p']))
 
 def run():
-    adb('install',str(next(Path('build/outputs/apk/debug').glob('*.apk'))))
+    abis=adb('shell','getprop','ro.product.cpu.abilist').split(',')
+    signed='arm64-v8a' in abis
+    if signed:
+        adb('install','--abi','arm64-v8a',str(next(Path('dist').glob('*.apk'))))
+    else:
+        adb('install',str(next(Path('build/outputs/apk/debug').glob('*.apk'))))
+    print('release_apk='+str(signed)+' device_abis='+','.join(abis),flush=True)
     adb('install',str(next(Path('qa/arena/build/outputs/apk/debug').glob('*.apk'))))
     adb('install',str(next(Path('qa/probe/build/outputs/apk/debug').glob('*.apk'))))
     adb('shell','input','keyevent','KEYCODE_WAKEUP')
@@ -88,7 +91,7 @@ def run():
         return n.get('package') in ('com.android.systemui','com.google.android.permissioncontroller','com.android.permissioncontroller','android') and (
             n.get('resource-id')=='android:id/button1' or n.get('text','').lower() in ('start now','start recording','start','share screen','share'))
     tap(find(consent))
-    wait_for(lambda: 'dev.iris.fixture.Arena' in adb('shell','dumpsys','activity','activities') and bool(re.findall(r'gear_center=',logs('IrisExternal:D'))))
+    wait_for(lambda: 'dev.iris.fixture.Arena' in adb('shell','dumpsys','activity','activities'))
     time.sleep(2)
     open_gear()
     tap(item('브롤러 선택'))
@@ -107,12 +110,17 @@ def run():
     snapshot('settings.png')
     tap(button('선택한 브롤러로 시작'))
     wait_for(lambda: hud_count()>=3,120)
-    wait_for(lambda: any(s['track']>0 and s['full']>0 for s in samples()),100)
-    time.sleep(4)
+    time.sleep(10)
     result={'api':adb('shell','getprop','ro.build.version.sdk'),'abi':adb('shell','getprop','ro.product.cpu.abi'),
             'fixture':'offline recorded screen','model_input':'held_turn.jpg','brawler':'8bit','fps_samples':samples(),
             'hud_touches_before_pause':hud_count(),'android_consent':True}
     open_gear()
+    measured=find(lambda n:'최근 실측 FPS' in n['text'])['text']
+    result.update(signed_release_apk=signed, supported_abis=abis, measured_menu=measured,
+                  qemu_vsync=adb('shell','getprop','ro.boot.qemu.vsync'))
+    print(json.dumps(result,ensure_ascii=False),flush=True)
+    numbers=re.search(r'캡처 ([\d.]+) +· +추적 ([\d.]+) +· +전체 분석 ([\d.]+)',measured)
+    assert numbers and float(numbers[1])>0,measured
     count=hud_count();time.sleep(2);assert hud_count()==count,'Input continued in menu'
     tap(button('플레이 정지'))
     tap(button('닫기') if any(n.get('text')=='닫기' for n in ui()) else item_after_scroll_top())

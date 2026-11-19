@@ -1,7 +1,7 @@
-name: External Android player verification
+name: Android 17 external player and high refresh display
 on:
   push:
-    branches: [android-external-player-v1]
+    branches: ['qa/android-external-player-api37']
 permissions: {contents: read}
 jobs:
   android:
@@ -24,6 +24,8 @@ jobs:
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
+          system-image-api-level: '37.0'
+          pre-emulator-launch-script: sed -i '/^hw.lcd.vsync/d;$a hw.lcd.vsync=120' "$HOME/.android/avd/test.avd/config.ini"
           arch: x86_64
           target: google_apis
           profile: pixel_2
@@ -33,16 +35,3 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: android-player-verification, path: "qa-results/\nbuild/test-results/testDebugUnitTest/", if-no-files-found: warn}
-  publish:
-    needs: android
-    runs-on: ubuntu-24.04
-    permissions: {contents: write}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Publish signed standalone APK
-        env: {GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}'}
-        run: |
-          cp README.md "$RUNNER_TEMP/notes.md"
-          echo >> "$RUNNER_TEMP/notes.md"
-          echo "[Android 실행 검사](https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)" >> "$RUNNER_TEMP/notes.md"
-          gh release create android-iris-external-1.0.0 dist/*.apk --target "$GITHUB_SHA" --title 'IrisAI 외부 플레이어 1.0.0 · Android ARM64' --prerelease --latest=false --notes-file "$RUNNER_TEMP/notes.md"
