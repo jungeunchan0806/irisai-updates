@@ -107,7 +107,18 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         FrameLayout.LayoutParams ip = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.CENTER_HORIZONTAL); ip.topMargin = dp(12); addView(hint, ip);
         setOnApplyWindowInsetsListener((v, insets) -> {
             android.graphics.Insets safe = insets.getInsets(android.view.WindowInsets.Type.systemBars() | android.view.WindowInsets.Type.displayCutout());
-            setPadding(safe.left, safe.top, safe.right, safe.bottom); return insets;
+            setPadding(safe.left, safe.top, safe.right, safe.bottom);
+            int horizontalInset = Math.max(safe.left, safe.right);
+            shade.setPadding(horizontalInset - safe.left, 0, horizontalInset - safe.right, 0);
+            if (getWidth() > 0) {
+                FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) window.getLayoutParams();
+                int width = panelWidth(getWidth());
+                if (params.width != width) {
+                    params.width = width;
+                    window.setLayoutParams(params);
+                }
+            }
+            return insets;
         });
         refresh();
     }
@@ -127,11 +138,15 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         GradientDrawable d = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{top, bottom});
         d.setCornerRadius(dp(radius)); d.setStroke(dp(2), border); return d;
     }
+    private int panelWidth(int width) {
+        int horizontalInset = Math.max(getPaddingLeft(), getPaddingRight());
+        return Math.min(dp(1000), Math.max(dp(260), width - 2 * horizontalInset - dp(24)));
+    }
     @Override protected void onSizeChanged(int w, int h, int ow, int oh) {
         super.onSizeChanged(w, h, ow, oh);
         if (w == lastWidth && h == lastHeight) return; lastWidth = w; lastHeight = h;
         FrameLayout.LayoutParams p = (FrameLayout.LayoutParams) window.getLayoutParams();
-        p.width = Math.min(dp(1000), Math.max(dp(260), w - getPaddingLeft() - getPaddingRight() - dp(24)));
+        p.width = panelWidth(w);
         p.height = Math.min(dp(600), Math.max(dp(200), h - getPaddingTop() - getPaddingBottom() - dp(20)));
         window.setLayoutParams(p); if (state.showMenu()) refreshCards();
     }

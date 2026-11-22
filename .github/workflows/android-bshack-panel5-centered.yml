@@ -1,0 +1,27 @@
+name: Publish centered BSHACK panel
+on:
+  push:
+    branches: [android-bshack-panel5-centered-build]
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore and verify signed APK
+        working-directory: distribution/bshack-panel5-centered
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xdelta3
+          curl --fail --location --retry 3 --output original.apk https://github.com/jungeunchan0806/irisai-updates/releases/download/android-bshack-panel5/BSHACK-Autogoal-2.1.1.apk
+          echo '28b2cb0df2145613348432e0cc29c2b745b1ace21d638e8cd0158baed667d110  original.apk' | sha256sum --check
+          xdelta3 -d -s original.apk panel.xdelta BSHACK-Autogoal-2.1.1-centered.apk
+          sha256sum --check apk.sha256
+      - name: Publish verified APK
+        working-directory: distribution/bshack-panel5-centered
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create android-bshack-panel5-centered BSHACK-Autogoal-2.1.1-centered.apk --target "$GITHUB_SHA" --title 'BSHACK 2.1.1 · 메뉴 가로 중앙 정렬' --notes '투명 버튼을 누르면 열리는 메뉴를 화면 가로 중앙에 배치했습니다. 메뉴 높이와 세로 위치는 기존과 동일합니다. APK 서명과 파일 무결성을 확인했습니다.' --prerelease --latest=false
