@@ -11,14 +11,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Restore and verify signed APK
+        env:
+          GH_TOKEN: ${{ github.token }}
         working-directory: distribution/bshack-panel5-center-tap
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y xdelta3
-          curl --fail --location --retry 3 --output original.apk https://github.com/jungeunchan0806/irisai-updates/releases/download/android-bshack-panel5/BSHACK-Autogoal-2.1.1.apk
+          gh release download android-bshack-panel5 --pattern BSHACK-Autogoal-2.1.1.apk --output original.apk
           echo '28b2cb0df2145613348432e0cc29c2b745b1ace21d638e8cd0158baed667d110  original.apk' | sha256sum --check
           xdelta3 -d -s original.apk panel.xdelta BSHACK-Autogoal-2.1.1-center-tap.apk
           sha256sum --check apk.sha256
+          rm original.apk
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '17'}
       - name: Build touch-test fixture with the release UI
