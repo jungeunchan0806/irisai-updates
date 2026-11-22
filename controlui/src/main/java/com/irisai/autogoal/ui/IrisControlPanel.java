@@ -34,7 +34,7 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
     private final RecordingWatcher recording;
     private final LinearLayout hud, window;
     private final FrameLayout shade;
-    private final Button auto, link, corner, close;
+    private final Button auto, link, opener, close;
     private final TextView title, subtitle, hint;
     private final LinearLayout tabs;
     private final GridLayout grid;
@@ -59,11 +59,11 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         recording = new RecordingWatcher(activity, this::recordingChanged);
 
         // Transparent but touchable; stays available when the visible HUD is hidden.
-        corner = button(""); corner.setBackgroundColor(Color.TRANSPARENT);
-        corner.setElevation(0); corner.setStateListAnimator(null);
-        corner.setOnClickListener(v -> { state.toggleMenu(); refresh(); });
-        FrameLayout.LayoutParams cp = new FrameLayout.LayoutParams(dp(TOGGLE_WIDTH_DP * 2), dp(TOGGLE_HEIGHT_DP * 2), Gravity.TOP | Gravity.RIGHT);
-        addView(corner, cp);
+        opener = button(""); opener.setBackgroundColor(Color.TRANSPARENT);
+        opener.setElevation(0); opener.setStateListAnimator(null);
+        opener.setOnClickListener(v -> { state.toggleMenu(); refresh(); });
+        FrameLayout.LayoutParams cp = new FrameLayout.LayoutParams(dp(TOGGLE_WIDTH_DP * 2), dp(TOGGLE_HEIGHT_DP * 2), Gravity.TOP | Gravity.CENTER_HORIZONTAL);
+        addView(opener, cp);
 
         hud = new LinearLayout(activity); hud.setOrientation(LinearLayout.VERTICAL);
         auto = button(""); auto.setTextSize(12); auto.setMaxLines(2); auto.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -108,6 +108,7 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         setOnApplyWindowInsetsListener((v, insets) -> {
             android.graphics.Insets safe = insets.getInsets(android.view.WindowInsets.Type.systemBars() | android.view.WindowInsets.Type.displayCutout());
             setPadding(safe.left, safe.top, safe.right, safe.bottom);
+            opener.setTranslationX((safe.right - safe.left) / 2f);
             int horizontalInset = Math.max(safe.left, safe.right);
             shade.setPadding(horizontalInset - safe.left, 0, horizontalInset - safe.right, 0);
             if (getWidth() > 0) {
@@ -197,11 +198,11 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         hud.setVisibility(state.showHud() ? VISIBLE : GONE);
         shade.setVisibility(state.showMenu() ? VISIBLE : GONE);
         hint.setVisibility(state.showHint() ? VISIBLE : GONE);
-        corner.setVisibility(state.canOpen() ? VISIBLE : GONE);
-        corner.setContentDescription(text("Iris 설정 열기", "Open Iris settings"));
+        opener.setVisibility(state.canOpen() ? VISIBLE : GONE);
+        opener.setContentDescription(text("Iris 설정 열기", "Open Iris settings"));
         paintHud();
         title.setText("IRIS  /  " + text("컨트롤 센터", "CONTROL CENTER"));
-        subtitle.setText(notice.isEmpty() ? text("오른쪽 위 투명 영역으로 열기 · ", "Open from the invisible top-right area · ") + (enabled ? "ON" : "OFF") : notice);
+        subtitle.setText(notice.isEmpty() ? text("상단 중앙 투명 영역으로 열기 · ", "Open from the invisible top-center area · ") + (enabled ? "ON" : "OFF") : notice);
         close.setContentDescription(text("설정 닫기", "Close settings"));
         String[] labels = state.english ? new String[]{"● All", "⚽ Auto Goal", "▣ Display", "↗ Community"} : new String[]{"● 전체", "⚽ 오토골", "▣ 화면", "↗ 커뮤니티"};
         int[] colors = {0xff80ce3d, 0xff58bbd1, 0xff598ce1, 0xffb65ed1};
@@ -307,7 +308,7 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
     private void save() { prefs.edit().putString("language", state.english ? "en" : "ko").putBoolean("hidden", state.hidden).apply(); }
     public boolean isUiTouch(float x, float y) {
         if (state.showMenu()) return true;
-        return hit(corner, x, y) || hit(hud, x, y) || hit(hint, x, y);
+        return hit(opener, x, y) || hit(hud, x, y) || hit(hint, x, y);
     }
     private boolean hit(View view, float x, float y) {
         if (view.getVisibility() != VISIBLE) return false;
