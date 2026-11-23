@@ -1,6 +1,6 @@
 # Iris AutoGoal 2.2.5 static standalone
 
-Builds from the original 70.757 APK without its contents being stored in Git.
+Builds from the original 70.648 APK without its contents being stored in Git.
 The bundled engine and UI are immutable for this build: no downloaded-patch loader,
 update UI, rollback notification, Anti AFK module, or connection guard is included.
 The invisible opener remains at top center. Existing preferences, HWID authorization,

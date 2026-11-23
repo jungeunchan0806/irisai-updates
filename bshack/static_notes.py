@@ -21,4 +21,4 @@ print(f"Android API {r.get('android_api')}, 에뮬레이터 ABI {r.get('abi')}."
 for kind in ['baseline','candidate']:
  d=r.get(kind,{})
  print(f"- {kind}: APK 설치={d.get('installed',False)}, 30초 프로세스 유지={d.get('alive_30s',False)}, UI 감지={d.get('ui_visible','미검사')}; 오류={d.get('error','없음')}")
-print('\n실제 삼성 기기, 실서버 로비 진입, 친선전 자동 득점은 검증하지 않았습니다. UI 검사 통과는 실제 경기 동작을 보증하지 않습니다. 게임 기반 버전은 기존 70.757입니다. 테스트 결과와 제약은 Actions 아티팩트를 참고하세요.')
+print('\n실제 삼성 기기, 실서버 로비 진입, 친선전 자동 득점은 검증하지 않았습니다. UI 검사 통과는 실제 경기 동작을 보증하지 않습니다. 게임 기반 버전은 기존 70.648입니다. 테스트 결과와 제약은 Actions 아티팩트를 참고하세요.')

@@ -13,5 +13,15 @@
   "signer_sha256": "a40da80a59d170caa950cf15c18c454d47a39b26989d8b640ecd745ba71bf5dc",
   "zipalign_16kb": "passed",
   "physical_device": "not tested",
-  "real_match": "not tested"
+  "real_match": "not tested",
+  "apk_manifest": {
+    "package": "com.supercell.brawlstars",
+    "versionName": "70.648",
+    "versionCode": 70648,
+    "minSdk": 32,
+    "targetSdk": 36,
+    "abis": [
+      "arm64-v8a"
+    ]
+  }
 }
