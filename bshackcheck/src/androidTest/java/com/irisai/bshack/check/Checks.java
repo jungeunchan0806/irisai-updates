@@ -65,14 +65,15 @@ public final class Checks extends Instrumentation {
     require(toggle!=null&&toggle.isShown(),"in-memory DEX attaches UI to game-shaped Activity");
     require(Math.abs(opener.getWidth()-toggle.getWidth()*2)<=1&&Math.abs(opener.getHeight()-toggle.getHeight()*2)<=1,"opener 2x toggle dimensions within pixel rounding");
     toggle.performClick();require(poll()==1&&poll()==0,"tap queues one engine toggle");
-    toggle.performLongClick();require(poll()==3,"long press requests original HWID copy");
+    require(!toggle.isLongClickable() && find(root(),"discord.gg/bshack")==null,"HUD contains only the toggle");
     call("update",new Class<?>[]{boolean.class,String.class},true,"골대로 운반");require(((TextView)toggle).getText().toString().contains("ON"),"native state updates HUD");
     opener.performClick();require(find(root(),"키 등록")==null,"buyer key registration absent from menu");
-    require(find(root(),"스트리머 모드")==null,"streamer mode absent from menu");
+    require(find(root(),"HWID 복사")==null && find(root(),"언어")==null && find(root(),"Discord")==null && find(root(),"● 전체")==null,"menu has no extra commands or navigation tabs");
     require(find(root(),"조작 위치")==null,"no coordinate calibration in native engine mode");
     ((View)find(root(),"UI 전부 숨기기").getParent()).performClick();require(!toggle.isShown(),"hide all hides toggle");require(poll()==0,"hiding HUD does not toggle engine");
     opener.performClick();require(find(root(),"UI 다시 표시").isShown(),"invisible opener recovers hidden UI");
-    ((View)find(root(),"언어").getParent()).performClick();require(find(root(),"IRIS  /  CONTROL CENTER")!=null,"language switching works");
+    ((View)find(root(),"UI 다시 표시").getParent()).performClick();
+    find(root(),"설정 닫기").performClick(); require(toggle.isShown() && poll()==0,"restoring and closing the menu shows the HUD");
    });
    ui(()->activity.finish());
    java.util.concurrent.atomic.AtomicBoolean active=new java.util.concurrent.atomic.AtomicBoolean(true);

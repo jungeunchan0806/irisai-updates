@@ -34,9 +34,8 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
     private final RecordingWatcher recording;
     private final LinearLayout hud, window;
     private final FrameLayout shade;
-    private final Button auto, link, opener, close;
+    private final Button auto, opener, close;
     private final TextView title, subtitle, hint;
-    private final LinearLayout tabs;
     private final GridLayout grid;
     private final List<Button> tabButtons = new ArrayList<>();
     private boolean enabled, closed, resumed, streamerAllowed;
@@ -68,12 +67,14 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         hud = new LinearLayout(activity); hud.setOrientation(LinearLayout.VERTICAL);
         auto = button(""); auto.setTextSize(12); auto.setMaxLines(2); auto.setEllipsize(android.text.TextUtils.TruncateAt.END);
         auto.setOnClickListener(v -> actions.toggleAutoGoal());
-        auto.setOnLongClickListener(v -> { if (actions.nativeEngine()) { actions.copyHwid(); return true; } state.menuOpen = true; tab = 1; refresh(); return true; });
         hud.addView(auto, new LinearLayout.LayoutParams(dp(TOGGLE_WIDTH_DP), dp(TOGGLE_HEIGHT_DP)));
-        link = button("discord.gg/bshack"); link.setTextSize(11);
-        link.setBackground(tile(0xe51b2949, 0xe5101830, 0xff4677b0, 8));
-        link.setOnClickListener(v -> openDiscord());
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(TOGGLE_WIDTH_DP), dp(28)); lp.topMargin = dp(5); hud.addView(link, lp);
+        if (!actions.nativeEngine()) {
+            auto.setOnLongClickListener(v -> { state.menuOpen = true; tab = 1; refresh(); return true; });
+            Button link = button("discord.gg/bshack"); link.setTextSize(11);
+            link.setBackground(tile(0xe51b2949, 0xe5101830, 0xff4677b0, 8));
+            link.setOnClickListener(v -> openDiscord());
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(TOGGLE_WIDTH_DP), dp(28)); lp.topMargin = dp(5); hud.addView(link, lp);
+        }
         FrameLayout.LayoutParams hp = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.LEFT);
         hp.leftMargin = dp(12); hp.topMargin = dp(12); addView(hud, hp);
 
@@ -90,14 +91,16 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         header.addView(headings, new LinearLayout.LayoutParams(0, -2, 1));
         close = button("×"); close.setTextSize(26); close.setBackground(tile(0xffe55d63, 0xff963044, 0xfff08a91, 10));
         close.setOnClickListener(v -> { state.menuOpen = false; refresh(); }); header.addView(close, new LinearLayout.LayoutParams(dp(42), dp(40))); window.addView(header);
-        HorizontalScrollView bar = new HorizontalScrollView(activity); bar.setHorizontalScrollBarEnabled(false);
-        tabs = new LinearLayout(activity); tabs.setPadding(0, dp(10), 0, dp(9)); bar.addView(tabs);
-        for (int i = 0; i < 4; i++) {
-            final int index = i; Button b = button(""); b.setTextSize(13);
-            b.setOnClickListener(v -> { tab = index; refresh(); });
-            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(dp(124), dp(42)); p.rightMargin = dp(8); tabs.addView(b, p); tabButtons.add(b);
+        if (!actions.nativeEngine()) {
+            HorizontalScrollView bar = new HorizontalScrollView(activity); bar.setHorizontalScrollBarEnabled(false);
+            LinearLayout tabs = new LinearLayout(activity); tabs.setPadding(0, dp(10), 0, dp(9)); bar.addView(tabs);
+            for (int i = 0; i < 4; i++) {
+                final int index = i; Button b = button(""); b.setTextSize(13);
+                b.setOnClickListener(v -> { tab = index; refresh(); });
+                LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(dp(124), dp(42)); p.rightMargin = dp(8); tabs.addView(b, p); tabButtons.add(b);
+            }
+            window.addView(bar, new LinearLayout.LayoutParams(-1, -2));
         }
-        window.addView(bar, new LinearLayout.LayoutParams(-1, -2));
         ScrollView scroller = new ScrollView(activity); scroller.setFillViewport(false);
         grid = new GridLayout(activity); grid.setUseDefaultMargins(false); scroller.addView(grid, new ScrollView.LayoutParams(-1, -2));
         window.addView(scroller, new LinearLayout.LayoutParams(-1, 0, 1));
@@ -226,28 +229,28 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         grid.removeAllViews(); autoDetail = null; autoCard = null;
         int available = lastWidth - getPaddingLeft() - getPaddingRight();
         int columns = available >= dp(720) ? 3 : available >= dp(430) ? 2 : 1;
-        grid.setColumnCount(columns);
+        grid.setColumnCount(actions.nativeEngine() ? Math.min(2, columns) : columns);
         if (tab == 0 || tab == 1) {
             autoCard = card(text("오토골", "Auto Goal"), (enabled ? "ON · " : "OFF · ") + statusText(phase), enabled,
                 () -> { actions.toggleAutoGoal(); refresh(); });
             autoDetail = (TextView) autoCard.getChildAt(1);
-            if (actions.nativeEngine()) {
-                card(text("HWID 복사", "Copy HWID"), text("기존 인증용 기기 ID 복사", "Copy the device ID used for registration"), false, actions::copyHwid);
-            } else {
-            card(text("조작 위치", "Control positions"), text("이동 · 공격 · 가젯 위치 지정", "Set movement, attack and gadget positions"), false,
-                () -> { state.menuOpen = false; state.hidden = false; save(); refresh(); actions.calibrate(); });
-            card(text("위치 초기화", "Reset positions"), text("조작 위치를 기본값으로 되돌립니다", "Restore default control positions"), false,
-                () -> { actions.resetControls(); notice = text("기본 위치로 되돌렸습니다", "Default positions restored"); refresh(); });
+            if (!actions.nativeEngine()) {
+                card(text("조작 위치", "Control positions"), text("이동 · 공격 · 가젯 위치 지정", "Set movement, attack and gadget positions"), false,
+                    () -> { state.menuOpen = false; state.hidden = false; save(); refresh(); actions.calibrate(); });
+                card(text("위치 초기화", "Reset positions"), text("조작 위치를 기본값으로 되돌립니다", "Restore default control positions"), false,
+                    () -> { actions.resetControls(); notice = text("기본 위치로 되돌렸습니다", "Default positions restored"); refresh(); });
             }
         }
         if (tab == 0 || tab == 2) {
-            card(text("언어", "Language"), state.english ? "English · 한국어로 전환" : "한국어 · Switch to English", false,
-                () -> { state.english = !state.english; notice = ""; save(); refresh(); });
+            if (!actions.nativeEngine()) {
+                card(text("언어", "Language"), state.english ? "English · 한국어로 전환" : "한국어 · Switch to English", false,
+                    () -> { state.english = !state.english; notice = ""; save(); refresh(); });
+            }
             card(state.hidden ? text("UI 다시 표시", "Show UI") : text("UI 전부 숨기기", "Hide all UI"),
                 text("투명 열기 영역은 계속 사용할 수 있습니다", "The invisible opener remains available"), state.hidden,
                 () -> { if (state.hidden) state.showAll(); else { state.hideAll(); actions.visibilitySuppressed(); } save(); refresh(); });
         }
-        if (tab == 0 || tab == 3) {
+        if (!actions.nativeEngine() && (tab == 0 || tab == 3)) {
             card("Discord", "discord.gg/bshack\n" + text("서버 링크 열기", "Open the server link"), false, this::openDiscord);
         }
     }

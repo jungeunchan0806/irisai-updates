@@ -18,6 +18,7 @@ public final class PanelPreviewActivity extends Activity {
         getWindow().setDecorFitsSystemWindows(false);
         root = new FrameLayout(this); board = new Board(); root.addView(board, new FrameLayout.LayoutParams(-1, -1));
         panel = new IrisControlPanel(this, new IrisControlPanel.Actions() {
+            @Override public boolean nativeEngine() { return BuildConfig.TWO_CONTROL_MENU; }
             @Override public void toggleAutoGoal() { enabled = !enabled; update(); }
             @Override public void calibrate() { panel.calibrationStep(0); board.calibration = 0; }
             @Override public void resetControls() { board.calibration = -1; panel.calibrationStep(-1); }

@@ -1,0 +1,33 @@
+name: Verify two-control menu and publish UI preview
+on:
+  push:
+    branches: [android-bshack-panel5-two-controls]
+permissions:
+  contents: write
+jobs:
+  payload:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+        with: {packages: 'platform-tools platforms;android-35 build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
+      - run: ./gradlew :uipreview:assembleTwoControls :controlui:testDebugUnitTest :bshackcheck:assembleDebug :bshackcheck:assembleDebugAndroidTest --console=plain --max-workers=2
+      - run: sudo chmod 666 /dev/kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 2048 -cores 2
+          script: python bshack/ci_payload.py
+      - name: Publish standalone menu preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp uipreview/build/outputs/apk/twoControls/uipreview-twoControls.apk Iris-Two-Controls-Preview.apk
+          gh release create android-panel5-two-controls-preview Iris-Two-Controls-Preview.apk --target "$GITHUB_SHA" --title "오토골 · UI 숨기기 메뉴 미리보기" --notes "별도 앱에서 두 메뉴 항목과 상단 중앙 버튼의 숨기기·다시 표시 동작을 확인할 수 있습니다. 오토골 스위치는 미리보기에서 화면 상태만 바꿉니다." --prerelease --latest=false

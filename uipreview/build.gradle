@@ -2,13 +2,23 @@ plugins { id 'com.android.application' }
 android {
     namespace 'com.irisai.autogoal.preview'
     compileSdk 35
+    buildFeatures { buildConfig true }
     defaultConfig {
         applicationId 'com.irisai.autogoal.preview'
+        buildConfigField 'boolean', 'TWO_CONTROL_MENU', 'false'
         minSdk 32
         targetSdk 35
         versionCode 1
         versionName '0.3.0-ui-preview'
         testInstrumentationRunner 'com.irisai.autogoal.preview.PreviewChecks'
+    }
+    buildTypes {
+        twoControls {
+            initWith debug
+            applicationIdSuffix '.twocontrols'
+            matchingFallbacks = ['debug']
+            buildConfigField 'boolean', 'TWO_CONTROL_MENU', 'true'
+        }
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
     lint { abortOnError true }
