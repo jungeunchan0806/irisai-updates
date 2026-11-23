@@ -109,6 +109,7 @@ function createLicense(Java, handlers, options = {}) {
   const repeat = options.repeat || setInterval;
   const BASE = "https://bshack-license-panel.jungeunchan0806.chatgpt.site";
   let ready = false, checked = false, initError = null, ctx = null, hwid = null, prefs = null, view = null, job = null, dialog = null, input = null, lease = new Lease(now);
+  let lastCheckError = null;
   let StringJ, Toast, ClipData, Clipboard, Builder, EditText, URL, Http, Thread2, Runnable, Click, Dismiss;
   function report(where, error) {
     initError = where + ": " + String(error);
@@ -229,6 +230,7 @@ function createLicense(Java, handlers, options = {}) {
       } catch (e) {
         error = String(e);
       }
+      lastCheckError = error;
       if (error) console.error("[BSHACK 2.0.1] " + error);
       if (!lease.active()) handlers.disabled();
       if (req.after) req.after(!error && lease.active(), error);
@@ -401,7 +403,7 @@ function createLicense(Java, handlers, options = {}) {
     } catch (e) {
       report("\uBC84\uD2BC \uC785\uB825", e);
     }
-  }, status: () => ({ ready, checked, licenseStatus: lease.status, pending: !!job || !!dialog, error: initError, active: lease.active() }) };
+  }, status: () => ({ ready, checked, licenseStatus: lease.status, pending: !!job || !!dialog, error: initError, checkError: lastCheckError, active: lease.active() }) };
 }
 var init_licensing = __esm({
   "licensing.mjs"() {

@@ -48,3 +48,30 @@ test('backgrounding and lease expiry stop input even with the render loop idle',
  f.auth.active=false;f.poll();assert.equal(f.c._ag.enabled,false);assert.equal(f.c._ag.stopPending,true);
  f.auth.active=true;f.poll(1);f.activate();f.poll();assert.equal(f.c._ag.enabled,true);f.background();f.poll();assert.equal(f.c._ag.enabled,false);
 });
+
+test('a transient panel error is displayed immediately and clears after a successful update',()=>{
+ const f=panelFixture();
+ const originalUpdate=f.c.fake.update;
+ let failOnce=true;
+ f.c.fake.update=(enabled,phase)=>{
+  if(failOnce){failOnce=false;throw Error('temporary UI failure');}
+  originalUpdate(enabled,phase);
+ };
+ f.poll();
+ assert.equal(f.phase,'UI 갱신 오류 (UI-02)');
+ f.poll();
+ assert.equal(f.phase,'브롤볼 대기');
+});
+
+test('UI distinguishes authorization initialization, HTTP denial and an unregistered device',()=>{
+ const f=panelFixture({ready:false});
+ f.auth.error='initialization failed';
+ f.poll();
+ assert.equal(f.phase,'인증 초기화 실패 (AUTH-01)');
+ Object.assign(f.auth,{ready:true,error:null,checkError:'Error: HTTP 403',checked:true,licenseStatus:'unregistered'});
+ f.poll();
+ assert.equal(f.phase,'인증 서버 응답 HTTP 403');
+ f.auth.checkError=null;
+ f.poll();
+ assert.equal(f.phase,'HWID 등록 필요');
+});

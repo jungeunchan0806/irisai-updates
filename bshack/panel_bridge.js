@@ -1,16 +1,28 @@
 // Executed inside the existing licensed engine closure. No Java calls from game hooks.
 let _panelHost = null, _panelPending = false, _panelAttempts = 0;
-let _panelWanted = false, _panelQueued = false, _panelForeground = false, _panelError = '';
+let _panelWanted = false, _panelQueued = false, _panelForeground = false;
+let _panelSurfaceFailed = false;
 const _Java = frida_java_bridge_default;
 function _panelStop() { _panelWanted = false; _panelQueued = false; _st.requested = false; }
 function _panelActivate() {
   if (_panelWanted && _panelForeground && _st.started) _st.requested = true;
   _panelWanted = false; _panelQueued = false;
 }
+function _panelReportError(label, error) {
+  console.error('[IRIS BSHACK] UI: ' + label + ' ' + error);
+  try {
+    if (_panelHost) _panelHost.update(_ag.enabled, label);
+  } catch (displayError) {
+    console.error('[IRIS BSHACK] UI status: ' + displayError);
+  }
+}
 function _panelSurface(surface) {
   if (!_panelHost) return;
   try { _panelHost.attach(_Java.cast(surface.getContext(), _Java.use('android.app.Activity'))); }
-  catch (e) { _panelError = String(e); }
+  catch (e) {
+    _panelSurfaceFailed = true;
+    console.error('[IRIS BSHACK] UI: UI-01 ' + e);
+  }
 }
 function _panelInitialize(app) {
   const input = app.getAssets().open('iris-panel.dex');
@@ -38,11 +50,14 @@ function _panelFindActivity() {
   }
 }
 function _panelPhase() {
-  if (_panelError) return 'UI 연결 오류';
+  if (_panelSurfaceFailed && !_panelForeground) return 'UI 화면 연결 오류 (UI-01)';
   if (!_st.started) return _st.error ? '게임 연결 실패' : '게임 로딩 중';
   const auth = _license.status();
-  if (!auth.ready) return '인증 준비 중';
-  if (auth.error) return '인증 연결 실패';
+  if (!auth.ready) return auth.error ? '인증 초기화 실패 (AUTH-01)' : '인증 준비 중';
+  if (auth.error || auth.checkError) {
+    const http = /\bHTTP (\d{3})\b/.exec(auth.checkError || auth.error);
+    return http ? '인증 서버 응답 HTTP ' + http[1] : '인증 연결 실패 (AUTH-02)';
+  }
   if (_panelWanted) return '인증 확인 중';
   if (auth.checked && !auth.active) return auth.licenseStatus === 'revoked' ? '이용 정지' : auth.licenseStatus === 'expired' ? '기간 만료' : 'HWID 등록 필요';
   if (_ag.lastError) return '오토골 오류 · 다시 켜세요';
@@ -67,6 +82,7 @@ function _panelPoll() {
           try { _panelFindActivity(); } catch (e) { console.log('[IRIS BSHACK] Waiting for activity: ' + e); }
         }
         _panelForeground = _panelHost.isResumed();
+        if (_panelForeground) _panelSurfaceFailed = false;
         if (!_panelForeground) _panelStop();
         for (let i = 0; i < 8; i++) {
           const command = _panelHost.poll();
@@ -85,7 +101,7 @@ function _panelPoll() {
         if (status.error && !_panelQueued) _panelWanted = false;
         _art();
         _panelHost.update(_ag.enabled, _panelPhase());
-      } catch (e) { _panelError = String(e); _panelStop(); console.error('[IRIS BSHACK] UI: ' + e); }
+      } catch (e) { _panelStop(); _panelReportError('UI 갱신 오류 (UI-02)', e); }
       finally { _panelPending = false; }
     }));
   } catch (e) { _panelPending = false; _panelStop(); console.error('[IRIS BSHACK] Schedule: ' + e); }
