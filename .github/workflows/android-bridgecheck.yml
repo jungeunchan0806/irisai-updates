@@ -1,71 +1,65 @@
-name: Verify real Frida Android UI bridge
-on:
-  workflow_dispatch:
-    inputs:
-      endurance_minutes: {type: number, default: 0}
-      release_manifest: {type: string, default: 'distribution/bshack-panel6/manifest.json'}
-      recovery_patch: {type: string, default: ''}
-  workflow_call:
-    inputs:
-      endurance_minutes: {type: number, default: 0}
-      release_manifest: {type: string, default: 'distribution/bshack-panel6/manifest.json'}
-      recovery_patch: {type: string, default: ''}
-permissions: {contents: read}
+name: Build and verify standalone AutoGoal 2.2.5 without updater or Anti AFK
+on: [workflow_dispatch]
+permissions: {contents: write}
 jobs:
-  bridge:
+  static-apk:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix: {api: [35, 36]}
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '17'}
       - uses: android-actions/setup-android@v3
         with: {packages: 'platform-tools platforms;android-35 build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
-      - run: |
-          pip install frida==17.5.1
-          curl --fail --location --retry 3 -o /tmp/frida.xz https://github.com/frida/frida/releases/download/17.5.1/frida-gadget-17.5.1-android-x86_64.so.xz
-          xz -d /tmp/frida.xz
-          mkdir -p bshackcheck/src/main/jniLibs/x86_64
-          cp /tmp/frida bshackcheck/src/main/jniLibs/x86_64/libirisgadget.so
-          echo '{"interaction":{"type":"listen","address":"127.0.0.1","port":27042,"on_load":"resume"}}' > bshackcheck/src/main/jniLibs/x86_64/libirisgadget.config.so
-          sudo chmod 666 /dev/kvm
-      - env:
-          RELEASE_MANIFEST: '${{ inputs.release_manifest }}'
+      - name: Verify and assemble exact payload
+        env: {GH_TOKEN: '${{ github.token }}'}
         run: |
-          python bridgecheck/prepare.py
+          cd distribution/autogoal-static-225
+          sha256sum -c SHA256SUMS
+          cd ../..
+          mkdir -p candidate bshackcheck/build/outputs/apk/debug
+          cp distribution/autogoal-static-225/isolated-ui-fixture.apk bshackcheck/build/outputs/apk/debug/bshackcheck-debug.apk
+          gh release download android-bshack-panel6 -p BSHACK-Autogoal-2.2.0.apk -D /tmp
+          python bshack/static_release.py repack /tmp/BSHACK-Autogoal-2.2.0.apk distribution/autogoal-static-225/payload.zip /tmp/static-unsigned.apk
+          curl -fsSL --retry 3 'https://android.googlesource.com/platform/build/+/refs/heads/main/target/product/security/testkey.pk8?format=TEXT' | base64 -d > /tmp/public-testkey.pk8
+          curl -fsSL --retry 3 'https://android.googlesource.com/platform/build/+/refs/heads/main/target/product/security/testkey.x509.pem?format=TEXT' | base64 -d > /tmp/public-testkey.pem
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign --key /tmp/public-testkey.pk8 --cert /tmp/public-testkey.pem --alignment-preserved true --v4-signing-enabled false --out candidate/Iris-AutoGoal-2.2.5-no-update-no-afk.apk /tmp/static-unsigned.apk
+          rm /tmp/static-unsigned.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs candidate/*.apk > candidate/signature.txt
+          grep -F a40da80a59d170caa950cf15c18c454d47a39b26989d8b640ecd745ba71bf5dc candidate/signature.txt
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 4 candidate/*.apk
+          python bshack/static_release.py verify /tmp/BSHACK-Autogoal-2.2.0.apk distribution/autogoal-static-225/payload.zip candidate/Iris-AutoGoal-2.2.5-no-update-no-afk.apk
           node --test bshack/runtime.test.mjs
-          ./gradlew :controlui:testDebugUnitTest :bshackcheck:assembleDebug :bshackcheck:assembleDebugAndroidTest --console=plain --max-workers=2
-          python - <<'PY'
-          import zipfile,hashlib,json,os
-          from pathlib import Path
-          p=Path(os.environ.get('RELEASE_MANIFEST') or 'distribution/bshack-panel6/manifest.json')
-          if p.exists():
-            with zipfile.ZipFile('bshackui/build/outputs/apk/release/bshackui-release-unsigned.apk') as z: digest=hashlib.sha256(z.read('classes.dex')).hexdigest()
-            assert digest==json.loads(p.read_text())['ui_sha256'], 'Release UI DEX differs from source-built UI DEX'
-            print('Exact release UI DEX matches the source-built UI')
-          PY
-      - uses: reactivecircus/android-emulator-runner@v2
-        env:
-          RECOVERY_PATCH: '${{ inputs.recovery_patch }}'
+          pip install frida==17.5.1
+          sudo chmod 666 /dev/kvm
+      - name: Real Android UI and comparative game launch
+        uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: '${{ matrix.api }}'
+          api-level: 35
           target: google_apis
           arch: x86_64
           profile: pixel_2
+          disk-size: 12G
+          ram-size: 4096M
           disable-animations: true
-          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 2048 -cores 2
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 4096 -cores 4
           script: |
-            python bshack/ci_payload.py
-            ENDURANCE_MINUTES=${{ inputs.endurance_minutes || 0 }} python bridgecheck/check.py
-            if [ -n "$RECOVERY_PATCH" ]; then python bridgecheck/prepare_recovery.py "$RECOVERY_PATCH" && ./gradlew :bshackcheck:assembleDebug -PirisBaselinePayload=bridgecheck/generated/recovery/baseline/classes.dex --console=plain --max-workers=2 && python bridgecheck/recovery_check.py; fi
-      - uses: actions/upload-artifact@v4
+            ENDURANCE_MINUTES=2 python bridgecheck/check.py
+            python bshack/smoke.py /tmp/BSHACK-Autogoal-2.2.0.apk candidate/Iris-AutoGoal-2.2.5-no-update-no-afk.apk
+      - name: Save test evidence
         if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: real-bridge-results-${{ matrix.api }}
+          name: autogoal-static-225-evidence
           path: |
             bridgecheck-results/
-            bshack-checks/
-            recovery-checks/
+            bshack-game-launch/
+            candidate/*.json
+            candidate/*.sha256
+            candidate/*.txt
+      - name: Publish standalone APK
+        env: {GH_TOKEN: '${{ github.token }}'}
+        run: |
+          python bshack/static_notes.py > candidate/RELEASE.md
+          gh release view android-autogoal-static-2.2.5 || gh release create android-autogoal-static-2.2.5 --target "$GITHUB_SHA" --title 'Iris AutoGoal 2.2.5 · 자동패치·Anti AFK 제거' --notes-file candidate/RELEASE.md
+          gh release upload android-autogoal-static-2.2.5 candidate/*.apk candidate/*.sha256 candidate/*.verification.json --clobber

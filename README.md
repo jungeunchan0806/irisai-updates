@@ -1,3 +1,9 @@
+# Iris AutoGoal 2.2.5-static — 오토골 단독판
+
+자동패치·Anti AFK를 제거하고 상단 중앙 투명 메뉴를 유지하는 브랜치입니다. 기존 HWID 인증과 Discord 링크를 유지합니다. [빌드·검증 안내](bshack/README.md). 실제 경기 자동 득점은 별도 검증이 필요합니다.
+
+아래는 이전 개발 이력이며, 이전 버전의 업데이트/서명 안내는 이번 배포에 적용되지 않습니다.
+
 # Iris 오토골 — 브롤스타즈 70.757 내부 실행 후보
 
 **새 panel3 게임 APK:** 이전 `packaging2-test.apk`의 Iris 모듈을 새 UI와 실제 인식·이동·슈팅 코드로 교체했습니다. [받을 파일과 설치 제한](https://github.com/jungeunchan0806/irisai-updates/releases/tag/android-ingame-70.757-panel3). 파일명은 `IrisAutoGoal-BrawlStars-70.757-panel3-test-newkey.apk`입니다. **새 서명이므로 기존 수정본·진단 앱·공식 앱 위에 덮어쓸 수 없습니다.** 기존 게임을 삭제하기 전에 진행 상태 보존 여부를 확인해야 합니다.

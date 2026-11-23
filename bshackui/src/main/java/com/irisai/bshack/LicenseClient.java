@@ -5,7 +5,6 @@ import android.content.*;
 import android.os.*;
 import android.provider.Settings;
 import android.widget.Toast;
-import com.irisai.bshack.update.PatchStore;
 import org.json.JSONObject;
 import java.io.*;
 import java.net.*;
@@ -35,6 +34,13 @@ final class LicenseClient {
    StringBuilder s=new StringBuilder("BS-");for(byte b:bytes)s.append(String.format(Locale.US,"%02X",b&255));hwid=s.toString();ready=true;
   }catch(Exception e){error="HWID 초기화: "+e.getClass().getSimpleName();}
   main.post(this::refreshTimer);
+ }
+ private static byte[] readResponse(InputStream input)throws IOException {
+  try(InputStream in=input;ByteArrayOutputStream out=new ByteArrayOutputStream()){
+   byte[] buffer=new byte[4096];int n;
+   while((n=in.read(buffer))!=-1){if(n>4096-out.size())throw new IOException("인증 응답 크기 초과");out.write(buffer,0,n);}
+   return out.toByteArray();
+  }
  }
  private void refreshTimer(){if(ready&&prefs.getBoolean("license_consent_v1",false))refresh();main.postDelayed(this::refreshTimer,60000);}
  synchronized String state(){
@@ -73,7 +79,7 @@ final class LicenseClient {
     byte[] bytes=new JSONObject().put("hwid",hwid).toString().getBytes(StandardCharsets.UTF_8);c.setFixedLengthStreamingMode(bytes.length);
     try(OutputStream out=c.getOutputStream()){out.write(bytes);}
     int code=c.getResponseCode();if(code!=200)throw new IOException("HTTP "+code);
-    response=new JSONObject(new String(PatchStore.read(c.getInputStream(),4096),StandardCharsets.UTF_8));
+    response=new JSONObject(new String(readResponse(c.getInputStream()),StandardCharsets.UTF_8));
    }catch(Exception e){failure=e.getClass().getSimpleName()+": "+(e.getMessage()==null?"":e.getMessage());}
    finally{if(c!=null)c.disconnect();}
    final JSONObject data=response;final String networkError=failure;

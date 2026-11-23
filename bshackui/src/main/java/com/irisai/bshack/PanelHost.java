@@ -13,7 +13,6 @@ import android.content.ClipboardManager;
 import android.app.AlertDialog;
 import android.view.ViewGroup;
 import com.irisai.autogoal.ui.IrisControlPanel;
-import com.irisai.bshack.update.UpdateManager;
 import java.util.ArrayDeque;
 
 /** All methods run on Android's main thread. No native game calls or capture loop. */
@@ -24,20 +23,17 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     private IrisControlPanel panel;
     private boolean resumed;
     private boolean engineEnabled;
-    private UpdateManager updates;
     private LicenseClient license;
-    private long lastHeartbeat, nextHealthAttempt;
-    private boolean markedHealthy, healthPending, freshBridgeState;
-    private int healthyResponses;
-    private String latestError = "", diagnosticState = "", bootName = "2.2.0", recovery = "";
+    private long lastHeartbeat;
+    private String latestError = "", diagnosticState = "", bootName = "2.2.5-static", recovery = "";
     private final Handler handler = new Handler(Looper.getMainLooper());
     public static void initialize(Application app) {
         if (host != null) return;
-        host = new PanelHost(); host.updates = new UpdateManager(app);host.license=new LicenseClient(app);app.registerActivityLifecycleCallbacks(host);
+        host = new PanelHost(); host.license=new LicenseClient(app);app.registerActivityLifecycleCallbacks(host);
         host.handler.postDelayed(host::watchdog, 1500);
     }
     public static void configure(long version,String name,String recovery) {
-        if(host==null)return;host.bootName=name;host.recovery=recovery;host.updates.configure(version,name);
+        if(host==null)return;host.bootName=name;host.recovery=recovery;
     }
     public static String licenseStatus(){return host==null?"{}":host.license.state();}
     public static long authorize(){return host==null?0:host.license.request(host.activity);}
@@ -71,18 +67,16 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
                 public void visibilitySuppressed() {}
                 public boolean nativeEngine() { return true; }
                 public void copyHwid() { queue(3); }
-                public void checkUpdates() { updates.attach(activity,panel.english());updates.check(true); }
                 public void showDiagnostics() { diagnostics(); }
             }, false);
             ((ViewGroup) next.findViewById(android.R.id.content)).addView(panel, new ViewGroup.LayoutParams(-1, -1));
         }
         resumed = true; panel.resume();
-        lastHeartbeat=SystemClock.uptimeMillis();freshBridgeState=false;healthyResponses=0;
-        updates.attach(next,panel.english());updates.start();
+        lastHeartbeat=SystemClock.uptimeMillis();
     }
     private void disconnect() {
-        resumed = false; freshBridgeState=false;healthyResponses=0;queue(2);
-        if(activity!=null){updates.pause(activity);license.detach(activity);}
+        resumed = false; queue(2);
+        if(activity!=null){license.detach(activity);}
         if (panel != null) {
             panel.close(); if (panel.getParent() instanceof ViewGroup) ((ViewGroup) panel.getParent()).removeView(panel);
         }
@@ -93,26 +87,11 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
     public static void update(boolean enabled, String phase) {
         if (host != null && host.panel != null) {
             host.lastHeartbeat=SystemClock.uptimeMillis();host.engineEnabled = enabled; host.panel.setEngineState(enabled, phase);
-            // A loaded module and responsive Android UI complete patch startup. Native
-            // game readiness can arrive much later and is not a UI-patch health check.
-            host.healthyResponses=host.resumed&&host.freshBridgeState?Math.min(2,host.healthyResponses+1):0;
-            host.freshBridgeState=false;
-            if(!host.markedHealthy&&!host.healthPending&&host.healthyResponses>=2&&host.lastHeartbeat>=host.nextHealthAttempt){
-                final PanelHost current=host;current.healthPending=true;
-                current.updates.healthy(success->{
-                    current.healthPending=false;current.markedHealthy=success;
-                    if(!success)current.nextHealthAttempt=SystemClock.uptimeMillis()+2000;
-                });
-            }
         }
     }
-    public static void recordError(String stage,String error) { if(host!=null){host.latestError=stage+": "+error;host.freshBridgeState=false;host.healthyResponses=0;} }
+    public static void recordError(String stage,String error) { if(host!=null){host.latestError=stage+": "+error;} }
     public static void recordState(String state) {
-        if(host==null)return;host.diagnosticState=state;host.freshBridgeState=false;
-        try{
-            org.json.JSONObject data=new org.json.JSONObject(state),auth=data.optJSONObject("auth");
-            host.freshBridgeState=data.optBoolean("foreground",false)&&auth!=null&&auth.optBoolean("ready",false);
-        }catch(Exception ignored){}
+        if(host!=null)host.diagnosticState=state;
     }
     private void watchdog() {
         if(resumed&&panel!=null&&SystemClock.uptimeMillis()-lastHeartbeat>5000)panel.setEngineState(false,"UI 응답 없음 · 오류 확인");
@@ -127,7 +106,7 @@ public final class PanelHost implements Application.ActivityLifecycleCallbacks {
             }).setNegativeButton(panel.english()?"Close":"닫기",null).show();
     }
     @Override public void onActivityResumed(Activity value) { attach(value); }
-    @Override public void onActivityPaused(Activity value) { if (value == activity) { resumed = false; freshBridgeState=false;healthyResponses=0;queue(2); updates.pause(value);license.detach(value);panel.pause(); } }
+    @Override public void onActivityPaused(Activity value) { if (value == activity) { resumed = false; queue(2); license.detach(value);panel.pause(); } }
     @Override public void onActivityDestroyed(Activity value) { if (value == activity) disconnect(); }
     @Override public void onActivityCreated(Activity value, Bundle state) {}
     @Override public void onActivityStarted(Activity value) {}

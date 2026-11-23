@@ -29,3 +29,25 @@ rpc.exports={...rpc.exports,
  });},
  failonce(){const host=_panelHost;let fail=true;_panelHost=new Proxy(host,{get(target,key){if(key==='poll'&&fail){fail=false;throw Error('fixture recoverable UI failure');}return target[key];}});return true;}
 };
+
+rpc.exports={...rpc.exports,inspectui(description){return onUi(()=>{
+ const records=_Java.use('android.app.ActivityThread').currentActivityThread().mActivities.value;
+ const it=records.values().iterator();const result={clicked:false,texts:[],rootWidth:0,centerX:0,top:0};
+ const VG=_Java.use('android.view.ViewGroup'),TV=_Java.use('android.widget.TextView');
+ function visit(v){
+  if(v.getVisibility()!==0)return;
+  if(TV.class.isInstance(v))result.texts.push(String(_Java.cast(v,TV).getText()));
+  const d=v.getContentDescription();
+  if(description&&d&&String(d)===description){
+   const pos=_Java.array('int',[0,0]);v.getLocationOnScreen(pos);
+   result.centerX=Number(pos[0])+Number(v.getWidth())/2;result.top=Number(pos[1]);
+   result.clicked=!!v.performClick();
+  }
+  if(VG.class.isInstance(v)){const g=_Java.cast(v,VG);for(let i=0;i<g.getChildCount();i++)visit(g.getChildAt(i));}
+ }
+ while(it.hasNext()){
+  const a=_Java.cast(it.next(),_Java.use('android.app.ActivityThread$ActivityClientRecord'));
+  if(!a.paused.value){const root=a.activity.value.getWindow().getDecorView();result.rootWidth=Number(root.getWidth());visit(root);}
+ }
+ return result;
+});}};

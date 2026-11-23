@@ -44,25 +44,35 @@ try:
   check(s['enabled']==(i%2==0) and not s['error'],'typed authorization commits engine ON/OFF')
  script.exports_sync.failonce();time.sleep(1)
  check(not state(script)['error'],'UI bridge recovers after transient exception')
- check(script.exports_sync.installfixture(),'verified small patch installs without replacing APK')
- restart(session);session,script=attach()
- deadline=time.monotonic()+15
- while time.monotonic()<deadline:
-  b=script.exports_sync.boot()
-  if b['engineAvailable']:break
-  time.sleep(.25)
- check(b['selected']['version']==22001 and b['engineAvailable'],'signed full production engine loads on next start')
- restart(session);session,script=attach();time.sleep(1)
- b=script.exports_sync.boot()
- check(b['selected']['version']==22000 and bool(b['selected']['recovery']),'unfinished patched startup rolls back to embedded engine')
- deadline=time.monotonic()+15
- while time.monotonic()<deadline:
-  try:
-   s=state(script)
-   if s.get('foreground') and s.get('auth',{}).get('ready'):break
-  except frida.core.RPCException:pass
-  time.sleep(.25)
- check(s.get('foreground') and s.get('auth',{}).get('ready'),'embedded UI and authorization recover after rollback')
+ ui=script.exports_sync.inspectui('Iris 설정 열기')
+ check(ui['clicked'] and abs(ui['centerX']-ui['rootWidth']/2)<=2,'invisible opener is at top center and opens menu')
+ time.sleep(.3)
+ ui=script.exports_sync.inspectui('')
+ check(any('컨트롤 센터' in t for t in ui['texts']),'large settings menu is visible')
+ check(not any(re.search(r'업데이트|패치 복구|Anti AFK|연결 복구 보호',t,re.I) for t in ui['texts']),'update and Anti AFK menu entries are absent')
+ check(any('discord.gg/bshack' in t for t in ui['texts']),'existing Discord link is retained')
+ check(script.exports_sync.inspectui('설정 닫기')['clicked'],'large menu closes')
+ # Populate old persisted update state, without modifying user settings.
+ subprocess.run(['adb','shell','run-as','com.irisai.bshack.check','mkdir','-p','files/iris-updates/v99999'],check=True)
+ for name in ['active','pending','failed','highest']:
+  subprocess.run(['adb','shell',f'run-as com.irisai.bshack.check sh -c "echo 99999 > files/iris-updates/{name}"'],check=True)
+ for iteration in range(3):
+  restart(session);session,script=attach()
+  deadline=time.monotonic()+15
+  while time.monotonic()<deadline:
+   try:
+    s=state(script)
+    if s.get('foreground') and s.get('auth',{}).get('ready'):break
+   except frida.core.RPCException:pass
+   time.sleep(.25)
+  b=script.exports_sync.boot()['selected']
+  check(b['version']==22500 and not b['engine'] and not b['ui'] and not b['recovery'],'restart '+str(iteration+1)+' ignores legacy patch state')
+  check(s.get('foreground') and s.get('auth',{}).get('ready'),'bundled UI and authorization load again')
+  check(script.exports_sync.grant(),'fixture lease renews after restart')
+  time.sleep(.5)
+  check(script.exports_sync.click(),'bundled Auto Goal toggle still dispatches after restart')
+  time.sleep(.5)
+  check(state(script)['enabled'],'bundled engine receives ON after restart')
  minutes=int(os.environ.get('ENDURANCE_MINUTES','0'))
  if minutes:
   checkpoints=[];stop=time.monotonic()+minutes*60;last_grant=0;last_memory=0;cycles=0;max_rpc=0

@@ -24,7 +24,6 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
         void visibilitySuppressed();
         default boolean nativeEngine() { return false; }
         default void copyHwid() {}
-        default void checkUpdates() {}
         default void showDiagnostics() {}
     }
     public static final String DISCORD_URL = "https://discord.gg/bshack";
@@ -228,7 +227,6 @@ public final class IrisControlPanel extends FrameLayout implements AutoCloseable
             }
         }
         if (tab == 0 || tab == 2) {
-            if(actions.nativeEngine())card(text("업데이트 확인", "Check for updates"), text("새 패치와 변경 내용 확인", "Check for patches and release notes"), false, actions::checkUpdates);
             card(text("언어", "Language"), state.english ? "English · 한국어로 전환" : "한국어 · Switch to English", false,
                 () -> { state.english = !state.english; notice = ""; save(); refresh(); });
             card(state.hidden ? text("UI 다시 표시", "Show UI") : text("UI 전부 숨기기", "Hide all UI"),

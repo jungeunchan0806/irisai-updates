@@ -20,8 +20,8 @@ function _panelRecordError(stage, error) {
   try { if(_panelHost) _panelHost.recordError(stage,_panelError); } catch (_) {}
 }
 function _panelInitialize(app) {
-  const boot=globalThis.__irisBoot || {version:22000,name:'2.2.0',ui:'',recovery:''};
-  const input = boot.ui ? _Java.use('java.io.FileInputStream').$new(boot.ui) : app.getAssets().open('iris-panel.dex');
+  const boot=globalThis.__irisBoot || {version:22500,name:'2.2.5-static',ui:'',recovery:''};
+  const input = app.getAssets().open('iris-panel.dex');
   const out = _Java.use('java.io.ByteArrayOutputStream').$new();
   const buffer = _Java.array('byte', new Array(8192).fill(0));
   try { let n; while ((n = input.read(buffer)) > 0) out.write(buffer, 0, n); }
