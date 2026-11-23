@@ -18,6 +18,6 @@ legacy update-state immunity, repeated restarts and baseline/candidate launch be
 Fixture license injection exists only in the isolated test APK; never in the game payload.
 No live license, private signing key or seller credential is included.
 
-The old patch-specific instrumentation remains historical; it is not applicable to
-this static branch. The new device checks are `bridgecheck/check.py`. Other old patch
+Patch-specific instrumentation has been removed from this static branch.
+The new device checks are `bridgecheck/check.py`. Other old patch
 guides describe earlier versions and do not apply to 2.2.5-static.
