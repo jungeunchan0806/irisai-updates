@@ -1,0 +1,27 @@
+{
+  "minutes": 2,
+  "cycles": 60,
+  "max_rpc_seconds": 0.4434881319999988,
+  "checkpoints": [
+    {
+      "cycle": 1,
+      "remaining_seconds": 120,
+      "pss_kb": 50093
+    },
+    {
+      "cycle": 16,
+      "remaining_seconds": 90,
+      "pss_kb": 50534
+    },
+    {
+      "cycle": 31,
+      "remaining_seconds": 59,
+      "pss_kb": 49878
+    },
+    {
+      "cycle": 46,
+      "remaining_seconds": 29,
+      "pss_kb": 49836
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "friendly_matches": 0,
+  "physical_device_tested": false,
+  "android_api": "35",
+  "abi": "x86_64,arm64-v8a",
+  "baseline": {
+    "installed": true,
+    "samples": [
+      {
+        "seconds": 15,
+        "alive": false
+      },
+      {
+        "seconds": 30,
+        "alive": false
+      }
+    ],
+    "alive_30s": false,
+    "diagnostics": [
+      "F/libc    ( 4513): Fatal signal 6 (SIGABRT), code -1 (SI_QUEUE) in tid 4513 (cell.brawlstars), pid 4513 (cell.brawlstars)",
+      "F/DEBUG   ( 4588):       #00 pc 0000000000081f58  /apex/com.android.runtime/lib64/bionic/libc.so (syscall+24) (BuildId: eb58b4d427279994f00c0e1818477e4f)",
+      "F/DEBUG   ( 4588):       #01 pc 00000000002d15ee  /system/lib64/libndk_translation.so (ndk_translation::RunKernelSyscall(berberis::ThreadState*)+78) (BuildId: 3bdce8491a367d18e6b73dc5f0f90ffa)",
+      "F/DEBUG   ( 4588):       #02 pc 00000000000bb014  /memfd:exec (deleted)",
+      "F/DEBUG   ( 4588):       #00 pc 0000000000048cc8  /system/lib64/arm64/libc.so (abort+164) (BuildId: efae7ea66b8bcde3ced1065517425e18)",
+      "F/DEBUG   ( 4588):       #01 pc 000000000097b7ec  /data/app/~~XF95-qKjs3shZrqf0d44Tw==/com.supercell.brawlstars-6ip8pq82_Kupy4kPoy2yXQ==/lib/arm64/libosu.so",
+      "F/DEBUG   ( 4588):       #02 pc 0000000000976978  /data/app/~~XF95-qKjs3shZrqf0d44Tw==/com.supercell.brawlstars-6ip8pq82_Kupy4kPoy2yXQ==/lib/arm64/libosu.so",
+      "F/DEBUG   ( 4588):       #03 pc 0000000000976f38  /data/app/~~XF95-qKjs3shZrqf0d44Tw==/com.supercell.brawlstars-6ip8pq82_Kupy4kPoy2yXQ==/lib/arm64/libosu.so",
+      "F/DEBUG   ( 4588):       #04 pc 00000000009643e4  /data/app/~~XF95-qKjs3shZrqf0d44Tw==/com.supercell.brawlstars-6ip8pq82_Kupy4kPoy2yXQ==/lib/arm64/libosu.so",
+      "F/DEBUG   ( 4588):       #05 pc 000000000008b1f8  /system/bin/arm64/linker64 (__dl__ZN6soinfo17call_constructorsEv+604) (BuildId: db20e3f7b51e96082f3803b2204734a2)",
+      "F/DEBUG   ( 4588):       #06 pc 0000000000072e08  /system/bin/arm64/linker64 (__dl__Z9do_dlopenPKciPK17android_dlextinfoPKv+2744) (BuildId: db20e3f7b51e96082f3803b2204734a2)",
+      "F/DEBUG   ( 4588):       #07 pc 000000000006cbac  /system/bin/arm64/linker64 (__loader_android_dlopen_ext+72) (BuildId: db20e3f7b51e96082f3803b2204734a2)",
+      "F/DEBUG   ( 4588):       #08 pc 0000000000004018  /system/lib64/arm64/libnative_bridge_vdso.so (BuildId: c7eb2dae1deb0f51d28b7a1c3619dca4)"
+    ]
+  },
+  "candidate": {
+    "installed": true,
+    "samples": [
+      {
+        "seconds": 15,
+        "alive": false
+      },
+      {
+        "seconds": 30,
+        "alive": false
+      }
+    ],
+    "alive_30s": false,
+    "diagnostics": [
+      "F/libc    ( 4675): Fatal signal 6 (SIGABRT), code -1 (SI_QUEUE) in tid 4675 (cell.brawlstars), pid 4675 (cell.brawlstars)",
+      "F/DEBUG   ( 4760):       #00 pc 0000000000081f58  /apex/com.android.runtime/lib64/bionic/libc.so (syscall+24) (BuildId: eb58b4d427279994f00c0e1818477e4f)",
+      "F/DEBUG   ( 4760):       #01 pc 00000000002d15ee  /system/lib64/libndk_translation.so (ndk_translation::RunKernelSyscall(berberis::ThreadState*)+78) (BuildId: 3bdce8491a367d18e6b73dc5f0f90ffa)",
+      "F/DEBUG   ( 4760):       #02 pc 00000000000ba844  /memfd:exec (deleted)",
+      "F/DEBUG   ( 4760):       #00 pc 0000000000048cc8  /system/lib64/arm64/libc.so (abort+164) (BuildId: efae7ea66b8bcde3ced1065517425e18)",
+      "F/DEBUG   ( 4760):       #01 pc 000000000097b7ec  /data/app/~~ufPkarlQiCz2pZnYF8rvBg==/com.supercell.brawlstars-aCQ17bKQw2l7Uzrs8RAtyg==/lib/arm64/libosu.so",
+      "F/DEBUG   ( 4760):       #02 pc 0000000000976978  /data/app/~~ufPkarlQiCz2pZnYF8rvBg==/com.supercell.brawlstars-aCQ17bKQw2l7Uzrs8RAtyg==/lib/arm64/libosu.so",
+      "F/DEBUG   ( 4760):       #03 pc 0000000000976f38  /data/app/~~ufPkarlQiCz2pZnYF8rvBg==/com.supercell.brawlstars-aCQ17bKQw2l7Uzrs8RAtyg==/lib/arm64/libosu.so",
+      "F/DEBUG   ( 4760):       #04 pc 00000000009643e4  /data/app/~~ufPkarlQiCz2pZnYF8rvBg==/com.supercell.brawlstars-aCQ17bKQw2l7Uzrs8RAtyg==/lib/arm64/libosu.so",
+      "F/DEBUG   ( 4760):       #05 pc 000000000008b1f8  /system/bin/arm64/linker64 (__dl__ZN6soinfo17call_constructorsEv+604) (BuildId: db20e3f7b51e96082f3803b2204734a2)",
+      "F/DEBUG   ( 4760):       #06 pc 0000000000072e08  /system/bin/arm64/linker64 (__dl__Z9do_dlopenPKciPK17android_dlextinfoPKv+2744) (BuildId: db20e3f7b51e96082f3803b2204734a2)",
+      "F/DEBUG   ( 4760):       #07 pc 000000000006cbac  /system/bin/arm64/linker64 (__loader_android_dlopen_ext+72) (BuildId: db20e3f7b51e96082f3803b2204734a2)",
+      "F/DEBUG   ( 4760):       #08 pc 0000000000004018  /system/lib64/arm64/libnative_bridge_vdso.so (BuildId: c7eb2dae1deb0f51d28b7a1c3619dca4)"
+    ]
+  }
+}

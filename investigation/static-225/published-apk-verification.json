@@ -1,0 +1,17 @@
+{
+  "version": "2.2.5-static",
+  "baseline_sha256": "99b33527f79ab2b277c90ae428df06d7450269aadeee7b77918e960106e1eb54",
+  "apk_sha256": "dc6328e376aca60f38d4fed3cc866d85ad32c127fa97e31ed11ec912d0e4e469",
+  "bytes": 2006344197,
+  "unchanged_entries_byte_verified": 38360,
+  "changed_entries": [
+    "assets/iris-bootstrap.dex",
+    "assets/iris-engine.mjs",
+    "assets/iris-panel.dex",
+    "lib/arm64-v8a/libosu.data.so"
+  ],
+  "patch_loader_removed": true,
+  "anti_afk_absent": true,
+  "real_match_tested": false,
+  "physical_device_tested": false
+}

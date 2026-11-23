@@ -61,5 +61,5 @@ jobs:
         env: {GH_TOKEN: '${{ github.token }}'}
         run: |
           python bshack/static_notes.py > candidate/RELEASE.md
-          gh release view android-autogoal-static-2.2.5 || gh release create android-autogoal-static-2.2.5 --target "$GITHUB_SHA" --title 'Iris AutoGoal 2.2.5 · 자동패치·Anti AFK 제거' --notes-file candidate/RELEASE.md
+          gh release view android-autogoal-static-2.2.5 || gh release create android-autogoal-static-2.2.5 --prerelease --target "$GITHUB_SHA" --title 'Iris AutoGoal 2.2.5 · 자동패치·Anti AFK 제거' --notes-file candidate/RELEASE.md
           gh release upload android-autogoal-static-2.2.5 candidate/*.apk candidate/*.sha256 candidate/*.verification.json --clobber
