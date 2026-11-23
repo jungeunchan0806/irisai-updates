@@ -20,7 +20,7 @@ print(f"독립 Android UI 검사 {len(c)}개 통과: 실제 DEX 로딩, 인증 �
 print(f"Android API {r.get('android_api')}, 에뮬레이터 ABI {r.get('abi')}.")
 for kind in ['baseline','candidate']:
  d=r.get(kind,{})
- print(f"- {kind}: APK 설치={d.get('installed',False)}, 30초 프로세스 유지={d.get('alive_30s',False)}, UI 감지={d.get('ui_visible','미검사')}; 오류={d.get('error','없음')}")
+ print(f"- {kind}: APK 설치={d.get('installed',False)}, 30초 프로세스 유지={d.get('alive_30s',False)}, UI 감지={d.get('ui_visible','미검사')}")
 print('\n게임 시작 검사 결과: 기존판과 새 APK 모두 ARM 변환 계층을 사용하는 API 35 에뮬레이터에서 libosu.so 초기화 중 동일한 SIGABRT로 종료했습니다. 두 APK 설치는 성공했지만 게임 시작 검사는 실패했습니다. 라이브러리 오류를 해결했다고 주장하지 않습니다.')
 print('\n실제 삼성 기기, 실서버 로비 진입, 친선전 자동 득점은 검증하지 않았습니다. UI 검사 통과는 실제 경기 동작을 보증하지 않습니다. 게임 기반 버전은 기존 70.648입니다. 테스트 결과와 제약은 Actions 아티팩트를 참고하세요.')
 
