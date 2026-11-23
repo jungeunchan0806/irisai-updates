@@ -1,0 +1,19 @@
+{
+  "baseline_sha256": "8d595381fe0247dbfc06bd03879f68828d1dc1967647e830d0c51745d810f082",
+  "sha256": "bb69d93f19f322747f64cf0723cd876b10c98faa51da697efe66c043357bda60",
+  "bytes": 2006344195,
+  "unchanged_entries_byte_verified": 38360,
+  "modified_entries": [
+    "lib/arm64-v8a/libosu.data.so"
+  ],
+  "added_entries": [
+    "assets/iris-bootstrap.dex",
+    "assets/iris-engine.mjs",
+    "assets/iris-panel.dex"
+  ],
+  "manifest_and_original_dex_preserved": true,
+  "game_native_libraries_preserved": true,
+  "all_crc": "pass",
+  "physical_device_test": "not performed",
+  "friendly_match_test": "not performed"
+}

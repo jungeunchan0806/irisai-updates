@@ -1,0 +1,17 @@
+{
+  "runtime_node_tests": {
+    "passed": 9,
+    "failed": 0
+  },
+  "ui_unit_tests": {
+    "passed": 5,
+    "failed": 0
+  },
+  "gradle_assemble_release": "passed",
+  "android_lint_release": "passed",
+  "apksigner_verify": "passed",
+  "signer_sha256": "a40da80a59d170caa950cf15c18c454d47a39b26989d8b640ecd745ba71bf5dc",
+  "zipalign_16kb": "passed",
+  "physical_device": "not tested",
+  "real_match": "not tested"
+}
