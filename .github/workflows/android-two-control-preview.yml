@@ -14,6 +14,8 @@ jobs:
         with: {distribution: temurin, java-version: '17'}
       - uses: android-actions/setup-android@v3
         with: {packages: 'platform-tools platforms;android-35 build-tools;35.0.0', log-accepted-android-sdk-licenses: false}
+      - name: Use Google's Maven Central mirror for this build
+        run: sed -i 's|mavenCentral()|maven { url "https://maven-central.storage-download.googleapis.com/maven2/" }; mavenCentral()|g' settings.gradle
       - run: ./gradlew :uipreview:assembleTwoControls :controlui:testDebugUnitTest :bshackcheck:assembleDebug :bshackcheck:assembleDebugAndroidTest --console=plain --max-workers=2
       - run: sudo chmod 666 /dev/kvm
       - uses: reactivecircus/android-emulator-runner@v2
